@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api';
-import { X, Upload, Check, Image as ImageIcon, UserPlus } from 'lucide-react';
+import { X, Upload, Check, Image as ImageIcon, UserPlus, Pencil, Trash2 } from 'lucide-react';
 import DelegateForm from '../delegates/DelegateForm';
 
 const TeamForm = ({ team, onClose, onSuccess }) => {
@@ -20,6 +20,10 @@ const TeamForm = ({ team, onClose, onSuccess }) => {
   const [previews, setPreviews] = useState({
     logo: team?.logo || null,
     team_photo: team?.team_photo || null
+  });
+  const [removedImages, setRemovedImages] = useState({
+    logo: false,
+    team_photo: false
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -63,8 +67,15 @@ const TeamForm = ({ team, onClose, onSuccess }) => {
     if (file) {
       setFormData({ ...formData, [field]: file });
       setPreviews({ ...previews, [field]: URL.createObjectURL(file) });
+      setRemovedImages({ ...removedImages, [field]: false });
       setError('');
     }
+  };
+
+  const handleClearFile = (field) => {
+    setFormData({ ...formData, [field]: null });
+    setPreviews({ ...previews, [field]: null });
+    setRemovedImages({ ...removedImages, [field]: true });
   };
 
   const handleSubmit = async (e) => {
@@ -74,8 +85,18 @@ const TeamForm = ({ team, onClose, onSuccess }) => {
     data.append('name', formData.name);
     data.append('category', formData.category);
     if (formData.delegate) data.append('delegate', formData.delegate);
-    if (formData.logo instanceof File) data.append('logo', formData.logo);
-    if (formData.team_photo instanceof File) data.append('team_photo', formData.team_photo);
+    
+    if (formData.logo instanceof File) {
+      data.append('logo', formData.logo);
+    } else if (removedImages.logo) {
+      data.append('remove_logo', 'true');
+    }
+    
+    if (formData.team_photo instanceof File) {
+      data.append('team_photo', formData.team_photo);
+    } else if (removedImages.team_photo) {
+      data.append('remove_team_photo', 'true');
+    }
 
     try {
       if (team) {
@@ -209,16 +230,121 @@ const TeamForm = ({ team, onClose, onSuccess }) => {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
           <div className="input-group">
             <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Escudo</label>
-            <div style={{ border: '2px dashed var(--border-subtle)', borderRadius: '12px', padding: '12px', textAlign: 'center', position: 'relative', background: 'var(--brand-beige-subtle)' }}>
-              <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileChange(e, 'logo')} />
-              {previews.logo ? <img src={previews.logo} alt="" style={{ height: '40px', objectFit: 'contain' }} /> : <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}><ImageIcon size={18} style={{ display: 'block', margin: '0 auto 4px' }} /> Subir Logo</div>}
+            <div style={{ 
+              border: previews.logo ? '1px solid var(--border-subtle)' : '2px dashed var(--border-subtle)', 
+              borderRadius: '12px', 
+              padding: previews.logo ? '16px' : '24px', 
+              textAlign: 'center', 
+              position: 'relative', 
+              background: 'var(--brand-beige-subtle)',
+              minHeight: '160px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '12px'
+            }}>
+              <input 
+                type="file" 
+                id="logo-file-input" 
+                accept="image/*" 
+                style={{ display: 'none' }} 
+                onChange={(e) => handleFileChange(e, 'logo')} 
+              />
+              
+              {previews.logo ? (
+                <>
+                  <div style={{ position: 'relative', width: '90px', height: '90px' }}>
+                    <img src={previews.logo} alt="Escudo del equipo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', zIndex: 10 }}>
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('logo-file-input').click()}
+                      className="secondary"
+                      style={{ padding: '6px 10px', height: '30px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}
+                    >
+                      <Pencil size={12} /> Modificar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleClearFile('logo')}
+                      className="secondary"
+                      style={{ padding: '6px 10px', height: '30px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#e57373', borderColor: 'rgba(229,115,115,0.2)' }}
+                    >
+                      <Trash2 size={12} /> Eliminar
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div 
+                  onClick={() => document.getElementById('logo-file-input').click()} 
+                  style={{ cursor: 'pointer', fontSize: '12px', color: 'var(--text-muted)' }}
+                >
+                  <ImageIcon size={22} style={{ display: 'block', margin: '0 auto 6px' }} />
+                  Subir Logo
+                </div>
+              )}
             </div>
           </div>
+
           <div className="input-group">
             <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Foto Equipo</label>
-            <div style={{ border: '2px dashed var(--border-subtle)', borderRadius: '12px', padding: '12px', textAlign: 'center', position: 'relative', background: 'var(--brand-beige-subtle)' }}>
-              <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileChange(e, 'team_photo')} />
-              {previews.team_photo ? <img src={previews.team_photo} alt="" style={{ height: '40px', width: '100%', objectFit: 'cover', borderRadius: '4px' }} /> : <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}><Upload size={18} style={{ display: 'block', margin: '0 auto 4px' }} /> Subir Foto</div>}
+            <div style={{ 
+              border: previews.team_photo ? '1px solid var(--border-subtle)' : '2px dashed var(--border-subtle)', 
+              borderRadius: '12px', 
+              padding: previews.team_photo ? '16px' : '24px', 
+              textAlign: 'center', 
+              position: 'relative', 
+              background: 'var(--brand-beige-subtle)',
+              minHeight: '160px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '12px'
+            }}>
+              <input 
+                type="file" 
+                id="photo-file-input" 
+                accept="image/*" 
+                style={{ display: 'none' }} 
+                onChange={(e) => handleFileChange(e, 'team_photo')} 
+              />
+              
+              {previews.team_photo ? (
+                <>
+                  <div style={{ position: 'relative', width: '100%', height: '90px', borderRadius: '8px', overflow: 'hidden' }}>
+                    <img src={previews.team_photo} alt="Foto del equipo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', zIndex: 10 }}>
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('photo-file-input').click()}
+                      className="secondary"
+                      style={{ padding: '6px 10px', height: '30px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}
+                    >
+                      <Pencil size={12} /> Modificar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleClearFile('team_photo')}
+                      className="secondary"
+                      style={{ padding: '6px 10px', height: '30px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#e57373', borderColor: 'rgba(229,115,115,0.2)' }}
+                    >
+                      <Trash2 size={12} /> Eliminar
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div 
+                  onClick={() => document.getElementById('photo-file-input').click()} 
+                  style={{ cursor: 'pointer', fontSize: '12px', color: 'var(--text-muted)' }}
+                >
+                  <Upload size={22} style={{ display: 'block', margin: '0 auto 6px' }} />
+                  Subir Foto
+                </div>
+              )}
             </div>
           </div>
         </div>

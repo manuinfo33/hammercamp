@@ -146,6 +146,10 @@ class ZoneTeam(models.Model):
     lost = models.IntegerField(default=0, verbose_name="PP")
     goals_for = models.IntegerField(default=0, verbose_name="GF")
     goals_against = models.IntegerField(default=0, verbose_name="GC")
+    yellow_cards = models.IntegerField(default=0, verbose_name="Tarjetas Amarillas")
+    red_cards = models.IntegerField(default=0, verbose_name="Tarjetas Rojas")
+    indumentaria = models.IntegerField(default=0, verbose_name="Indumentaria")
+    fair_play = models.IntegerField(default=0, verbose_name="Fair Play")
 
     def __str__(self):
         return f"{self.zone} - {self.team.name}"

@@ -16,6 +16,37 @@ export default function TournamentDetailView({ tournament, onBack }) {
   const [activeTab, setActiveTab] = useState('principal');
   const [detailedTournament, setDetailedTournament] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [customAlert, setCustomAlert] = useState(null); // { message: string, type: 'success' | 'error' }
+  const [alertExiting, setAlertExiting] = useState(false);
+  const [customConfirm, setCustomConfirm] = useState(null); // { message: string, onConfirm: () => void }
+  const [confirmExiting, setConfirmExiting] = useState(false);
+
+  const triggerCloseAlert = () => {
+    setAlertExiting(true);
+    setTimeout(() => {
+      setCustomAlert(null);
+      setAlertExiting(false);
+    }, 300);
+  };
+
+  const triggerCloseConfirm = (confirmed) => {
+    setConfirmExiting(true);
+    setTimeout(() => {
+      if (confirmed && customConfirm?.onConfirm) {
+        customConfirm.onConfirm();
+      }
+      setCustomConfirm(null);
+      setConfirmExiting(false);
+    }, 300);
+  };
+
+  useEffect(() => {
+    if (!customAlert) return;
+    const timer = setTimeout(() => {
+      triggerCloseAlert();
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [customAlert]);
   
   // Good Faith list states
   const [selectedBuenaFeTeamId, setSelectedBuenaFeTeamId] = useState('');
@@ -127,10 +158,43 @@ export default function TournamentDetailView({ tournament, onBack }) {
       setShowTeamForm(true);
     } catch (e) {
       console.error(e);
-      alert('Error al cargar la información del equipo.');
+      setCustomAlert({ message: 'Error al cargar la información del equipo.', type: 'error' });
     } finally {
       setLoadingTeam(false);
     }
+  };
+
+  const handleDeleteTeamClick = async (zt) => {
+    setCustomConfirm({
+      message: `¿Estás seguro de que deseas eliminar a ${zt.team_name} de este torneo?`,
+      onConfirm: async () => {
+        try {
+          setLoading(true);
+          await api.delete(`zone-teams/${zt.id}/`);
+          setCustomAlert({ message: "Equipo eliminado del torneo con éxito.", type: "success" });
+          await fetchTournamentDetail();
+        } catch (e) {
+          console.error(e);
+          let errorMsg = "Hubo un error al eliminar el equipo del torneo.";
+          if (e.response?.data) {
+            if (typeof e.response.data === 'string') {
+              errorMsg = e.response.data;
+            } else if (e.response.data.detail) {
+              errorMsg = e.response.data.detail;
+            } else if (Array.isArray(e.response.data)) {
+              errorMsg = e.response.data[0];
+            } else if (typeof e.response.data === 'object') {
+              const firstKey = Object.keys(e.response.data)[0];
+              const val = e.response.data[firstKey];
+              errorMsg = Array.isArray(val) ? val[0] : val;
+            }
+          }
+          setCustomAlert({ message: errorMsg, type: "error" });
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
   };
 
   // Round-Robin Fixture Generator Algorithm (Berger Tables)
@@ -300,20 +364,22 @@ export default function TournamentDetailView({ tournament, onBack }) {
   };
 
   const handleDeleteRound = async (roundId) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar esta fecha por completo? Se perderán todos sus partidos programados.")) {
-      return;
-    }
-    try {
-      setLoading(true);
-      await api.delete(`match-rounds/${roundId}/`);
-      alert("Fecha eliminada correctamente.");
-      await fetchFixturesForZone(activeZoneId);
-    } catch (e) {
-      console.error(e);
-      alert("Hubo un error al eliminar la fecha.");
-    } finally {
-      setLoading(false);
-    }
+    setCustomConfirm({
+      message: "¿Estás seguro de que deseas eliminar esta fecha por completo? Se perderán todos sus partidos programados.",
+      onConfirm: async () => {
+        try {
+          setLoading(true);
+          await api.delete(`match-rounds/${roundId}/`);
+          setCustomAlert({ message: "Fecha eliminada correctamente.", type: "success" });
+          await fetchFixturesForZone(activeZoneId);
+        } catch (e) {
+          console.error(e);
+          setCustomAlert({ message: "Hubo un error al eliminar la fecha.", type: "error" });
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
   };
 
   // Open New Match Modal
@@ -395,20 +461,22 @@ export default function TournamentDetailView({ tournament, onBack }) {
   };
 
   const handleDeleteMatch = async (matchId) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este partido?")) {
-      return;
-    }
-    try {
-      setLoading(true);
-      await api.delete(`matches/${matchId}/`);
-      alert("Partido de fixture eliminado.");
-      await fetchFixturesForZone(activeZoneId);
-    } catch (e) {
-      console.error(e);
-      alert("Hubo un error al eliminar el partido.");
-    } finally {
-      setLoading(false);
-    }
+    setCustomConfirm({
+      message: "¿Estás seguro de que deseas eliminar este partido?",
+      onConfirm: async () => {
+        try {
+          setLoading(true);
+          await api.delete(`matches/${matchId}/`);
+          setCustomAlert({ message: "Partido de fixture eliminado.", type: "success" });
+          await fetchFixturesForZone(activeZoneId);
+        } catch (e) {
+          console.error(e);
+          setCustomAlert({ message: "Hubo un error al eliminar el partido.", type: "error" });
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
   };
 
   // Helper to dynamically calculate which team is libre in a round
@@ -520,20 +588,22 @@ export default function TournamentDetailView({ tournament, onBack }) {
   };
 
   const handleRemovePlayerFromRoster = async (rosterId) => {
-    if (!window.confirm("¿Estás seguro de quitar a este jugador de la lista de buena fe para este torneo?")) {
-      return;
-    }
-    try {
-      setLoadingBuenaFe(true);
-      await api.delete(`good-faith-lists/${rosterId}/`);
-      alert("Jugador removido de la lista de buena fe.");
-      fetchBuenaFePlayers();
-    } catch (err) {
-      console.error(err);
-      alert("Error al remover al jugador.");
-    } finally {
-      setLoadingBuenaFe(false);
-    }
+    setCustomConfirm({
+      message: "¿Estás seguro de quitar a este jugador de la lista de buena fe para este torneo?",
+      onConfirm: async () => {
+        try {
+          setLoadingBuenaFe(true);
+          await api.delete(`good-faith-lists/${rosterId}/`);
+          setCustomAlert({ message: "Jugador removido de la lista de buena fe.", type: "success" });
+          fetchBuenaFePlayers();
+        } catch (err) {
+          console.error(err);
+          setCustomAlert({ message: "Error al remover al jugador.", type: "error" });
+        } finally {
+          setLoadingBuenaFe(false);
+        }
+      }
+    });
   };
 
   const dropdownStyles = {
@@ -619,7 +689,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
       </div>
 
       {/* Tabs Navigation */}
-      <div style={{ borderBottom: '1px solid var(--border-subtle)', display: 'flex', gap: '4px' }}>
+      <div style={{ borderBottom: '1px solid var(--border-subtle)', display: 'flex', gap: '4px', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
         {TABS.map(tab => (
           <button
             key={tab.id}
@@ -636,6 +706,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
               cursor: 'pointer',
               transition: 'all 0.2s ease',
               marginBottom: '-1px',
+              flexShrink: 0
             }}
           >
             {tab.label}
@@ -694,7 +765,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                           </div>
                         ) : (
                           <div className="table-container" style={{ margin: 0, overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '500px' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
                               <thead>
                                 <tr>
                                   <th className="hide-on-mobile" style={{ width: '80px' }}>Escudo</th>
@@ -703,7 +774,15 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                   <th className="hide-on-mobile" style={{ width: '60px', textAlign: 'center' }}>PG</th>
                                   <th className="hide-on-mobile" style={{ width: '60px', textAlign: 'center' }}>PE</th>
                                   <th className="hide-on-mobile" style={{ width: '60px', textAlign: 'center' }}>PP</th>
-                                  <th style={{ width: '80px', textAlign: 'center' }}>+/-</th>
+                                  <th style={{ width: '60px', textAlign: 'center' }}>+/-</th>
+                                  <th className="hide-on-mobile" style={{ width: '40px', textAlign: 'center' }} title="Tarjetas Rojas">
+                                    <span style={{ display: 'inline-block', width: '10px', height: '14px', background: '#ef4444', borderRadius: '2px' }} />
+                                  </th>
+                                  <th className="hide-on-mobile" style={{ width: '40px', textAlign: 'center' }} title="Tarjetas Amarillas">
+                                    <span style={{ display: 'inline-block', width: '10px', height: '14px', background: '#facc15', borderRadius: '2px' }} />
+                                  </th>
+                                  <th className="hide-on-mobile" style={{ width: '50px', textAlign: 'center' }}>IND</th>
+                                  <th className="hide-on-mobile" style={{ width: '50px', textAlign: 'center' }}>FP</th>
                                   <th style={{ width: '80px', textAlign: 'center' }}>Puntos</th>
                                   <th style={{ width: '80px', textAlign: 'right' }}>Acciones</th>
                                 </tr>
@@ -761,28 +840,53 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                       <td style={{ textAlign: 'center', color: diff >= 0 ? '#81c784' : '#e57373', fontWeight: '700', fontSize: '13px' }}>
                                         {diffStr}
                                       </td>
+                                      <td className="hide-on-mobile" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{zt.red_cards || 0}</td>
+                                      <td className="hide-on-mobile" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{zt.yellow_cards || 0}</td>
+                                      <td className="hide-on-mobile" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{zt.indumentaria || 0}</td>
+                                      <td className="hide-on-mobile" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{zt.fair_play || 0}</td>
                                       <td style={{ textAlign: 'center', fontWeight: '800', color: 'var(--text-primary)', fontSize: '15px' }}>
                                         {zt.points}
                                       </td>
                                       <td style={{ textAlign: 'right' }}>
-                                        <button
-                                          type="button"
-                                          onClick={() => handleEditTeamClick(zt.team)}
-                                          className="secondary"
-                                          style={{
-                                            minWidth: 'auto',
-                                            height: '34px',
-                                            width: '34px',
-                                            padding: 0,
-                                            borderRadius: '8px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center'
-                                          }}
-                                          title="Editar equipo"
-                                        >
-                                          <Edit size={14} />
-                                        </button>
+                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleEditTeamClick(zt.team)}
+                                            className="secondary"
+                                            style={{
+                                              minWidth: 'auto',
+                                              height: '34px',
+                                              width: '34px',
+                                              padding: 0,
+                                              borderRadius: '8px',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center'
+                                            }}
+                                            title="Editar equipo"
+                                          >
+                                            <Edit size={14} />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDeleteTeamClick(zt)}
+                                            className="secondary"
+                                            style={{
+                                              minWidth: 'auto',
+                                              height: '34px',
+                                              width: '34px',
+                                              padding: 0,
+                                              borderRadius: '8px',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              color: '#e57373'
+                                            }}
+                                            title="Eliminar equipo del torneo"
+                                          >
+                                            <Trash2 size={14} />
+                                          </button>
+                                        </div>
                                       </td>
                                     </tr>
                                   );
@@ -805,7 +909,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                 
                 {/* Zone Navigation Tabs */}
                 {detailedTournament.zones?.length > 1 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '12px' }}>
+                  <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '12px', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
                     {detailedTournament.zones.map((zone) => (
                       <button
                         key={zone.id}
@@ -815,7 +919,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
                           borderRadius: '20px',
                           padding: '6px 16px',
                           fontSize: '0.8rem',
-                          height: '32px'
+                          height: '32px',
+                          flexShrink: 0
                         }}
                       >
                         {zone.name}
@@ -1837,6 +1942,151 @@ export default function TournamentDetailView({ tournament, onBack }) {
             Cargando datos del equipo...
           </div>
         </div>
+      )}
+      {/* Custom alert notification banner */}
+      {customAlert && (
+        <div 
+          className="custom-alert-container"
+          style={{
+            position: 'fixed',
+            top: alertExiting ? '-80px' : '24px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 9999,
+            background: 'rgba(26, 21, 18, 0.95)',
+            border: customAlert.type === 'error' ? '1px solid #e57373' : '1px solid var(--brand-beige)',
+            borderRadius: '12px',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.7)',
+            padding: '16px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            minWidth: '320px',
+            maxWidth: '480px',
+            backdropFilter: 'blur(8px)',
+            opacity: alertExiting ? 0 : 1,
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}
+        >
+          {customAlert.type === 'error' ? (
+            <AlertTriangle size={20} color="#e57373" style={{ flexShrink: 0 }} />
+          ) : (
+            <Check size={20} color="var(--brand-beige)" style={{ flexShrink: 0 }} />
+          )}
+          <span style={{ fontSize: '0.88rem', color: 'var(--text-primary)', fontWeight: '600', flexGrow: 1 }}>
+            {customAlert.message}
+          </span>
+          <button
+            onClick={triggerCloseAlert}
+            style={{
+              background: customAlert.type === 'error' ? '#e57373' : 'var(--brand-beige)',
+              color: '#1a1512',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '6px 14px',
+              fontSize: '0.8rem',
+              fontWeight: '700',
+              cursor: 'pointer',
+              transition: 'opacity 0.2s',
+              outline: 'none',
+              flexShrink: 0
+            }}
+            onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
+            onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+          >
+            OK
+          </button>
+        </div>
+      )}
+
+      {/* Custom confirmation banner with blocking backdrop overlay */}
+      {customConfirm && (
+        <>
+          <div 
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0, 0, 0, 0.65)',
+              backdropFilter: 'blur(3px)',
+              zIndex: 9998,
+              animation: 'fade-in 0.2s ease-out'
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          />
+          <div 
+            className="custom-confirm-container"
+            style={{
+              position: 'fixed',
+              top: confirmExiting ? '-120px' : '24px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 9999,
+              background: 'rgba(26, 21, 18, 0.98)',
+              border: '1px solid var(--brand-beige)',
+              borderRadius: '16px',
+              boxShadow: '0 15px 40px rgba(0, 0, 0, 0.8)',
+              padding: '20px 24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              minWidth: '340px',
+              maxWidth: '500px',
+              backdropFilter: 'blur(10px)',
+              opacity: confirmExiting ? 0 : 1,
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <AlertTriangle size={22} color="var(--brand-beige)" style={{ flexShrink: 0 }} />
+              <span style={{ fontSize: '0.92rem', color: 'var(--text-primary)', fontWeight: '700', lineHeight: '1.4' }}>
+                {customConfirm.message}
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                onClick={() => triggerCloseConfirm(false)}
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  color: 'var(--text-secondary)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  fontSize: '0.82rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s',
+                  outline: 'none'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => triggerCloseConfirm(true)}
+                style={{
+                  background: 'var(--brand-beige)',
+                  color: '#1a1512',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  fontSize: '0.82rem',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  transition: 'opacity 0.2s',
+                  outline: 'none'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
+                onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

@@ -65,7 +65,7 @@ const TorneosView = () => {
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+      <div className="responsive-header" style={{ marginBottom: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{
             width: '52px', height: '52px', borderRadius: '16px',
@@ -144,11 +144,8 @@ const TorneosView = () => {
                 key={t.id}
                 style={{
                   borderBottom: idx < tournaments.length - 1 ? '1px solid var(--border-subtle)' : 'none',
-                  padding: '20px 24px',
-                  display: 'flex', alignItems: 'center', gap: '20px',
-                  transition: 'background 0.15s'
                 }}
-                className="table-row-hover"
+                className="table-row-hover tournament-row"
               >
                 {/* Icon */}
                 <div style={{

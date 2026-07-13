@@ -9,9 +9,9 @@ export function Footer() {
         <div>
           <div className="flex items-center gap-3">
             <img src={logo} alt="La Superliga" width={48} height={48} className="size-12 object-contain" />
-            <div className="font-display text-2xl font-bold uppercase leading-tight">
+            <div className="font-display text-2xl font-bold uppercase leading-tight text-white">
               La <span className="text-primary">Superliga</span>
-              <div className="text-[10px] tracking-[0.35em] text-primary/80">Torneos</div>
+              <div className="text-[10px] tracking-[0.35em] text-primary/80 font-semibold mt-0.5">Torneos</div>
             </div>
           </div>
           <p className="mt-3 text-sm text-muted-foreground max-w-xs">

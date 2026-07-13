@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api';
-import { X, Check, Image as ImageIcon } from 'lucide-react';
+import { X, Check, Image as ImageIcon, Pencil, Trash2 } from 'lucide-react';
 
 const PlayerFormModal = ({ player, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -19,6 +19,11 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
     dni_front: player?.dni_front || null,
     dni_back: player?.dni_back || null
   });
+  const [removedImages, setRemovedImages] = useState({
+    photo: false,
+    dni_front: false,
+    dni_back: false
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -27,8 +32,15 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
     if (file) {
       setFormData({ ...formData, [field]: file });
       setPreviews({ ...previews, [field]: URL.createObjectURL(file) });
+      setRemovedImages({ ...removedImages, [field]: false });
       setError('');
     }
+  };
+
+  const handleClearFile = (field) => {
+    setFormData({ ...formData, [field]: null });
+    setPreviews({ ...previews, [field]: null });
+    setRemovedImages({ ...removedImages, [field]: true });
   };
 
   const handleSubmit = async (e) => {
@@ -45,9 +57,23 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
     if (formData.email) data.append('email', formData.email);
     if (formData.phone) data.append('phone', formData.phone);
     
-    if (formData.photo instanceof File) data.append('photo', formData.photo);
-    if (formData.dni_front instanceof File) data.append('dni_front', formData.dni_front);
-    if (formData.dni_back instanceof File) data.append('dni_back', formData.dni_back);
+    if (formData.photo instanceof File) {
+      data.append('photo', formData.photo);
+    } else if (removedImages.photo) {
+      data.append('remove_photo', 'true');
+    }
+    
+    if (formData.dni_front instanceof File) {
+      data.append('dni_front', formData.dni_front);
+    } else if (removedImages.dni_front) {
+      data.append('remove_dni_front', 'true');
+    }
+    
+    if (formData.dni_back instanceof File) {
+      data.append('dni_back', formData.dni_back);
+    } else if (removedImages.dni_back) {
+      data.append('remove_dni_back', 'true');
+    }
 
     try {
       let response;
@@ -127,13 +153,58 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
           <div className="input-group">
             <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Foto del Jugador</label>
-            <div style={{ border: '2px dashed var(--border-subtle)', borderRadius: '12px', padding: '12px', textAlign: 'center', position: 'relative', background: 'var(--brand-beige-subtle)', minHeight: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileChange(e, 'photo')} />
+            <div style={{ 
+              border: previews.photo ? '1px solid var(--border-subtle)' : '2px dashed var(--border-subtle)', 
+              borderRadius: '12px', 
+              padding: previews.photo ? '12px' : '20px', 
+              textAlign: 'center', 
+              position: 'relative', 
+              background: 'var(--brand-beige-subtle)', 
+              minHeight: '150px', 
+              display: 'flex', 
+              flexDirection: 'column',
+              alignItems: 'center', 
+              justifyContent: 'center',
+              gap: '8px'
+            }}>
+              <input 
+                type="file" 
+                id="player-photo-input"
+                accept="image/*" 
+                style={{ display: 'none' }} 
+                onChange={(e) => handleFileChange(e, 'photo')} 
+              />
+              
               {previews.photo ? (
-                <img src={previews.photo} alt="Vista previa" style={{ height: '56px', borderRadius: '6px', objectFit: 'contain' }} />
+                <>
+                  <div style={{ position: 'relative', width: '90px', height: '90px', borderRadius: '8px', overflow: 'hidden' }}>
+                    <img src={previews.photo} alt="Vista previa" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px', zIndex: 10 }}>
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('player-photo-input').click()}
+                      className="secondary"
+                      style={{ padding: '4px 8px', height: '26px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '10px' }}
+                    >
+                      <Pencil size={10} /> Editar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleClearFile('photo')}
+                      className="secondary"
+                      style={{ padding: '4px 8px', height: '26px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '10px', color: '#e57373', borderColor: 'rgba(229,115,115,0.2)' }}
+                    >
+                      <Trash2 size={10} /> Borrar
+                    </button>
+                  </div>
+                </>
               ) : (
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  <ImageIcon size={18} style={{ display: 'block', margin: '0 auto 4px' }} /> Perfil
+                <div 
+                  onClick={() => document.getElementById('player-photo-input').click()} 
+                  style={{ cursor: 'pointer', fontSize: '12px', color: 'var(--text-muted)' }}
+                >
+                  <ImageIcon size={20} style={{ display: 'block', margin: '0 auto 4px' }} /> Perfil
                 </div>
               )}
             </div>
@@ -141,13 +212,58 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
           
           <div className="input-group">
             <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>DNI (Frente)</label>
-            <div style={{ border: '2px dashed var(--border-subtle)', borderRadius: '12px', padding: '12px', textAlign: 'center', position: 'relative', background: 'var(--brand-beige-subtle)', minHeight: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileChange(e, 'dni_front')} />
+            <div style={{ 
+              border: previews.dni_front ? '1px solid var(--border-subtle)' : '2px dashed var(--border-subtle)', 
+              borderRadius: '12px', 
+              padding: previews.dni_front ? '12px' : '20px', 
+              textAlign: 'center', 
+              position: 'relative', 
+              background: 'var(--brand-beige-subtle)', 
+              minHeight: '150px', 
+              display: 'flex', 
+              flexDirection: 'column',
+              alignItems: 'center', 
+              justifyContent: 'center',
+              gap: '8px'
+            }}>
+              <input 
+                type="file" 
+                id="player-dni-front-input"
+                accept="image/*" 
+                style={{ display: 'none' }} 
+                onChange={(e) => handleFileChange(e, 'dni_front')} 
+              />
+              
               {previews.dni_front ? (
-                <img src={previews.dni_front} alt="Vista previa" style={{ height: '56px', objectFit: 'contain' }} />
+                <>
+                  <div style={{ position: 'relative', width: '100%', height: '90px', borderRadius: '6px', overflow: 'hidden' }}>
+                    <img src={previews.dni_front} alt="Vista previa" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px', zIndex: 10 }}>
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('player-dni-front-input').click()}
+                      className="secondary"
+                      style={{ padding: '4px 8px', height: '26px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '10px' }}
+                    >
+                      <Pencil size={10} /> Editar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleClearFile('dni_front')}
+                      className="secondary"
+                      style={{ padding: '4px 8px', height: '26px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '10px', color: '#e57373', borderColor: 'rgba(229,115,115,0.2)' }}
+                    >
+                      <Trash2 size={10} /> Borrar
+                    </button>
+                  </div>
+                </>
               ) : (
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  <ImageIcon size={18} style={{ display: 'block', margin: '0 auto 4px' }} /> Frente DNI
+                <div 
+                  onClick={() => document.getElementById('player-dni-front-input').click()} 
+                  style={{ cursor: 'pointer', fontSize: '12px', color: 'var(--text-muted)' }}
+                >
+                  <ImageIcon size={20} style={{ display: 'block', margin: '0 auto 4px' }} /> Frente DNI
                 </div>
               )}
             </div>
@@ -155,13 +271,58 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
 
           <div className="input-group">
             <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>DNI (Dorso)</label>
-            <div style={{ border: '2px dashed var(--border-subtle)', borderRadius: '12px', padding: '12px', textAlign: 'center', position: 'relative', background: 'var(--brand-beige-subtle)', minHeight: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileChange(e, 'dni_back')} />
+            <div style={{ 
+              border: previews.dni_back ? '1px solid var(--border-subtle)' : '2px dashed var(--border-subtle)', 
+              borderRadius: '12px', 
+              padding: previews.dni_back ? '12px' : '20px', 
+              textAlign: 'center', 
+              position: 'relative', 
+              background: 'var(--brand-beige-subtle)', 
+              minHeight: '150px', 
+              display: 'flex', 
+              flexDirection: 'column',
+              alignItems: 'center', 
+              justifyContent: 'center',
+              gap: '8px'
+            }}>
+              <input 
+                type="file" 
+                id="player-dni-back-input"
+                accept="image/*" 
+                style={{ display: 'none' }} 
+                onChange={(e) => handleFileChange(e, 'dni_back')} 
+              />
+              
               {previews.dni_back ? (
-                <img src={previews.dni_back} alt="Vista previa" style={{ height: '56px', objectFit: 'contain' }} />
+                <>
+                  <div style={{ position: 'relative', width: '100%', height: '90px', borderRadius: '6px', overflow: 'hidden' }}>
+                    <img src={previews.dni_back} alt="Vista previa" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px', zIndex: 10 }}>
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('player-dni-back-input').click()}
+                      className="secondary"
+                      style={{ padding: '4px 8px', height: '26px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '10px' }}
+                    >
+                      <Pencil size={10} /> Editar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleClearFile('dni_back')}
+                      className="secondary"
+                      style={{ padding: '4px 8px', height: '26px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '10px', color: '#e57373', borderColor: 'rgba(229,115,115,0.2)' }}
+                    >
+                      <Trash2 size={10} /> Borrar
+                    </button>
+                  </div>
+                </>
               ) : (
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  <ImageIcon size={18} style={{ display: 'block', margin: '0 auto 4px' }} /> Dorso DNI
+                <div 
+                  onClick={() => document.getElementById('player-dni-back-input').click()} 
+                  style={{ cursor: 'pointer', fontSize: '12px', color: 'var(--text-muted)' }}
+                >
+                  <ImageIcon size={20} style={{ display: 'block', margin: '0 auto 4px' }} /> Dorso DNI
                 </div>
               )}
             </div>

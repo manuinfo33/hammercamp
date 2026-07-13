@@ -32,9 +32,10 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: (user: any) => void;
 }
 
-export function LoginModal({ isOpen, onClose }: LoginModalProps) {
+export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<LoginFormValues>({
@@ -63,8 +64,6 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       const data = await response.json();
       
       // Guardar tokens en localStorage
-      // Nota: Esto funcionará si ambos sistemas están en el mismo dominio/puerto 
-      // o si Hammercamp está configurado para leer de este origen.
       localStorage.setItem("token", data.access);
       localStorage.setItem("refresh", data.refresh);
 
@@ -75,17 +74,21 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         },
       });
       
+      let userData: any = null;
       if (userResponse.ok) {
-        const userData = await userResponse.json();
+        userData = await userResponse.json();
         localStorage.setItem("user", JSON.stringify(userData));
       }
 
+      if (userData && userData.role === "Delegado") {
+        toast.success("Login exitoso. Bienvenido!");
+        if (onSuccess) {
+          onSuccess(userData);
+        }
+        return;
+      }
+
       toast.success("Login exitoso. Redirigiendo...");
-      
-      // Redirigir al sistema Hammercamp
-      // Asumimos que está en el puerto 5174 o en una ruta específica
-      // Si están en diferentes puertos de localhost, el localStorage NO se comparte.
-      // Una opción es pasar el token por la URL para que el otro sistema lo guarde.
       
       setTimeout(() => {
         // Redirigir al sistema Hammercamp pasando los tokens por URL para que el otro sistema los capture
@@ -102,7 +105,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[400px] border-primary/20 bg-surface">
+      <DialogContent className="w-[92%] max-w-[400px] rounded-lg border-primary/20 bg-surface">
         <DialogHeader>
           <DialogTitle className="text-2xl font-display uppercase tracking-tight">
             Acceso <span className="text-primary">Hammercamp</span>

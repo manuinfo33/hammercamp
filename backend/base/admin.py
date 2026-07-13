@@ -35,7 +35,7 @@ class TournamentZoneAdmin(admin.ModelAdmin):
 
 @admin.register(ZoneTeam)
 class ZoneTeamAdmin(admin.ModelAdmin):
-    list_display = ('id', 'zone', 'team', 'points', 'played')
+    list_display = ('id', 'zone', 'team', 'points', 'played', 'yellow_cards', 'red_cards', 'indumentaria', 'fair_play')
     list_filter = ('zone__tournament',)
 
 @admin.register(Transaccion)

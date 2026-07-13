@@ -51,6 +51,15 @@ class TeamViewSet(viewsets.ModelViewSet):
             print(f"DEBUG: Team {team.name} created and linked to Delegate {team.delegate}")
 
     def perform_update(self, serializer):
+        remove_logo = self.request.data.get('remove_logo') == 'true'
+        remove_team_photo = self.request.data.get('remove_team_photo') == 'true'
+        
+        team = serializer.instance
+        if remove_logo:
+            team.logo = None
+        if remove_team_photo:
+            team.team_photo = None
+            
         team = serializer.save()
         if team.delegate:
             team.delegate.team = team
@@ -68,15 +77,90 @@ class DelegateViewSet(viewsets.ModelViewSet):
         if dni and Delegate.objects.filter(dni=dni).exists():
             from rest_framework import serializers
             raise serializers.ValidationError({"dni": "Ya existe un delegado creado con ese DNI en tu base de datos"})
-        serializer.save()
+        
+        username = self.request.data.get('username')
+        password = self.request.data.get('password')
+        
+        from rest_framework import serializers
+        if not username:
+            raise serializers.ValidationError({"username": "El nombre de usuario es obligatorio"})
+        if not password:
+            raise serializers.ValidationError({"password": "La contraseña es obligatoria"})
+            
+        from django.contrib.auth.models import User, Group
+        if User.objects.filter(username=username).exists():
+            raise serializers.ValidationError({"username": "Este nombre de usuario ya está en uso"})
+            
+        user = User.objects.create_user(
+            username=username,
+            first_name=serializer.validated_data.get('first_name', ''),
+            last_name=serializer.validated_data.get('last_name', ''),
+            password=password
+        )
+        
+        delegado_group = Group.objects.filter(name='Delegado').first()
+        if delegado_group:
+            user.groups.add(delegado_group)
+            
+        serializer.save(user=user)
 
     def perform_update(self, serializer):
-        instance = self.get_object()
+        remove_dni_front = self.request.data.get('remove_dni_front') == 'true'
+        remove_dni_back = self.request.data.get('remove_dni_back') == 'true'
+        
+        delegate = serializer.instance
+        if remove_dni_front:
+            delegate.dni_front = None
+        if remove_dni_back:
+            delegate.dni_back = None
+            
+        instance = delegate
         dni = serializer.validated_data.get('dni')
         if dni and Delegate.objects.filter(dni=dni).exclude(id=instance.id).exists():
             from rest_framework import serializers
             raise serializers.ValidationError({"dni": "Ya existe un delegado creado con ese DNI en tu base de datos"})
-        serializer.save()
+        
+        username = self.request.data.get('username')
+        password = self.request.data.get('password')
+        
+        from rest_framework import serializers
+        from django.contrib.auth.models import User, Group
+        
+        if not instance.user:
+            if not username:
+                raise serializers.ValidationError({"username": "El nombre de usuario es obligatorio"})
+            if not password:
+                raise serializers.ValidationError({"password": "La contraseña es obligatoria"})
+                
+            if User.objects.filter(username=username).exists():
+                raise serializers.ValidationError({"username": "Este nombre de usuario ya está en uso"})
+                
+            user = User.objects.create_user(
+                username=username,
+                first_name=serializer.validated_data.get('first_name', ''),
+                last_name=serializer.validated_data.get('last_name', ''),
+                password=password
+            )
+            delegado_group = Group.objects.filter(name='Delegado').first()
+            if delegado_group:
+                user.groups.add(delegado_group)
+            
+            serializer.save(user=user)
+        else:
+            delegate = serializer.save()
+            user = delegate.user
+            user.first_name = delegate.first_name
+            user.last_name = delegate.last_name
+            
+            if username and username != user.username:
+                if User.objects.filter(username=username).exclude(id=user.id).exists():
+                    raise serializers.ValidationError({"username": "Este nombre de usuario ya está en uso"})
+                user.username = username
+                
+            if password:
+                user.set_password(password)
+                
+            user.save()
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -165,6 +249,24 @@ class ZoneTeamViewSet(viewsets.ModelViewSet):
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        tournament = instance.zone.tournament
+        team = instance.team
+        
+        from django.db.models import Q
+        has_matches = Match.objects.filter(
+            match_round__tournament_zone__tournament=tournament
+        ).filter(
+            Q(local_team=team) | Q(visitor_team=team)
+        ).exists()
+        
+        if has_matches:
+            from rest_framework import serializers
+            raise serializers.ValidationError({"detail": "No se puede eliminar el equipo, ya que tiene partidos cargados en el torneo"})
+            
+        return super().destroy(request, *args, **kwargs)
 
 
 @api_view(['GET'])
@@ -519,6 +621,21 @@ class PlayerViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [filters.SearchFilter]
     search_fields = ['first_name', 'last_name', 'dni']
+
+    def perform_update(self, serializer):
+        remove_photo = self.request.data.get('remove_photo') == 'true'
+        remove_dni_front = self.request.data.get('remove_dni_front') == 'true'
+        remove_dni_back = self.request.data.get('remove_dni_back') == 'true'
+        
+        player = serializer.instance
+        if remove_photo:
+            player.photo = None
+        if remove_dni_front:
+            player.dni_front = None
+        if remove_dni_back:
+            player.dni_back = None
+            
+        serializer.save()
 
 
 class GoodFaithListViewSet(viewsets.ModelViewSet):

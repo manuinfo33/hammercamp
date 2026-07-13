@@ -98,11 +98,11 @@ function Index() {
                   className="absolute inset-0 size-full object-cover animate-in fade-in duration-700"
                   key={activeImage.id}
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/30 to-background" />
-                <div className="absolute inset-0 bg-gradient-to-r from-background/70 via-transparent to-background/50" />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#1c1d1f]/40 via-[#1c1d1f]/30 to-[#1c1d1f]" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#1c1d1f]/70 via-transparent to-[#1c1d1f]/50" />
 
                 <div className="relative container mx-auto h-full px-6 flex flex-col justify-center items-center text-center">
-                  <h1 className="mt-6 font-display text-5xl md:text-7xl lg:text-8xl font-bold uppercase max-w-4xl text-shadow-hero animate-in slide-in-from-bottom-4 duration-700">
+                  <h1 className="mt-6 font-display text-5xl md:text-7xl lg:text-8xl font-bold uppercase max-w-4xl text-shadow-hero text-white animate-in slide-in-from-bottom-4 duration-700">
                     {activeImage.title || "LA SUPERLIGA"}
                   </h1>
                 </div>
@@ -110,10 +110,10 @@ function Index() {
                 {/* slider arrows */}
                 {carouselImages.length > 1 && (
                   <>
-                    <button onClick={prevSlide} className="absolute left-8 md:left-20 top-1/2 -translate-y-1/2 size-12 grid place-items-center bg-surface-elevated/70 hover:bg-primary hover:text-primary-foreground transition-colors backdrop-blur-sm rounded-full" aria-label="Anterior">
+                    <button onClick={prevSlide} className="absolute left-8 md:left-20 top-1/2 -translate-y-1/2 size-12 grid place-items-center bg-neutral-800/70 text-white hover:bg-primary hover:text-primary-foreground transition-colors backdrop-blur-sm rounded-full" aria-label="Anterior">
                       <ChevronLeft className="size-6" />
                     </button>
-                    <button onClick={nextSlide} className="absolute right-8 md:right-20 top-1/2 -translate-y-1/2 size-12 grid place-items-center bg-surface-elevated/70 hover:bg-primary hover:text-primary-foreground transition-colors backdrop-blur-sm rounded-full" aria-label="Siguiente">
+                    <button onClick={nextSlide} className="absolute right-8 md:right-20 top-1/2 -translate-y-1/2 size-12 grid place-items-center bg-neutral-800/70 text-white hover:bg-primary hover:text-primary-foreground transition-colors backdrop-blur-sm rounded-full" aria-label="Siguiente">
                       <ChevronRight className="size-6" />
                     </button>
                   </>

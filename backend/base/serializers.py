@@ -14,7 +14,9 @@ class UserSerializer(serializers.ModelSerializer):
     def get_role(self, obj):
         if obj.is_superuser:
             return "Administrador"
-        return "Delegado"
+        if obj.groups.filter(name="Delegado").exists() or (hasattr(obj, 'delegate_profile') and obj.delegate_profile):
+            return "Delegado"
+        return "Usuario"
 
     def get_team_id(self, obj):
         if hasattr(obj, 'delegate_profile') and obj.delegate_profile and obj.delegate_profile.team:
@@ -102,7 +104,8 @@ class ZoneTeamSerializer(serializers.ModelSerializer):
     class Meta:
         model = ZoneTeam
         fields = ['id', 'zone', 'team', 'team_name', 'team_logo',
-                  'points', 'played', 'won', 'drawn', 'lost', 'goals_for', 'goals_against']
+                  'points', 'played', 'won', 'drawn', 'lost', 'goals_for', 'goals_against',
+                  'yellow_cards', 'red_cards', 'indumentaria', 'fair_play']
 
     def get_team_logo(self, obj):
         request = self.context.get('request')

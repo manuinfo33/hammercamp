@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { useState, useEffect } from "react";
+import grassBg from "@/assets/football-grass.png";
+import superligaLogo from "@/assets/logo-superliga.png";
 
 export const Route = createFileRoute("/categorias/$id")({
   component: CategoryDetailPage,
@@ -121,17 +123,19 @@ function CategoryDetailPage() {
       <Header />
 
       {/* HERO HEADER */}
-      <section className="relative border-b border-border/60">
-        <div className="absolute inset-0 bg-black/50 z-0" />
+      <section 
+        className="relative border-b border-border/60 text-white bg-cover bg-center overflow-hidden"
+        style={{ backgroundImage: `url(${grassBg})` }}
+      >
+        <div className="absolute inset-0 bg-black/45 z-0" />
         <div className="relative z-10 container mx-auto px-6 py-16 md:py-20 flex flex-col items-center text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-primary font-bold">Información de Categoría</p>
-          <h1 className="font-display text-4xl md:text-6xl font-bold uppercase mt-4 mb-2">
+          <h1 className="font-display text-4xl md:text-6xl font-bold uppercase mt-4 mb-2 text-white">
             {loading ? "Cargando..." : category?.name || "Categoría no encontrada"}
           </h1>
           {tournament && (
-            <p className="text-muted-foreground mt-2 text-sm">
+            <p className="text-neutral-200 mt-2 text-sm font-medium">
               {tournament.name}
-              {tournament.start_date && <> — Inicio: {fmtDate(tournament.start_date)}</>}
             </p>
           )}
         </div>
@@ -167,43 +171,69 @@ function CategoryDetailPage() {
                     <table className="w-full text-left text-sm whitespace-nowrap">
                       <thead className="bg-surface-elevated text-xs uppercase tracking-widest text-muted-foreground">
                         <tr>
-                          <th className="px-4 md:px-6 py-4 font-semibold w-12 text-center">#</th>
-                          <th className="px-4 md:px-6 py-4 font-semibold">Equipo</th>
-                          <th className="px-4 md:px-6 py-4 font-semibold text-center">PS</th>
-                          <th className="px-4 md:px-6 py-4 font-semibold text-center">PJ</th>
-                          <th className="px-4 md:px-6 py-4 font-semibold text-center">G</th>
-                          <th className="px-4 md:px-6 py-4 font-semibold text-center">E</th>
-                          <th className="px-4 md:px-6 py-4 font-semibold text-center">P</th>
-                          <th className="px-4 md:px-6 py-4 font-semibold text-center">GF</th>
-                          <th className="px-4 md:px-6 py-4 font-semibold text-center">GC</th>
-                          <th className="px-4 md:px-6 py-4 font-semibold text-center">DG</th>
-                          <th className="px-4 md:px-6 py-4 font-semibold text-center">FP</th>
+                          <th className="px-2 md:px-6 py-4 font-semibold w-12 text-center">#</th>
+                          <th className="px-3 md:px-6 py-4 font-semibold min-w-[160px] md:min-w-[200px]">Equipo</th>
+                          <th className="px-2 md:px-6 py-4 font-semibold text-center">PS</th>
+                          <th className="px-2 md:px-6 py-4 font-semibold text-center">PJ</th>
+                          <th className="px-2 md:px-6 py-4 font-semibold text-center">G</th>
+                          <th className="px-2 md:px-6 py-4 font-semibold text-center">E</th>
+                          <th className="px-2 md:px-6 py-4 font-semibold text-center">P</th>
+                          <th className="px-2 md:px-6 py-4 font-semibold text-center">GF</th>
+                          <th className="px-2 md:px-6 py-4 font-semibold text-center">GC</th>
+                          <th className="px-2 md:px-6 py-4 font-semibold text-center">DG</th>
+                          <th className="px-2 md:px-6 py-4 font-semibold text-center" title="Tarjetas Rojas">
+                            <span className="inline-block w-2.5 h-3.5 bg-red-500 rounded-sm"></span>
+                          </th>
+                          <th className="px-2 md:px-6 py-4 font-semibold text-center" title="Tarjetas Amarillas">
+                            <span className="inline-block w-2.5 h-3.5 bg-yellow-400 rounded-sm"></span>
+                          </th>
+                          <th className="px-2 md:px-6 py-4 font-semibold text-center">IND</th>
+                          <th className="px-2 md:px-6 py-4 font-semibold text-center">FP</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/60">
                         {teams.length === 0 && (
-                          <tr><td colSpan={11} className="px-6 py-8 text-center text-muted-foreground">Sin equipos en esta zona</td></tr>
+                          <tr><td colSpan={14} className="px-6 py-8 text-center text-muted-foreground">Sin equipos en esta zona</td></tr>
                         )}
                         {teams.map((zt: any, idx: number) => {
                           const diff = zt.goals_for - zt.goals_against;
-                          const fp = (zt.played * 3) > 0 ? Math.round((zt.points / (zt.played * 3)) * 100) : 0;
                           return (
                             <tr key={zt.id} className="hover:bg-primary/5 transition-colors">
-                              <td className="px-4 md:px-6 py-4 font-bold text-center">
+                              <td className="px-2 md:px-6 py-4 font-bold text-center">
                                 <span className={idx === 0 ? "text-primary" : ""}>{idx + 1}</span>
                               </td>
-                              <td className="px-4 md:px-6 py-4 font-bold">{zt.team_name}</td>
-                              <td className="px-4 md:px-6 py-4 font-bold text-primary text-center">{zt.points}</td>
-                              <td className="px-4 md:px-6 py-4 text-muted-foreground text-center">{zt.played}</td>
-                              <td className="px-4 md:px-6 py-4 text-muted-foreground text-center">{zt.won}</td>
-                              <td className="px-4 md:px-6 py-4 text-muted-foreground text-center">{zt.drawn}</td>
-                              <td className="px-4 md:px-6 py-4 text-muted-foreground text-center">{zt.lost}</td>
-                              <td className="px-4 md:px-6 py-4 text-muted-foreground text-center">{zt.goals_for}</td>
-                              <td className="px-4 md:px-6 py-4 text-muted-foreground text-center">{zt.goals_against}</td>
-                              <td className={`px-4 md:px-6 py-4 font-bold text-center ${diff > 0 ? "text-green-500" : diff < 0 ? "text-red-400" : "text-muted-foreground"}`}>
+                              <td className="px-3 md:px-6 py-4 font-bold">
+                                <div className="flex items-center gap-3">
+                                  {zt.team_logo ? (
+                                    <img 
+                                      src={zt.team_logo} 
+                                      alt="" 
+                                      className="w-8 h-8 object-contain" 
+                                    />
+                                  ) : (
+                                    <img 
+                                      src={superligaLogo} 
+                                      alt="" 
+                                      className="w-8 h-8 object-contain grayscale opacity-40" 
+                                    />
+                                  )}
+                                  <span>{zt.team_name}</span>
+                                </div>
+                              </td>
+                              <td className="px-2 md:px-6 py-4 font-bold text-primary text-center">{zt.points}</td>
+                              <td className="px-2 md:px-6 py-4 text-muted-foreground text-center">{zt.played}</td>
+                              <td className="px-2 md:px-6 py-4 text-muted-foreground text-center">{zt.won}</td>
+                              <td className="px-2 md:px-6 py-4 text-muted-foreground text-center">{zt.drawn}</td>
+                              <td className="px-2 md:px-6 py-4 text-muted-foreground text-center">{zt.lost}</td>
+                              <td className="px-2 md:px-6 py-4 text-muted-foreground text-center">{zt.goals_for}</td>
+                              <td className="px-2 md:px-6 py-4 text-muted-foreground text-center">{zt.goals_against}</td>
+                              <td className={`px-2 md:px-6 py-4 text-center ${diff > 0 ? "text-green-500" : diff < 0 ? "text-red-400" : "text-muted-foreground"}`}>
                                 {diff > 0 ? `+${diff}` : diff}
                               </td>
-                              <td className="px-4 md:px-6 py-4 text-muted-foreground text-center">{fp}</td>
+                              <td className="px-2 md:px-6 py-4 text-muted-foreground text-center">{zt.red_cards || 0}</td>
+                              <td className="px-2 md:px-6 py-4 text-muted-foreground text-center">{zt.yellow_cards || 0}</td>
+                              <td className="px-2 md:px-6 py-4 text-muted-foreground text-center">{zt.indumentaria || 0}</td>
+                              <td className="px-2 md:px-6 py-4 text-muted-foreground text-center">{zt.fair_play || 0}</td>
                             </tr>
                           );
                         })}
