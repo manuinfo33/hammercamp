@@ -1032,11 +1032,6 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                     <span style={{ fontWeight: '800', letterSpacing: '1.5px', fontSize: '14px', textTransform: 'uppercase', color: 'var(--text-primary)' }}>
                                       {r.name}
                                     </span>
-                                    {r.date && (
-                                      <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '600' }}>
-                                        📅 {r.date.split('-').reverse().join('/')} {r.time ? `• ⏰ ${r.time.slice(0, 5)} hs` : ''}
-                                      </span>
-                                    )}
                                   </div>
 
                                   {/* Kebab/More Options Button */}
@@ -1130,9 +1125,9 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                 </div>
 
                                 {/* Card Body (Stacked matches) */}
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', background: '#ffffff', borderRadius: '0 0 20px 20px', overflow: 'hidden' }}>
                                   {r.matches?.length === 0 ? (
-                                    <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                                    <div style={{ padding: '24px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>
                                       No hay partidos programados en esta fecha.
                                     </div>
                                   ) : (
@@ -1143,19 +1138,49 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                           display: 'flex',
                                           alignItems: 'center',
                                           justifyContent: 'space-between',
-                                          padding: '14px 44px 14px 16px',
-                                          borderBottom: '1px solid rgba(212, 184, 150, 0.05)',
-                                          background: 'rgba(0,0,0,0.08)',
+                                          padding: '14px 16px 14px 16px',
+                                          borderBottom: '1px solid #e2e8f0',
+                                          background: '#ffffff',
                                           position: 'relative'
                                         }}
                                       >
+                                        {/* Left Match Info: Cancha, Fecha, Horario */}
+                                        <div style={{
+                                          flex: '0 0 130px',
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          gap: '4px',
+                                          borderRight: '1px solid #e2e8f0',
+                                          paddingRight: '12px',
+                                          marginRight: '12px',
+                                          fontSize: '11px',
+                                          color: '#475569',
+                                          textAlign: 'left'
+                                        }}>
+                                          <span style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            gap: '6px',
+                                            fontWeight: '700', 
+                                            color: '#0f172a'
+                                          }}>
+                                            <MapPin size={11} color="#475569" /> {m.cancha ? `Cancha: ${m.cancha}` : 'Cancha: -'}
+                                          </span>
+                                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <Calendar size={11} color="#64748b" /> {m.date ? m.date.split('-').reverse().join('/') : 'Sin fecha'}
+                                          </span>
+                                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '500' }}>
+                                            <Clock size={11} color="#64748b" /> {m.time ? `${m.time.slice(0, 5)} hs` : 'Sin horario'}
+                                          </span>
+                                        </div>
+
                                         {/* Local Team */}
                                         <div style={{ 
                                           flex: '1 1 0', 
                                           textAlign: 'right', 
                                           fontWeight: '700', 
                                           fontSize: '0.88rem', 
-                                          color: 'var(--text-primary)', 
+                                          color: '#0f172a', 
                                           paddingRight: '16px', 
                                           overflow: 'hidden', 
                                           textOverflow: 'ellipsis', 
@@ -1164,7 +1189,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                           {m.local_team_name}
                                         </div>
 
-                                        {/* Center Score / VS / Cancha info */}
+                                        {/* Center Score / VS */}
                                         <div style={{ 
                                           flex: '0 0 140px', 
                                           display: 'flex', 
@@ -1173,72 +1198,26 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                           justifyContent: 'center',
                                           textAlign: 'center'
                                         }}>
-                                          <span style={{ 
-                                            fontSize: '8px', 
-                                            fontWeight: '800', 
-                                            color: 'var(--text-muted)', 
-                                            letterSpacing: '0.8px', 
-                                            textTransform: 'uppercase' 
-                                          }}>
-                                            {m.played ? 'FINALIZADO' : 'PROGRAMADO'}
-                                          </span>
+                                          {m.played && (
+                                            <span style={{ 
+                                              fontSize: '8px', 
+                                              fontWeight: '800', 
+                                              color: '#64748b', 
+                                              letterSpacing: '0.8px', 
+                                              textTransform: 'uppercase' 
+                                            }}>
+                                              FINALIZADO
+                                            </span>
+                                          )}
                                           <div style={{ 
                                             fontSize: '16px', 
                                             fontWeight: '900', 
-                                            color: 'var(--brand-beige)', 
+                                            color: '#0f172a', 
                                             marginTop: '3px', 
                                             letterSpacing: m.played ? '12px' : 'normal', 
                                             paddingLeft: m.played ? '12px' : '0' 
                                           }}>
                                             {m.played ? `${m.local_score} ${m.visitor_score}` : 'VS'}
-                                          </div>
-                                          
-                                          {/* court & specific match time */}
-                                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px', justifyContent: 'center' }}>
-                                            {m.time && !m.played && (
-                                              <span style={{ fontSize: '9px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                                                <Clock size={8} /> {m.time.slice(0, 5)}
-                                              </span>
-                                            )}
-                                            {m.cancha && (
-                                              <span style={{ 
-                                                fontSize: '9px', 
-                                                background: 'rgba(255,255,255,0.03)', 
-                                                color: 'var(--text-muted)', 
-                                                border: '1px solid var(--border-subtle)', 
-                                                padding: '1px 5px', 
-                                                borderRadius: '4px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '2px'
-                                              }}>
-                                                <MapPin size={8} /> {m.cancha}
-                                              </span>
-                                            )}
-                                            {m.impact_zone && (
-                                              <span style={{ 
-                                                fontSize: '8px', 
-                                                background: 'var(--brand-beige-subtle)', 
-                                                color: 'var(--brand-beige)', 
-                                                border: '1px solid rgba(212,184,150,0.12)', 
-                                                padding: '1px 5px', 
-                                                borderRadius: '4px' 
-                                              }}>
-                                                Impacta: {m.impact_zone_name}
-                                              </span>
-                                            )}
-                                            {m.impact_zone === null && (
-                                              <span style={{ 
-                                                fontSize: '8px', 
-                                                background: 'rgba(239, 83, 80, 0.08)', 
-                                                color: '#e57373', 
-                                                border: '1px solid rgba(239, 83, 80, 0.15)', 
-                                                padding: '1px 5px', 
-                                                borderRadius: '4px' 
-                                              }}>
-                                                CRUCE
-                                              </span>
-                                            )}
                                           </div>
                                         </div>
 
@@ -1248,7 +1227,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                           textAlign: 'left', 
                                           fontWeight: '700', 
                                           fontSize: '0.88rem', 
-                                          color: 'var(--text-primary)', 
+                                          color: '#0f172a', 
                                           paddingLeft: '16px', 
                                           overflow: 'hidden', 
                                           textOverflow: 'ellipsis', 
@@ -1256,6 +1235,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                         }}>
                                           {m.visitor_team_name}
                                         </div>
+                                        {/* Right Spacer to balance Left Match Info and center teams/VS */}
+                                        <div style={{ flex: '0 0 130px', marginLeft: '12px' }} />
 
                                         {/* Kebab button and Dropdown for Match */}
                                         <button
@@ -1270,7 +1251,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                             background: 'none',
                                             border: 'none',
                                             padding: '6px',
-                                            color: 'var(--brand-beige)',
+                                            color: '#475569',
                                             cursor: 'pointer',
                                             minWidth: 'auto',
                                             height: 'auto',

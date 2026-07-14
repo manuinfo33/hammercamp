@@ -205,10 +205,29 @@ class MatchRound(models.Model):
     def __str__(self):
         return f"{self.tournament_zone.tournament.name} - {self.tournament_zone.name} - {self.name}"
 
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        old_date = None
+        old_time = None
+        if not is_new:
+            try:
+                old_instance = MatchRound.objects.get(pk=self.pk)
+                old_date = old_instance.date
+                old_time = old_instance.time
+            except MatchRound.DoesNotExist:
+                pass
+        
+        super().save(*args, **kwargs)
+        
+        if not is_new:
+            if old_date != self.date or old_time != self.time:
+                self.matches.all().update(date=self.date, time=self.time)
+
     class Meta:
         verbose_name = "Fecha"
         verbose_name_plural = "Fechas"
         ordering = ['order']
+
 
 
 class Match(models.Model):
