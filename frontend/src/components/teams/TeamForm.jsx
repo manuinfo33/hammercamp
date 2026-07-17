@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api';
 import { X, Upload, Check, Image as ImageIcon, UserPlus, Pencil, Trash2 } from 'lucide-react';
-import DelegateForm from '../delegates/DelegateForm';
+import { useNavigate } from 'react-router-dom';
 
-const TeamForm = ({ team, onClose, onSuccess }) => {
+const TeamForm = ({ team, onClose, onSuccess, isModal = false }) => {
+  const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [delegates, setDelegates] = useState([]);
+  
   const [formData, setFormData] = useState({
     name: team?.name || '',
     category: team?.category || '',
@@ -13,48 +15,44 @@ const TeamForm = ({ team, onClose, onSuccess }) => {
     logo: null,
     team_photo: null
   });
-  const [searchTerm, setSearchTerm] = useState(team?.delegate_name || '');
-  const [showDelegates, setShowDelegates] = useState(false);
-  const [showAddDelegateModal, setShowAddDelegateModal] = useState(false);
   
   const [previews, setPreviews] = useState({
     logo: team?.logo || null,
     team_photo: team?.team_photo || null
   });
+  
   const [removedImages, setRemovedImages] = useState({
     logo: false,
     team_photo: false
   });
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showDelegates, setShowDelegates] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     fetchCategories();
-    fetchDelegates();
+    fetchDelegates(team?.delegate);
   }, []);
 
   const fetchCategories = async () => {
     try {
       const response = await api.get('categories/');
       setCategories(response.data);
-      if (!team && response.data.length > 0 && !formData.category) {
-        setFormData(prev => ({ ...prev, category: response.data[0].id }));
-      }
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
   };
 
-  const fetchDelegates = async (newDelegateId = null) => {
+  const fetchDelegates = async (selectId = null) => {
     try {
       const response = await api.get('delegates/');
       setDelegates(response.data);
-      
-      if (newDelegateId) {
-        const newDelegate = response.data.find(d => d.id === newDelegateId);
-        if (newDelegate) {
-          setFormData(prev => ({ ...prev, delegate: newDelegate.id }));
-          setSearchTerm(`${newDelegate.first_name} ${newDelegate.last_name}`);
+      if (selectId) {
+        const del = response.data.find(d => d.id === selectId);
+        if (del) {
+          setSearchTerm(`${del.first_name} ${del.last_name}`);
         }
       }
     } catch (error) {
@@ -80,11 +78,15 @@ const TeamForm = ({ team, onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.delegate) {
+      setError('Debes asignar un delegado responsable al equipo.');
+      return;
+    }
     setSubmitting(true);
     const data = new FormData();
     data.append('name', formData.name);
     data.append('category', formData.category);
-    if (formData.delegate) data.append('delegate', formData.delegate);
+    data.append('delegate', formData.delegate);
     
     if (formData.logo instanceof File) {
       data.append('logo', formData.logo);
@@ -99,18 +101,19 @@ const TeamForm = ({ team, onClose, onSuccess }) => {
     }
 
     try {
+      let response;
       if (team) {
-        await api.patch(`teams/${team.id}/`, data);
+        response = await api.patch(`teams/${team.id}/`, data);
       } else {
-        await api.post('teams/', data);
+        response = await api.post('teams/', data);
       }
-      onSuccess();
+      onSuccess(response.data);
     } catch (error) {
       console.error("Error saving team:", error);
       if (error.response?.data?.name) {
-        setError('Ya existe un equipo con ese nombre. Por favor, utiliza otro nombre.');
+        setError(error.response.data.name[0]);
       } else {
-        setError('Hubo un error al guardar el equipo. Por favor, intenta de nuevo.');
+        setError('Hubo un error al guardar el equipo. Por favor, verifica los datos e intenta de nuevo.');
       }
     } finally {
       setSubmitting(false);
@@ -121,8 +124,6 @@ const TeamForm = ({ team, onClose, onSuccess }) => {
     `${d.first_name} ${d.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const isModal = !!onClose;
-
   return (
     <div 
       style={isModal ? {
@@ -130,42 +131,24 @@ const TeamForm = ({ team, onClose, onSuccess }) => {
         border: 'none',
         padding: '24px',
         margin: 0
-      } : {
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border-subtle)',
-        borderRadius: '20px',
-        padding: '24px',
+      } : { 
+        background: 'var(--bg-card)', 
+        border: '1px solid var(--border-subtle)', 
+        borderRadius: '20px', 
+        padding: '32px', 
         marginBottom: '24px'
       }} 
-      className="animate-fade-in"
+      className="anthropic-theme animate-fade-in"
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <div>
-          <h2 style={{ fontSize: '20px', margin: 0, fontWeight: '700', color: 'var(--text-primary)' }}>{team ? 'Editar Equipo' : 'Cargar Equipo'}</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>Ingresa la información básica y fotos</p>
-        </div>
-        {onClose && (
-          <button 
-            type="button" 
-            onClick={onClose} 
-            className="secondary" 
-            style={{ minWidth: 'auto', width: '32px', height: '32px', padding: 0 }}
-          >
-            <X size={16} />
-          </button>
-        )}
-      </div>
-
-
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
           <div className="input-group">
-            <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Nombre</label>
-            <input type="text" required value={formData.name} onChange={(e) => { setFormData({ ...formData, name: e.target.value }); setError(''); }} placeholder="Ej. Los Halcones FC" style={{ height: '40px', borderColor: error ? '#e07070' : 'var(--border-subtle)' }} />
+            <label>Nombre</label>
+            <input type="text" required value={formData.name} onChange={(e) => { setFormData({ ...formData, name: e.target.value }); setError(''); }} style={{ borderColor: error ? '#e07070' : 'var(--border-subtle)' }} />
           </div>
           <div className="input-group">
-            <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Categoría</label>
-            <select required value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} style={{ height: '40px', borderColor: 'var(--border-subtle)' }}>
+            <label>Categoría</label>
+            <select required value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} style={{ borderColor: 'var(--border-subtle)' }}>
               <option value="" disabled>Selecciona...</option>
               {categories.map(cat => (
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
@@ -175,11 +158,11 @@ const TeamForm = ({ team, onClose, onSuccess }) => {
         </div>
 
         <div className="input-group" style={{ position: 'relative' }}>
-          <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Delegado Responsable *</label>
+          <label>Delegado Responsable *</label>
             <div style={{ display: 'flex', gap: '8px' }}>
               <input 
                 type="text" 
-                placeholder="Buscar delegado por nombre..." 
+                placeholder="Buscar delegado por nombre"
                 value={searchTerm}
                 required
                 onChange={(e) => {
@@ -188,25 +171,19 @@ const TeamForm = ({ team, onClose, onSuccess }) => {
                   if (e.target.value === '') setFormData({ ...formData, delegate: '' });
                 }}
                 onFocus={() => setShowDelegates(true)}
-                style={{ height: '40px', borderColor: 'var(--border-subtle)', flex: 1 }}
+                style={{ borderColor: 'var(--border-subtle)', flex: 1 }}
               />
               <button 
                 type="button" 
-                onClick={() => setShowAddDelegateModal(true)}
-                className="secondary"
+                onClick={() => navigate('/delegados', { state: { openForm: true } })}
+                className="secondary icon-only"
                 title="Nuevo Delegado"
-                style={{ height: '40px', width: '40px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
                 <UserPlus size={18} />
               </button>
             </div>
           {showDelegates && searchTerm && (
-            <div style={{ 
-              position: 'absolute', top: '100%', left: 0, right: 0, 
-              background: '#1a1a1a', border: '1px solid var(--border-subtle)', 
-              borderRadius: '8px', zIndex: 100, maxHeight: '150px', overflowY: 'auto',
-              marginTop: '4px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)'
-            }}>
+            <div className="delegate-dropdown-list">
               {filteredDelegates.length > 0 ? filteredDelegates.map(d => (
                 <div 
                   key={d.id} 
@@ -215,13 +192,12 @@ const TeamForm = ({ team, onClose, onSuccess }) => {
                     setSearchTerm(`${d.first_name} ${d.last_name}`);
                     setShowDelegates(false);
                   }}
-                  style={{ padding: '10px 15px', cursor: 'pointer', fontSize: '13px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
-                  className="table-row-hover"
+                  className="delegate-dropdown-item"
                 >
                   {d.first_name} {d.last_name} <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>({d.dni})</span>
                 </div>
               )) : (
-                <div style={{ padding: '10px 15px', fontSize: '12px', color: 'var(--text-muted)' }}>No se encontraron delegados</div>
+                <div style={{ padding: '12px 16px', fontSize: '12px', color: 'var(--text-muted)' }}>No se encontraron delegados</div>
               )}
             </div>
           )}
@@ -229,21 +205,25 @@ const TeamForm = ({ team, onClose, onSuccess }) => {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
           <div className="input-group">
-            <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Escudo</label>
+            <label>Escudo</label>
             <div style={{ 
-              border: previews.logo ? '1px solid var(--border-subtle)' : '2px dashed var(--border-subtle)', 
+              border: previews.logo ? '1px solid #e6dfd3' : '2px dashed #c4b9a3', 
               borderRadius: '12px', 
               padding: previews.logo ? '16px' : '24px', 
               textAlign: 'center', 
               position: 'relative', 
-              background: 'var(--brand-beige-subtle)',
+              background: '#fcfbfa',
               minHeight: '160px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '12px'
-            }}>
+              gap: '12px',
+              transition: 'all 0.2s ease',
+              cursor: previews.logo ? 'default' : 'pointer'
+            }}
+            onClick={() => !previews.logo && document.getElementById('logo-file-input').click()}
+            >
               <input 
                 type="file" 
                 id="logo-file-input" 
@@ -260,7 +240,7 @@ const TeamForm = ({ team, onClose, onSuccess }) => {
                   <div style={{ display: 'flex', gap: '8px', zIndex: 10 }}>
                     <button
                       type="button"
-                      onClick={() => document.getElementById('logo-file-input').click()}
+                      onClick={(e) => { e.stopPropagation(); document.getElementById('logo-file-input').click(); }}
                       className="secondary"
                       style={{ padding: '6px 10px', height: '30px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}
                     >
@@ -268,42 +248,43 @@ const TeamForm = ({ team, onClose, onSuccess }) => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleClearFile('logo')}
+                      onClick={(e) => { e.stopPropagation(); handleClearFile('logo'); }}
                       className="secondary"
-                      style={{ padding: '6px 10px', height: '30px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#e57373', borderColor: 'rgba(229,115,115,0.2)' }}
+                      style={{ padding: '6px 10px', height: '30px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#cc7a5c', borderColor: '#e5c5bb' }}
                     >
                       <Trash2 size={12} /> Eliminar
                     </button>
                   </div>
                 </>
               ) : (
-                <div 
-                  onClick={() => document.getElementById('logo-file-input').click()} 
-                  style={{ cursor: 'pointer', fontSize: '12px', color: 'var(--text-muted)' }}
-                >
-                  <ImageIcon size={22} style={{ display: 'block', margin: '0 auto 6px' }} />
-                  Subir Logo
+                <div style={{ pointerEvents: 'none' }}>
+                  <Upload size={24} style={{ color: '#cc7a5c', marginBottom: '4px' }} />
+                  <div style={{ fontSize: '12px', fontWeight: '600', color: '#191919' }}>Subir Logo</div>
                 </div>
               )}
             </div>
           </div>
 
           <div className="input-group">
-            <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Foto Equipo</label>
+            <label>Foto Equipo</label>
             <div style={{ 
-              border: previews.team_photo ? '1px solid var(--border-subtle)' : '2px dashed var(--border-subtle)', 
+              border: previews.team_photo ? '1px solid #e6dfd3' : '2px dashed #c4b9a3', 
               borderRadius: '12px', 
               padding: previews.team_photo ? '16px' : '24px', 
               textAlign: 'center', 
               position: 'relative', 
-              background: 'var(--brand-beige-subtle)',
+              background: '#fcfbfa',
               minHeight: '160px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '12px'
-            }}>
+              gap: '12px',
+              transition: 'all 0.2s ease',
+              cursor: previews.team_photo ? 'default' : 'pointer'
+            }}
+            onClick={() => !previews.team_photo && document.getElementById('photo-file-input').click()}
+            >
               <input 
                 type="file" 
                 id="photo-file-input" 
@@ -320,7 +301,7 @@ const TeamForm = ({ team, onClose, onSuccess }) => {
                   <div style={{ display: 'flex', gap: '8px', zIndex: 10 }}>
                     <button
                       type="button"
-                      onClick={() => document.getElementById('photo-file-input').click()}
+                      onClick={(e) => { e.stopPropagation(); document.getElementById('photo-file-input').click(); }}
                       className="secondary"
                       style={{ padding: '6px 10px', height: '30px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}
                     >
@@ -328,21 +309,18 @@ const TeamForm = ({ team, onClose, onSuccess }) => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleClearFile('team_photo')}
+                      onClick={(e) => { e.stopPropagation(); handleClearFile('team_photo'); }}
                       className="secondary"
-                      style={{ padding: '6px 10px', height: '30px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#e57373', borderColor: 'rgba(229,115,115,0.2)' }}
+                      style={{ padding: '6px 10px', height: '30px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#cc7a5c', borderColor: '#e5c5bb' }}
                     >
                       <Trash2 size={12} /> Eliminar
                     </button>
                   </div>
                 </>
               ) : (
-                <div 
-                  onClick={() => document.getElementById('photo-file-input').click()} 
-                  style={{ cursor: 'pointer', fontSize: '12px', color: 'var(--text-muted)' }}
-                >
-                  <Upload size={22} style={{ display: 'block', margin: '0 auto 6px' }} />
-                  Subir Foto
+                <div style={{ pointerEvents: 'none' }}>
+                  <Upload size={24} style={{ color: '#cc7a5c', marginBottom: '4px' }} />
+                  <div style={{ fontSize: '12px', fontWeight: '600', color: '#191919' }}>Subir Foto</div>
                 </div>
               )}
             </div>
@@ -350,35 +328,19 @@ const TeamForm = ({ team, onClose, onSuccess }) => {
         </div>
 
         {error && (
-          <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(220, 60, 60, 0.1)', color: '#e07070', fontSize: '13px', border: '1px solid rgba(220, 60, 60, 0.2)' }}>
+          <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'rgba(204, 122, 92, 0.05)', color: '#cc7a5c', fontSize: '13px', border: '1px solid #e5c5bb' }}>
             {error}
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '16px', borderTop: '1px solid #e6dfd3' }}>
           <button type="button" onClick={onClose} className="secondary" style={{ height: '40px' }}>Cancelar</button>
           <button type="submit" disabled={submitting} style={{ height: '40px' }}>
-            {submitting ? '...' : <><Check size={18} /> {team ? 'Guardar' : 'Crear Equipo'}</>}
+            {submitting ? '...' : <><Check size={18} /> {team ? 'Guardar' : 'Crear'}</>}
           </button>
         </div>
       </form>
 
-      {showAddDelegateModal && (
-        <div className="premium-modal-overlay" onClick={() => setShowAddDelegateModal(false)}>
-          <div
-            style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}
-            onClick={e => e.stopPropagation()}
-          >
-            <DelegateForm 
-              onClose={() => setShowAddDelegateModal(false)} 
-              onSuccess={(newDelegate) => {
-                setShowAddDelegateModal(false);
-                fetchDelegates(newDelegate?.id);
-              }} 
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -47,20 +47,32 @@ const EquiposView = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }} className="animate-fade-in">
+    <div style={{ maxWidth: '1200px', margin: '0 auto' }} className="anthropic-theme teams-container animate-fade-in">
       {/* Header Section */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
         <div>
-          <h1 className="gradient-text" style={{ fontSize: '32px', margin: 0 }}>Equipos</h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>Gestión centralizada de equipos y categorías</p>
+          <h1 className="anthropic-title" style={{ margin: 0 }}>
+            {showForm ? (selectedTeam ? 'Editar Equipo' : 'Nuevo Equipo') : 'Equipos'}
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>
+            {showForm ? 'Ingresa la información básica y fotos' : 'Gestión centralizada de equipos y categorías'}
+          </p>
         </div>
-        {!showForm && (
+        {showForm ? (
+          <button 
+            type="button" 
+            onClick={() => setShowForm(false)} 
+            className="secondary icon-only" 
+            style={{ width: '36px', height: '36px' }}
+          >
+            <X size={18} />
+          </button>
+        ) : (
           <button 
             onClick={() => { setSelectedTeam(null); setShowForm(true); }}
             style={{ height: '40px', padding: '0 20px', fontSize: '14px' }}
           >
-            <Plus size={18} />
-            Nuevo Equipo
+            <Plus size={18} /> Nuevo Equipo
           </button>
         )}
       </div>
@@ -76,15 +88,7 @@ const EquiposView = () => {
       {!showForm && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Search & Filter Bar */}
-          <div style={{ 
-            display: 'flex', 
-            gap: '12px', 
-            alignItems: 'center', 
-            background: 'rgba(255,255,255,0.03)', 
-            padding: '12px', 
-            borderRadius: '16px',
-            border: '1px solid rgba(255,255,255,0.05)'
-          }}>
+          <div className="search-filter-bar">
             <div style={{ position: 'relative', flex: 1 }}>
               <Search 
                 size={18} 
@@ -97,18 +101,13 @@ const EquiposView = () => {
                   width: '100%', 
                   padding: '10px 10px 10px 42px', 
                   height: '42px', 
-                  fontSize: '14px',
-                  borderRadius: '10px',
-                  border: '1px solid var(--border-subtle)',
-                  background: 'var(--input-bg)',
-                  color: 'var(--text-primary)',
-                  outline: 'none'
+                  fontSize: '14px'
                 }}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <button className="secondary" style={{ height: '42px', minWidth: '100px', fontSize: '14px' }}>
+            <button className="secondary" style={{ minWidth: '100px', fontSize: '14px' }}>
               <Filter size={18} />
               Filtrar
             </button>
@@ -146,19 +145,7 @@ const EquiposView = () => {
                       <td style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{team.delegate_name || '-'}</td>
                       <td>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ 
-                            padding: '4px 10px', 
-                            borderRadius: '20px', 
-                            fontSize: '11px', 
-                            fontWeight: '700',
-                            background: team.is_active ? 'rgba(74, 222, 128, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                            color: team.is_active ? '#4ade80' : 'var(--text-muted)',
-                            border: team.is_active ? '1px solid rgba(74, 222, 128, 0.2)' : '1px solid rgba(255, 255, 255, 0.1)',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            width: 'fit-content'
-                          }}>
+                          <span className={team.is_active ? "status-badge active" : "status-badge inactive"}>
                             {team.is_active ? <Check size={12} strokeWidth={3} /> : <X size={12} strokeWidth={3} />}
                             {team.is_active ? 'ACTIVO' : 'INACTIVO'}
                           </span>
@@ -197,16 +184,16 @@ const EquiposView = () => {
                               <button 
                                 type="button"
                                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEdit(team); }} 
-                                className="secondary" 
-                                style={{ minWidth: 'auto', height: '34px', padding: '0 10px', position: 'relative', zIndex: 11 }}
+                                className="secondary icon-only" 
+                                style={{ position: 'relative', zIndex: 11 }}
                               >
                                 <Edit2 size={16} style={{ pointerEvents: 'none' }} />
                               </button>
                               <button 
                                 type="button"
                                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeletingId(team.id); }} 
-                                className="danger" 
-                                style={{ minWidth: 'auto', height: '34px', padding: '0 10px', position: 'relative', zIndex: 11 }}
+                                className="danger icon-only" 
+                                style={{ position: 'relative', zIndex: 11 }}
                               >
                                 <Trash2 size={16} style={{ pointerEvents: 'none' }} />
                               </button>

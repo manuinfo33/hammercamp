@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api';
-import { Plus, Search, UserCheck, Trash2, Edit, Eye, Mail, Phone, Calendar } from 'lucide-react';
+import { Plus, Search, UserCheck, Trash2, Edit, Eye, Mail, Phone, Calendar, X } from 'lucide-react';
 import PlayerFormModal from './PlayerFormModal';
 
 const JugadoresView = () => {
@@ -29,39 +29,42 @@ const JugadoresView = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('¿Estás seguro de eliminar este jugador? Se quitará también de todas las listas de buena fe.')) {
-      setDeletingId(id);
-      try {
-        await api.delete(`players/${id}/`);
-        fetchPlayers();
-      } catch (error) {
-        console.error("Error deleting player:", error);
-        alert('Hubo un error al eliminar el jugador.');
-      } finally {
-        setDeletingId(null);
-      }
+    try {
+      await api.delete(`players/${id}/`);
+      fetchPlayers();
+    } catch (error) {
+      console.error("Error deleting player:", error);
+    } finally {
+      setDeletingId(null);
     }
   };
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto' }} className="anthropic-theme players-container animate-fade-in">
       
       {/* Header Section */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
         <div>
-          <h1 className="gradient-text" style={{ fontSize: '32px', margin: 0 }}>Jugadores</h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>Base de datos central y documentación de todos los jugadores</p>
+          <h1 className="anthropic-title" style={{ margin: 0 }}>
+            {showForm ? (editingPlayer ? 'Editar Jugador' : 'Nuevo Jugador') : 'Jugadores'}
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>
+            {showForm ? 'Completa la información del jugador para la base de datos' : 'Base de datos central y documentación de todos los jugadores'}
+          </p>
         </div>
-        {!showForm && (
+        {showForm ? (
+          <button 
+            type="button" 
+            onClick={() => setShowForm(false)} 
+            className="secondary icon-only" 
+            style={{ width: '36px', height: '36px' }}
+          >
+            <X size={18} />
+          </button>
+        ) : (
           <button 
             onClick={() => { setEditingPlayer(null); setShowForm(true); }}
-            style={{ 
-              height: '42px', padding: '0 20px', fontSize: '14px',
-              background: 'linear-gradient(135deg, var(--brand-beige), var(--brand-beige-dim))',
-              boxShadow: '0 8px 20px -6px rgba(212,184,150,0.4)',
-              border: 'none',
-              color: '#1a1512'
-            }}
+            style={{ height: '40px', padding: '0 20px', fontSize: '14px' }}
           >
             <Plus size={18} /> Nuevo Jugador
           </button>
@@ -81,10 +84,10 @@ const JugadoresView = () => {
 
       {/* Content Section — hidden while form is open */}
       {!showForm && (
-        <div className="glass-card" style={{ padding: '0', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
           {/* Toolbar */}
-          <div style={{ padding: '20px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', gap: '15px' }}>
+          <div className="search-filter-bar">
             <div style={{ position: 'relative', flex: 1 }}>
               <Search 
                 size={18} 
@@ -93,17 +96,7 @@ const JugadoresView = () => {
               <input 
                 type="text" 
                 placeholder="Buscar jugador por nombre, apellido o DNI..." 
-                style={{ 
-                  width: '100%', 
-                  padding: '10px 10px 10px 42px', 
-                  height: '42px', 
-                  fontSize: '14px',
-                  borderRadius: '10px',
-                  border: '1px solid var(--border-subtle)',
-                  background: 'var(--input-bg)',
-                  color: 'var(--text-primary)',
-                  outline: 'none'
-                }}
+                style={{ paddingLeft: '42px' }}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -111,15 +104,15 @@ const JugadoresView = () => {
           </div>
 
           {/* Table */}
-          <div style={{ overflowX: 'auto' }}>
+          <div className="table-container" style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '800px' }}>
               <thead>
-                <tr style={{ background: 'var(--bg-base)', borderBottom: '1px solid var(--border-subtle)' }}>
-                  <th style={{ padding: '16px 20px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Jugador</th>
-                  <th style={{ padding: '16px 20px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>DNI</th>
-                  <th style={{ padding: '16px 20px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Contacto</th>
-                  <th style={{ padding: '16px 20px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Documentación</th>
-                  <th style={{ padding: '16px 20px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'right' }}>Acciones</th>
+                <tr>
+                  <th>Jugador</th>
+                  <th>DNI</th>
+                  <th>Contacto</th>
+                  <th>Documentación</th>
+                  <th style={{ textAlign: 'right' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -129,19 +122,20 @@ const JugadoresView = () => {
                   <tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No hay jugadores registrados</td></tr>
                 ) : (
                   players.map((player) => (
-                    <tr key={player.id} style={{ borderBottom: '1px solid var(--border-subtle)' }} className="table-row-hover">
-                      <td style={{ padding: '16px 20px' }}>
+                    <tr key={player.id} className="table-row-hover">
+                      <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <div style={{ 
                             width: '40px', 
                             height: '40px', 
                             borderRadius: '8px', 
-                            background: 'var(--brand-beige-subtle)', 
+                            background: '#f4efe6', 
                             display: 'flex', 
                             alignItems: 'center', 
                             justifyContent: 'center', 
-                            color: 'var(--brand-beige)',
-                            overflow: 'hidden'
+                            color: '#cc7a5c',
+                            overflow: 'hidden',
+                            border: '1px solid #e6dfd3'
                           }}>
                             {player.photo ? (
                               <img src={player.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -161,10 +155,10 @@ const JugadoresView = () => {
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '16px 20px', fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '700' }}>
+                      <td style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '700' }}>
                         {player.dni}
                       </td>
-                      <td style={{ padding: '16px 20px' }}>
+                      <td>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           {player.phone && (
                             <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -179,7 +173,7 @@ const JugadoresView = () => {
                           {!player.phone && !player.email && <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>-</span>}
                         </div>
                       </td>
-                      <td style={{ padding: '16px 20px' }}>
+                      <td>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           {player.dni_front ? (
                             <button 
@@ -207,16 +201,42 @@ const JugadoresView = () => {
                           )}
                         </div>
                       </td>
-                      <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                      <td style={{ textAlign: 'right' }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                           {deletingId === player.id ? (
-                            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Eliminando...</span>
+                            <div style={{ display: 'flex', gap: '4px', alignItems: 'center', animation: 'fadeIn 0.2s ease' }}>
+                              <span style={{ fontSize: '10px', color: '#cc7a5c', fontWeight: 'bold', marginRight: '4px' }}>¿Eliminar?</span>
+                              <button 
+                                type="button"
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(player.id); }} 
+                                className="danger" 
+                                style={{ minWidth: 'auto', height: '28px', padding: '0 8px', fontSize: '11px' }}
+                              >
+                                Sí
+                              </button>
+                              <button 
+                                type="button"
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeletingId(null); }} 
+                                className="secondary" 
+                                style={{ minWidth: 'auto', height: '28px', padding: '0 8px', fontSize: '11px' }}
+                              >
+                                No
+                              </button>
+                            </div>
                           ) : (
                             <>
-                              <button onClick={() => { setEditingPlayer(player); setShowForm(true); }} className="secondary" style={{ padding: '6px', minWidth: 'auto', height: 'auto', borderRadius: '8px' }}>
+                              <button 
+                                type="button"
+                                onClick={() => { setEditingPlayer(player); setShowForm(true); }} 
+                                className="secondary icon-only" 
+                              >
                                 <Edit size={16} />
                               </button>
-                              <button onClick={() => handleDelete(player.id)} className="danger" style={{ padding: '6px', minWidth: 'auto', height: 'auto', borderRadius: '8px' }}>
+                              <button 
+                                type="button"
+                                onClick={() => setDeletingId(player.id)} 
+                                className="danger icon-only" 
+                              >
                                 <Trash2 size={16} />
                               </button>
                             </>

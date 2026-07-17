@@ -26,37 +26,32 @@ const LoginView = () => {
   };
 
   return (
-    <div style={{ 
+    <div className="anthropic-theme" style={{ 
       minHeight: '100vh', 
       display: 'flex', 
-      background: 'radial-gradient(ellipse at top right, rgba(212,184,150,0.07) 0%, transparent 55%), radial-gradient(ellipse at bottom left, rgba(160,128,96,0.04) 0%, transparent 55%), #0d0c0b',
+      background: '#f9f6f0',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '20px'
     }}>
-      {/* Decorative glows */}
-      <div style={{ position: 'fixed', top: '15%', right: '8%', width: '280px', height: '280px', background: 'rgba(212,184,150,0.06)', filter: 'blur(90px)', borderRadius: '50%', zIndex: 0, pointerEvents: 'none' }} />
-      <div style={{ position: 'fixed', bottom: '12%', left: '8%', width: '350px', height: '350px', background: 'rgba(160,128,96,0.04)', filter: 'blur(110px)', borderRadius: '50%', zIndex: 0, pointerEvents: 'none' }} />
-
       <div style={{ width: '100%', maxWidth: '420px', zIndex: 1, animation: 'fadeIn 0.6s ease-out' }}>
 
         {/* Logo + Brand */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{ width: '160px', height: '160px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img src="/logo.png" alt="Hammercamp Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'brightness(1.1)' }} />
+          <div style={{ width: '140px', height: '140px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src="/logo-superliga.png" alt="La Superliga Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
         </div>
 
         {/* Login Card */}
         <div style={{ 
-          background: 'rgba(26, 23, 19, 0.92)', 
-          border: '1px solid rgba(212, 184, 150, 0.15)', 
-          borderRadius: '24px', 
-          padding: '32px',
-          backdropFilter: 'blur(16px)',
-          boxShadow: '0 30px 60px -15px rgba(0,0,0,0.7), inset 0 1px 0 rgba(212,184,150,0.08)'
+          background: '#ffffff', 
+          border: '1px solid #e6dfd3', 
+          borderRadius: '16px', 
+          padding: '40px',
+          boxShadow: '0 12px 40px rgba(25, 20, 15, 0.05)'
         }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#f5ede4', marginBottom: '24px' }}>
+          <h2 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '26px', fontWeight: '400', color: '#191919', marginBottom: '24px', textAlign: 'center' }}>
             Iniciar Sesión
           </h2>
 
@@ -64,10 +59,10 @@ const LoginView = () => {
             {error && (
               <div style={{ 
                 padding: '11px 15px', 
-                background: 'rgba(220, 80, 80, 0.1)', 
-                border: '1px solid rgba(220, 80, 80, 0.2)', 
+                background: 'rgba(204, 122, 92, 0.05)', 
+                border: '1px solid #e5c5bb', 
                 borderRadius: '10px', 
-                color: '#e08080', 
+                color: '#cc7a5c', 
                 fontSize: '13px',
                 animation: 'shake 0.4s ease-in-out'
               }}>
@@ -78,7 +73,7 @@ const LoginView = () => {
             <div className="input-group">
               <label>Usuario</label>
               <div style={{ position: 'relative' }}>
-                <User size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#6b5d4e' }} />
+                <User size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#7f776f' }} />
                 <input 
                   type="text" 
                   placeholder="ej. admin" 
@@ -93,7 +88,7 @@ const LoginView = () => {
             <div className="input-group">
               <label>Contraseña</label>
               <div style={{ position: 'relative' }}>
-                <Lock size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#6b5d4e' }} />
+                <Lock size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#7f776f' }} />
                 <input 
                   type="password" 
                   placeholder="••••••••" 
@@ -111,15 +106,9 @@ const LoginView = () => {
               style={{ 
                 height: '46px', 
                 fontSize: '14px', 
-                marginTop: '6px',
-                background: isSubmitting
-                  ? 'rgba(212, 184, 150, 0.7)'
-                  : 'linear-gradient(135deg, #D4B896 0%, #c4a882 100%)',
-                color: '#1a1512',
-                fontWeight: '800',
-                letterSpacing: '0.5px',
-                border: '1px solid rgba(212, 184, 150, 0.3)',
-                boxShadow: '0 10px 24px -8px rgba(212, 184, 150, 0.3)'
+                marginTop: '10px',
+                width: '100%',
+                fontWeight: '600'
               }}
             >
               {isSubmitting ? (
@@ -137,8 +126,8 @@ const LoginView = () => {
           </form>
         </div>
 
-        <p style={{ textAlign: 'center', marginTop: '24px', color: '#3d352c', fontSize: '12px' }}>
-          &copy; 2026 Hammercamp Pro. Todos los derechos reservados.
+        <p style={{ textAlign: 'center', marginTop: '24px', color: 'var(--text-muted)', fontSize: '12px' }}>
+          &copy; 2026 La Superliga Gestión. Todos los derechos reservados.
         </p>
       </div>
 

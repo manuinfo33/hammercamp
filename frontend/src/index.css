@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap');
+
 
 @keyframes spin {
   to { transform: rotate(360deg); }
@@ -74,35 +75,45 @@ body {
 }
 
 .sidebar {
-  width: 240px;
+  width: fit-content;
+  max-width: 95%;
+  height: 64px;
   background: var(--bg-sidebar);
-  border-right: 1px solid var(--border-subtle);
-  padding: 2rem 1rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 32px;
+  padding: 0 24px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
   position: fixed;
-  height: 100vh;
-  z-index: 50;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow-x: hidden;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: visible;
 }
 
 .sidebar.collapsed {
-  width: 80px;
-  padding: 2rem 0.5rem;
+  width: fit-content;
+  padding: 0 24px;
 }
 
 .main-content {
   flex: 1;
-  margin-left: 240px;
-  padding: 2rem 3rem;
-  width: calc(100% - 240px);
-  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-left: 0;
+  padding: 110px 24px 40px 24px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .main-content.expanded {
-  margin-left: 80px;
-  width: calc(100% - 80px);
+  margin-left: 0;
+  width: 100%;
 }
 
 /* =============================================
@@ -233,7 +244,7 @@ label {
   letter-spacing: 1.5px;
 }
 
-input, select {
+input, select, textarea {
   width: 100%;
   background: var(--input-bg);
   border: 1px solid var(--border-subtle);
@@ -244,6 +255,8 @@ input, select {
   font-family: inherit;
   outline: none;
   transition: all 0.2s ease;
+}
+input, select {
   height: 42px;
 }
 input::placeholder { color: var(--text-muted); }
@@ -712,6 +725,552 @@ tr:hover td { background: rgba(212, 184, 150, 0.03); }
     left: 16px !important;
     transform: none !important;
   }
+}
+
+
+/* =============================================
+   ANTHROPIC THEME (CREAM & EDITORIAL EDIT)
+   ============================================= */
+.anthropic-theme {
+  --bg-base: #f9f6f0;           /* Cream background */
+  --bg-card: #ffffff;           /* Pure white card */
+  --bg-elevated: #f4efe6;       /* Slightly darker cream for elevations */
+  
+  --text-primary: #191919;      /* Deep warm black/brown */
+  --text-secondary: #383530;    /* Warm dark gray */
+  --text-muted: #7f776f;        /* Sand gray */
+  
+  --border-subtle: #e6dfd3;     /* Creamy border */
+  --border-medium: #d8cfc0;     /* Slightly darker border */
+  --border-strong: #a69b8c;     /* Darker border for highlights */
+  
+  --input-bg: #ffffff;
+  
+  --brand-beige: #cc7a5c;       /* Anthropic Coral/Rust */
+  --brand-beige-light: #e5a892; /* Light peach */
+  --brand-beige-dim: #994c33;   /* Deep rust */
+  --brand-beige-subtle: rgba(204, 122, 92, 0.08); /* 8% Coral */
+}
+
+.anthropic-theme.teams-container,
+.anthropic-theme.delegates-container,
+.anthropic-theme.players-container {
+  background-color: #ffffff;
+  color: #191919;
+  border: 1px solid #e6dfd3;
+  border-radius: 12px;
+  padding: 40px;
+  box-shadow: 0 4px 20px rgba(25, 20, 15, 0.06);
+  margin-top: 10px;
+}
+
+/* Header style - elegant serif */
+.anthropic-theme .anthropic-title {
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 2.5rem;
+  font-weight: 400;
+  color: #191919;
+  letter-spacing: -0.02em;
+}
+
+.anthropic-theme .anthropic-title em {
+  font-family: 'Newsreader', Georgia, serif;
+  font-style: italic;
+}
+
+/* Override global buttons for Anthropic aesthetics */
+.anthropic-theme button,
+.anthropic-theme .btn {
+  background: #191919;
+  color: #fbfaf7;
+  border: 1px solid #191919;
+  border-radius: 6px;
+  font-family: inherit;
+  font-weight: 500;
+  height: 40px;
+  padding: 0 20px;
+  box-shadow: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.anthropic-theme button:hover,
+.anthropic-theme .btn:hover {
+  background: #383530;
+  border-color: #383530;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(25, 25, 25, 0.1);
+}
+
+.anthropic-theme button:disabled,
+.anthropic-theme .btn:disabled {
+  background: #d8cfc0;
+  border-color: #d8cfc0;
+  color: #7f776f;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.anthropic-theme button.secondary {
+  background: transparent;
+  color: #191919;
+  border: 1px solid #d8cfc0;
+}
+
+.anthropic-theme button.secondary:hover {
+  background: #f4efe6;
+  border-color: #191919;
+}
+
+.anthropic-theme button.danger {
+  background: transparent;
+  color: #cc7a5c;
+  border: 1px solid #e5c5bb;
+}
+
+.anthropic-theme button.danger:hover {
+  background: #f4e6e0;
+  color: #994c33;
+  border-color: #cc7a5c;
+}
+
+/* Custom inputs for theme */
+.anthropic-theme input,
+.anthropic-theme select,
+.anthropic-theme textarea {
+  background: #ffffff;
+  border: 1px solid #d8cfc0;
+  color: #191919;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.anthropic-theme input::placeholder {
+  color: #a69b8c;
+}
+
+.anthropic-theme input:focus,
+.anthropic-theme select:focus {
+  border-color: #cc7a5c;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(204, 122, 92, 0.12);
+}
+
+.anthropic-theme select option {
+  background: #ffffff;
+  color: #191919;
+}
+
+/* Search bar styling */
+.anthropic-theme .search-filter-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: #f4efe6;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e6dfd3;
+}
+
+/* Table styling for Anthropic theme */
+.anthropic-theme .table-container {
+  background: #ffffff;
+  border: 1px solid #e6dfd3;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(25, 20, 15, 0.03);
+}
+
+.anthropic-theme th {
+  background: #f4efe6;
+  color: #7f776f;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #d8cfc0;
+  padding: 14px 20px;
+}
+
+.anthropic-theme td {
+  border-bottom: 1px solid #e6dfd3;
+  color: #383530;
+  padding: 14px 20px;
+}
+
+.anthropic-theme tr:hover td {
+  background: #faf9f6;
+}
+
+/* Badges */
+.anthropic-theme .badge {
+  background: #f4e6e0;
+  color: #cc7a5c;
+  border: 1px solid #e5c5bb;
+  border-radius: 4px;
+}
+
+.anthropic-theme .status-badge {
+  padding: 4px 10px; 
+  border-radius: 20px; 
+  font-size: 11px; 
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+}
+
+.anthropic-theme .status-badge.active {
+  background: #e2ece9;
+  color: #2e6f40;
+  border: 1px solid #b4d4c8;
+}
+
+.anthropic-theme .status-badge.inactive {
+  background: #f0ede6;
+  color: #7f776f;
+  border: 1px solid #d8cfc0;
+}
+
+.anthropic-theme .table-row-hover:hover {
+  background: #f4efe6;
+  color: #191919;
+}
+
+/* Sidebar Active State for Equipos (Coral rust) */
+.nav-item.team-nav-item.active {
+  color: #fbfaf7 !important;
+  background: #cc7a5c !important;
+  border-color: #994c33 !important;
+  box-shadow: 0 4px 12px rgba(204, 122, 92, 0.25) !important;
+  font-weight: 700;
+}
+
+.nav-item.team-nav-item.active:hover {
+  background: #b8593c !important;
+  border-color: #994c33 !important;
+  color: #fbfaf7 !important;
+}
+
+.mobile-nav-item.team-nav-item.active {
+  color: #fbfaf7 !important;
+  background: #cc7a5c !important;
+  font-weight: 700;
+}
+
+/* Select custom dropdown arrow styling */
+.anthropic-theme select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23383530' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 40px !important;
+}
+
+/* Delegate Autocomplete Dropdown list styles */
+.anthropic-theme .delegate-dropdown-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #d8cfc0;
+  border-radius: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+  margin-top: 6px;
+  box-shadow: 0 10px 30px rgba(25, 20, 15, 0.08);
+  z-index: 100;
+  scrollbar-width: thin;
+}
+
+.anthropic-theme .delegate-dropdown-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #383530;
+  border-bottom: 1px solid #e6dfd3;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.anthropic-theme .delegate-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.anthropic-theme .delegate-dropdown-item:hover {
+  background: #f4efe6;
+  color: #191919;
+}
+
+/* Action button overrides inside table cell */
+.anthropic-theme td button.icon-only,
+.anthropic-theme button.secondary.icon-only {
+  height: 32px !important;
+  width: 32px !important;
+  min-width: unset !important;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px !important;
+  border: 1px solid #d8cfc0 !important;
+  background: transparent !important;
+  color: #383530 !important;
+  box-shadow: none !important;
+  transition: all 0.2s ease;
+}
+
+.anthropic-theme td button.icon-only:hover,
+.anthropic-theme button.secondary.icon-only:hover {
+  background: #f4efe6 !important;
+  border-color: #191919 !important;
+  color: #191919 !important;
+}
+
+.anthropic-theme td button.danger.icon-only {
+  color: #cc7a5c !important;
+  border-color: #e5c5bb !important;
+}
+
+.anthropic-theme td button.danger.icon-only:hover {
+  background: #f4e6e0 !important;
+  border-color: #cc7a5c !important;
+  color: #994c33 !important;
+}
+
+/* Specific styling for new delegate icon button inside input group */
+.anthropic-theme .input-group button.secondary.icon-only {
+  height: 40px !important;
+  width: 40px !important;
+  border: 1px solid #d8cfc0 !important;
+}
+
+/* Yes/No delete confirmation buttons inside cells */
+.anthropic-theme td button.danger:not(.icon-only),
+.anthropic-theme td button.secondary:not(.icon-only) {
+  height: 28px !important;
+  padding: 0 12px !important;
+  font-size: 11px !important;
+  min-width: unset !important;
+  border-radius: 4px !important;
+  font-weight: 600 !important;
+}
+
+/* Layout overrides for anthropic cream layout */
+body:has(.anthropic-theme),
+.dashboard-container:has(.anthropic-theme) {
+  background: #fdfcfb !important;
+  background-image: none !important;
+}
+
+.main-content:has(.anthropic-theme) {
+  background-color: #fdfcfb !important;
+  background-image: none !important;
+  min-height: 100vh;
+  transition: background-color 0.3s ease;
+}
+
+/* Premium modal overrides under anthropic theme */
+.anthropic-theme .premium-modal-card {
+  background: #fbfaf7 !important;
+  border: 1px solid #e6dfd3 !important;
+  box-shadow: 0 20px 50px rgba(25, 20, 15, 0.12) !important;
+  color: #191919 !important;
+}
+
+.anthropic-theme .premium-modal-card h3 {
+  color: #191919 !important;
+}
+
+.anthropic-theme .premium-modal-card p,
+.anthropic-theme .premium-modal-card label {
+  color: #7f776f !important;
+}
+
+/* =============================================
+   ANTHROPIC SIDEBAR & NAVIGATION SYSTEM
+   ============================================= */
+/* Desktop Sidebar */
+.sidebar {
+  background: #eae4d8 !important;
+  border: 1px solid #d8cfc0 !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Sidebar Branding Text Override */
+.sidebar span, 
+.mobile-admin-header span {
+  font-family: 'Outfit', sans-serif;
+}
+
+.sidebar .brand-text-la,
+.mobile-admin-header .brand-text-la {
+  color: #191919 !important;
+}
+
+.sidebar .brand-text-superliga,
+.mobile-admin-header .brand-text-superliga {
+  color: #cc7a5c !important;
+}
+
+.sidebar .brand-text-gestion,
+.mobile-admin-header .brand-text-gestion {
+  color: #7f776f !important;
+}
+
+/* Navigation Items (Links) */
+.nav-item {
+  color: #383530 !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+  border: 1px solid transparent !important;
+}
+
+.nav-item:hover {
+  color: #191919 !important;
+  background: #ffffff !important;
+  border-color: #e6dfd3 !important;
+}
+
+.nav-item.active {
+  color: #fbfaf7 !important;
+  background: #cc7a5c !important; /* Coral background for active */
+  border-color: #994c33 !important;
+  box-shadow: 0 4px 12px rgba(204, 122, 92, 0.25) !important;
+  font-weight: 600 !important;
+}
+
+.nav-item.active:hover {
+  background: #b8593c !important;
+  border-color: #994c33 !important;
+  color: #fbfaf7 !important;
+}
+
+/* User profile container inside sidebar bottom */
+.sidebar-profile {
+  background: #ffffff !important;
+  border: 1px solid #e6dfd3 !important;
+}
+
+.sidebar-profile p.profile-name {
+  color: #191919 !important;
+}
+
+.sidebar-profile p.profile-role {
+  color: #7f776f !important;
+}
+
+.sidebar-profile-avatar {
+  background: #cc7a5c !important;
+}
+
+.sidebar-profile-avatar svg {
+  color: #ffffff !important;
+}
+
+/* Collapse Toggle Button */
+.sidebar-collapse-btn {
+  display: none !important;
+}
+
+.sidebar-collapse-btn:hover {
+  background: #383530 !important;
+  transform: scale(1.05);
+}
+
+/* Log out button in Sidebar */
+.sidebar-logout-btn {
+  background: #fdfcfb !important;
+  color: #cc7a5c !important;
+  border: 1px solid #e5c5bb !important;
+  transition: all 0.2s ease !important;
+}
+
+.sidebar-logout-btn:hover {
+  background: #f4e6e0 !important;
+  color: #994c33 !important;
+  border-color: #cc7a5c !important;
+  transform: translateY(-1px) !important;
+}
+
+/* =============================================
+   ANTHROPIC MOBILE NAVIGATION SYSTEM
+   ============================================= */
+.mobile-admin-header {
+  background: #eae4d8 !important;
+  border-bottom: 1px solid #d8cfc0 !important;
+}
+
+.mobile-action-btn {
+  border: 1px solid #c4b9a3 !important;
+  background: #ffffff !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 3px rgba(25, 20, 15, 0.03) !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-action-btn:hover,
+.mobile-action-btn.active {
+  background: #eae4d8 !important;
+  border-color: #cc7a5c !important;
+}
+
+/* Mobile dropdown menus */
+.mobile-dropdown-menu {
+  background: #ffffff !important;
+  border: 1px solid #d8cfc0 !important;
+  box-shadow: 0 10px 30px rgba(25, 20, 15, 0.08) !important;
+}
+
+.mobile-dropdown-profile {
+  border-bottom: 1px solid #e6dfd3 !important;
+}
+
+.mobile-dropdown-profile p.profile-name {
+  color: #191919 !important;
+}
+
+.mobile-dropdown-profile p.profile-role {
+  color: #7f776f !important;
+}
+
+.mobile-logout-btn {
+  background: #fdfcfb !important;
+  color: #cc7a5c !important;
+  border-top: 1px solid #e5c5bb !important;
+}
+
+.mobile-logout-btn:hover {
+  background: #f4e6e0 !important;
+  color: #994c33 !important;
+}
+
+/* Mobile Navigation Dropdown */
+.mobile-navigation-dropdown {
+  background: #eae4d8 !important;
+  border-bottom: 1px solid #d8cfc0 !important;
+}
+
+.mobile-nav-item {
+  color: #383530 !important;
+  font-weight: 500 !important;
+}
+
+.mobile-nav-item.active {
+  color: #fbfaf7 !important;
+  background: #cc7a5c !important;
+}
+
+/* Glass card styling override for Anthropic dashboard views */
+.anthropic-theme .glass-card {
+  background: #ffffff !important;
+  border: 1px solid #e6dfd3 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 20px rgba(25, 20, 15, 0.04) !important;
+  padding: 24px !important;
 }
 
 

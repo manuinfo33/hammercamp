@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api';
-import { Plus, Trash2, Edit2, Check, X } from 'lucide-react';
+import { Plus, Trash2, Edit2, Check, X, Upload, Newspaper, Calendar } from 'lucide-react';
 
 const NewsConfigView = () => {
   const [newsList, setNewsList] = useState([]);
@@ -8,6 +8,7 @@ const NewsConfigView = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -130,112 +131,245 @@ const NewsConfigView = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Seguro que deseas eliminar esta noticia?')) return;
     try {
       await api.delete(`news/${id}/`);
       fetchData();
     } catch (err) {
       console.error(err);
       setError('Error al eliminar.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
-  if (loading) return <div style={{ color: 'var(--text-muted)' }}>Cargando datos...</div>;
+  if (loading) return <div style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Cargando datos...</div>;
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)' }}>Gestión de Noticias</h2>
+        <h2 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '22px', fontWeight: '400', color: 'var(--text-primary)', margin: 0 }}>Gestión de Noticias</h2>
       </div>
 
-      {error && <div style={{ background: 'rgba(220, 80, 80, 0.1)', color: '#e08080', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>{error}</div>}
+      {error && (
+        <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'rgba(204, 122, 92, 0.05)', color: '#cc7a5c', fontSize: '13px', border: '1px solid #e5c5bb', marginBottom: '16px' }}>
+          {error}
+        </div>
+      )}
 
-      <div style={{ background: 'var(--bg-base)', padding: '20px', borderRadius: '12px', marginBottom: '32px', border: '1px solid rgba(212,184,150,0.1)' }}>
-        <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', color: 'var(--brand-beige)' }}>Agregar Nueva Noticia</h3>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', gap: '16px' }}>
+      {/* Formulario Agregar Nueva Noticia */}
+      <div style={{ marginBottom: '32px', borderBottom: '1px solid #e6dfd3', paddingBottom: '32px' }}>
+        <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Newspaper size={14} /> Agregar Nueva Noticia
+        </h3>
+        
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'flex', gap: '20px' }}>
             <div className="input-group" style={{ flex: 1 }}>
               <label>Título</label>
-              <input type="text" name="title" value={formData.title} onChange={handleInputChange} required />
+              <input type="text" name="title" value={formData.title} onChange={handleInputChange} required style={{ borderColor: 'var(--border-subtle)' }} />
             </div>
-            <div className="input-group" style={{ width: '200px' }}>
+            
+            <div className="input-group" style={{ width: '220px' }}>
               <label>Categoría</label>
-              <select name="category" value={formData.category} onChange={handleInputChange}>
+              <select name="category" value={formData.category} onChange={handleInputChange} style={{ borderColor: 'var(--border-subtle)' }}>
                 {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
               </select>
             </div>
-            <div className="input-group" style={{ width: '150px' }}>
+            
+            <div className="input-group" style={{ width: '180px' }}>
               <label>Fecha</label>
-              <input type="date" name="date" value={formData.date} onChange={handleInputChange} required />
+              <input type="date" name="date" value={formData.date} onChange={handleInputChange} required style={{ borderColor: 'var(--border-subtle)' }} />
             </div>
           </div>
           
           <div className="input-group">
             <label>Resumen / Descripción corta</label>
-            <textarea name="excerpt" value={formData.excerpt} onChange={handleInputChange} rows={2} required />
+            <textarea name="excerpt" value={formData.excerpt} onChange={handleInputChange} rows={2} required style={{ borderColor: 'var(--border-subtle)', borderRadius: '10px', padding: '10px 16px', fontSize: '0.88rem', fontFamily: 'inherit', outline: 'none' }} />
           </div>
 
-          <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-end' }}>
             <div className="input-group" style={{ flex: 1 }}>
               <label>Imagen</label>
-              <input type="file" name="image" id="news-image-upload" accept="image/*" onChange={handleInputChange} required />
+              <div style={{
+                border: formData.image ? '1px solid #e6dfd3' : '2px dashed #c4b9a3',
+                borderRadius: '12px',
+                padding: '10px 16px',
+                textAlign: 'center',
+                background: '#fcfbfa',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                height: '42px',
+                boxSizing: 'border-box'
+              }}
+              onClick={() => document.getElementById('news-image-upload').click()}
+              >
+                <input 
+                  type="file" 
+                  name="image" 
+                  id="news-image-upload" 
+                  accept="image/*" 
+                  style={{ display: 'none' }}
+                  onChange={handleInputChange} 
+                  required 
+                />
+                {formData.image ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '13px', color: '#cc7a5c', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formData.image.name}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setFormData(prev => ({ ...prev, image: null })); }}
+                      style={{ background: 'none', border: 'none', padding: '2px', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <Upload size={16} style={{ color: '#cc7a5c' }} />
+                    <span style={{ fontSize: '13px', color: '#7f776f' }}>Subir Imagen</span>
+                  </>
+                )}
+              </div>
             </div>
-            <button type="submit" disabled={uploading} className="btn-primary" style={{ padding: '0 24px', height: '42px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {uploading ? 'Guardando...' : <><Plus size={18} /> Agregar</>}
+            
+            <button type="submit" disabled={uploading} style={{ height: '42px', padding: '0 24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {uploading ? '...' : <><Plus size={18} /> Agregar</>}
             </button>
           </div>
         </form>
       </div>
 
+      {/* Grid de noticias */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
         {newsList.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)' }}>No hay noticias publicadas.</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>No hay noticias publicadas.</p>
         ) : (
           newsList.map((item) => (
             <div key={item.id} style={{ 
-              background: 'var(--bg-base)', 
+              background: '#ffffff', 
               borderRadius: '12px', 
               overflow: 'hidden',
-              border: '1px solid rgba(212,184,150,0.1)',
+              border: '1px solid #e6dfd3',
+              boxShadow: '0 2px 8px rgba(25, 20, 15, 0.03)',
               display: 'flex',
               flexDirection: 'column'
             }}>
               {editingId === item.id ? (
-                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <input type="text" name="title" value={editFormData.title} onChange={handleEditChange} style={{ background: '#000', border: '1px solid #333', color: '#fff', padding: '8px' }} />
-                  <select name="category" value={editFormData.category} onChange={handleEditChange} style={{ background: '#000', border: '1px solid #333', color: '#fff', padding: '8px' }}>
-                    {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
-                  </select>
-                  <input type="date" name="date" value={editFormData.date} onChange={handleEditChange} style={{ background: '#000', border: '1px solid #333', color: '#fff', padding: '8px' }} />
-                  <textarea name="excerpt" value={editFormData.excerpt} onChange={handleEditChange} rows={3} style={{ background: '#000', border: '1px solid #333', color: '#fff', padding: '8px' }} />
-                  <input type="file" name="image" accept="image/*" onChange={handleEditChange} style={{ fontSize: '12px' }} />
+                <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div className="input-group">
+                    <label>Título</label>
+                    <input type="text" name="title" value={editFormData.title} onChange={handleEditChange} style={{ borderColor: 'var(--border-subtle)', height: '38px' }} />
+                  </div>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="input-group">
+                      <label>Categoría</label>
+                      <select name="category" value={editFormData.category} onChange={handleEditChange} style={{ borderColor: 'var(--border-subtle)', height: '38px', padding: '6px 12px' }}>
+                        {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="input-group">
+                      <label>Fecha</label>
+                      <input type="date" name="date" value={editFormData.date} onChange={handleEditChange} style={{ borderColor: 'var(--border-subtle)', height: '38px' }} />
+                    </div>
+                  </div>
+                  
+                  <div className="input-group">
+                    <label>Resumen</label>
+                    <textarea name="excerpt" value={editFormData.excerpt} onChange={handleEditChange} rows={3} style={{ borderColor: 'var(--border-subtle)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', fontFamily: 'inherit' }} />
+                  </div>
+                  
+                  <div className="input-group">
+                    <label>Imagen</label>
+                    <div style={{
+                      border: editFormData.image ? '1px solid #e6dfd3' : '1px dashed #c4b9a3',
+                      borderRadius: '8px',
+                      padding: '8px 12px',
+                      background: '#fcfbfa',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      height: '38px',
+                      boxSizing: 'border-box'
+                    }}
+                    onClick={() => document.getElementById(`news-image-edit-${item.id}`).click()}
+                    >
+                      <input 
+                        type="file" 
+                        name="image" 
+                        id={`news-image-edit-${item.id}`} 
+                        accept="image/*" 
+                        style={{ display: 'none' }}
+                        onChange={handleEditChange} 
+                      />
+                      {editFormData.image ? (
+                        <span style={{ fontSize: '12px', color: '#cc7a5c', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{editFormData.image.name}</span>
+                      ) : (
+                        <>
+                          <Upload size={14} style={{ color: '#cc7a5c' }} />
+                          <span style={{ fontSize: '12px', color: '#7f776f' }}>Cambiar Imagen</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  
                   <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '8px' }}>
-                    <button onClick={() => setEditingId(null)} className="btn-secondary" style={{ padding: '6px 12px' }}>Cancelar</button>
-                    <button onClick={() => saveEdit(item.id)} className="btn-primary" style={{ padding: '6px 12px' }}>Guardar</button>
+                    <button onClick={() => setEditingId(null)} className="secondary" style={{ padding: '6px 12px', height: '34px', fontSize: '12px' }}>Cancelar</button>
+                    <button onClick={() => saveEdit(item.id)} style={{ padding: '6px 12px', height: '34px', fontSize: '12px' }}>Guardar</button>
                   </div>
                 </div>
               ) : (
                 <>
-                  <div style={{ width: '100%', height: '160px', background: '#111' }}>
+                  <div style={{ width: '100%', height: '160px', background: '#faf9f6', borderBottom: '1px solid #e6dfd3' }}>
                     <img src={item.image} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                   <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '10px', background: 'var(--brand-beige-subtle)', color: 'var(--brand-beige)', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '10px', background: '#eae4d8', color: '#191919', border: '1px solid #d8cfc0', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                         {item.category}
                       </span>
-                      <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{item.date}</span>
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Calendar size={12} /> {item.date}
+                      </span>
                     </div>
-                    <h4 style={{ fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px', fontSize: '1.1rem' }}>{item.title}</h4>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '14px', flex: 1 }}>{item.excerpt}</p>
+                    <h4 style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px', fontSize: '15px' }}>{item.title}</h4>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '13px', flex: 1, lineHeight: '1.5' }}>{item.excerpt}</p>
                     
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                      <button onClick={() => startEdit(item)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#60a5fa' }} title="Editar">
-                        <Edit2 size={18} />
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #e6dfd3' }}>
+                      <button onClick={() => startEdit(item)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#cc7a5c', display: 'flex', alignItems: 'center', padding: '4px' }} title="Editar">
+                        <Edit2 size={16} />
                       </button>
-                      <button onClick={() => handleDelete(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f87171' }} title="Eliminar">
-                        <Trash2 size={18} />
-                      </button>
+                      
+                      {deletingId === item.id ? (
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center', animation: 'fadeIn 0.2s ease' }}>
+                          <span style={{ fontSize: '10px', color: '#cc7a5c', fontWeight: 'bold', marginRight: '4px' }}>¿Eliminar?</span>
+                          <button 
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(item.id); }} 
+                            className="danger" 
+                            style={{ minWidth: 'auto', height: '24px', padding: '0 6px', fontSize: '10px' }}
+                          >
+                            Sí
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeletingId(null); }} 
+                            className="secondary" 
+                            style={{ minWidth: 'auto', height: '24px', padding: '0 6px', fontSize: '10px' }}
+                          >
+                            No
+                          </button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setDeletingId(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#cc7a5c', display: 'flex', alignItems: 'center', padding: '4px' }} title="Eliminar">
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </>

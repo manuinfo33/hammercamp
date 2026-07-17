@@ -96,21 +96,17 @@ const HomeView = () => {
   }
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div className="anthropic-theme animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h1 className="gradient-text" style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '8px' }}>Dashboard</h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Bienvenido de nuevo al panel de control de Hammercamp.</p>
+          <h1 className="anthropic-title" style={{ marginBottom: '8px' }}>Dashboard</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Bienvenido de nuevo al panel de control de La Superliga.</p>
         </div>
         <button
           type="button"
           onClick={() => setShowMerger(true)}
           style={{
-            height: '42px', padding: '0 20px', fontSize: '14px',
-            background: 'linear-gradient(135deg, var(--brand-beige), var(--brand-beige-dim))',
-            boxShadow: '0 8px 20px -6px rgba(212,184,150,0.4)',
-            border: 'none',
-            color: '#1a1512'
+            height: '42px', padding: '0 20px', fontSize: '14px'
           }}
         >
           📄 Unir PDF
