@@ -9,6 +9,7 @@ import TorneosView from './components/tournaments/TorneosView';
 import UnirPDF from './components/UnirPDF';
 import LoginView from './components/LoginView';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import Typewriter from './components/Typewriter';
 
 import ConfiguracionView from './components/config/ConfiguracionView';
 import DelegateDashboard from './components/delegates/DelegateDashboard';
@@ -95,11 +96,15 @@ const HomeView = () => {
     return <DelegateWelcomeDashboard user={user} />;
   }
 
+  const userName = user?.first_name || user?.username || '';
+
   return (
     <div className="anthropic-theme animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h1 className="anthropic-title" style={{ marginBottom: '8px' }}>Dashboard</h1>
+          <h1 className="anthropic-title" style={{ marginBottom: '8px' }}>
+            <Typewriter text={`Hola, ${userName}`} />
+          </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Bienvenido de nuevo al panel de control de La Superliga.</p>
         </div>
         <button

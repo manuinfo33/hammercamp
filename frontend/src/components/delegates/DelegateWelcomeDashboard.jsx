@@ -1,12 +1,13 @@
 import React from 'react';
 import { User, AlertCircle, ShieldAlert } from 'lucide-react';
+import Typewriter from '../Typewriter';
 
 export default function DelegateWelcomeDashboard({ user }) {
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       <div>
         <h1 className="gradient-text" style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '8px' }}>
-          ¡Hola, {user.first_name}!
+          <Typewriter text={`¡Hola, ${user.first_name}!`} />
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
           Bienvenido al Panel de Control de Delegado para <strong>{user.team_name}</strong>.

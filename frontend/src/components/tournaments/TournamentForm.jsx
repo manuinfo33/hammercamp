@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../../api';
-import { X, Check, Trophy } from 'lucide-react';
+import { X, Check, Trophy, Calendar, Users, Layers, FileText } from 'lucide-react';
 import ZonesBuilder from './ZonesBuilder';
 
 const TournamentForm = ({ tournament, onClose, onSuccess }) => {
@@ -22,6 +22,26 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(!!tournament); // true if we already have an ID
+
+  const isDraftCreated = useRef(false);
+  const isSubmitted = useRef(false);
+  const currentIdRef = useRef(null);
+
+  // Sync tournamentId ref so it's always accessible in cleanup
+  useEffect(() => {
+    currentIdRef.current = tournamentId;
+  }, [tournamentId]);
+
+  useEffect(() => {
+    return () => {
+      // If we created a new draft during this session, but user didn't submit successfully, delete it.
+      if (isDraftCreated.current && !isSubmitted.current && currentIdRef.current) {
+        api.delete(`tournaments/${currentIdRef.current}/`).catch(err => {
+          console.error("Cleanup: Error deleting draft tournament:", err);
+        });
+      }
+    };
+  }, []);
 
   useEffect(() => {
     fetchCategories();
@@ -55,7 +75,7 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
       })),
     };
 
-    try {
+  try {
       let res;
       if (tournamentId) {
         res = await api.patch(`tournaments/${tournamentId}/`, payload);
@@ -63,6 +83,10 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
         res = await api.post('tournaments/', payload);
       }
       setTournamentId(res.data.id);
+      
+      // Mark as submitted so cleanup won't delete it
+      isSubmitted.current = true;
+
       // Fetch the full tournament with zones to get the zone IDs
       const fullRes = await api.get(`tournaments/${res.data.id}/`);
       setSavedZones(fullRes.data.zones);
@@ -93,12 +117,16 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
         zones_data: zones.map((z, i) => ({ id: z.id, name: z.name, order: i })),
       };
       let res;
+      const isNewDraft = !tournamentId;
       if (tournamentId) {
         res = await api.patch(`tournaments/${tournamentId}/`, payload);
       } else {
         res = await api.post('tournaments/', payload);
       }
       setTournamentId(res.data.id);
+      if (isNewDraft) {
+        isDraftCreated.current = true;
+      }
       const fullRes = await api.get(`tournaments/${res.data.id}/`);
       setSavedZones(fullRes.data.zones);
       setZones(fullRes.data.zones.map(z => ({ id: z.id, name: z.name, order: z.order })));
@@ -112,139 +140,129 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
   };
 
   return (
-    <div style={{
-      background: 'var(--bg-card)', border: '1px solid var(--border-subtle)',
-      borderRadius: '20px', padding: '28px', marginBottom: '24px'
-    }} className="animate-fade-in">
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{
-            width: '40px', height: '40px', borderRadius: '12px',
-            background: 'linear-gradient(135deg, var(--brand-beige), var(--brand-beige-dim))',
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}>
-            <Trophy size={20} color="#1a1512" />
-          </div>
-          <div>
-            <h2 style={{ fontSize: '18px', margin: 0, fontWeight: '800', color: 'var(--text-primary)' }}>
-              {tournamentId ? 'Editar Torneo' : 'Nuevo Torneo'}
-            </h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '11px', margin: 0 }}>
-              Completá la información del torneo y sus zonas
-            </p>
-          </div>
-        </div>
-        <button onClick={onClose} className="secondary" style={{ minWidth: 'auto', width: '32px', height: '32px', padding: 0 }}>
-          <X size={16} />
-        </button>
-      </div>
+    <div className="responsive-form-card anthropic-theme animate-fade-in">
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-        {/* Nombre + Categoría */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-          <div className="input-group">
-            <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              Nombre del Torneo *
-            </label>
-            <input
-              type="text" required
-              value={formData.name}
-              onChange={e => { setFormData({ ...formData, name: e.target.value }); setError(''); }}
-              placeholder="Ej. Torneo Apertura 2025"
-              style={{ height: '40px', borderColor: error ? '#e07070' : 'var(--border-subtle)' }}
-            />
-          </div>
-          <div className="input-group">
-            <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              Categoría *
-            </label>
-            <select
-              required
-              value={formData.category}
-              onChange={e => setFormData({ ...formData, category: e.target.value })}
-              style={{ height: '40px', borderColor: 'var(--border-subtle)' }}
-            >
-              <option value="" disabled>Selecciona...</option>
-              {categories.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Fechas */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-          <div className="input-group">
-            <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              Fecha de Inicio
-            </label>
-            <input
-              type="date"
-              value={formData.start_date}
-              onChange={e => setFormData({ ...formData, start_date: e.target.value })}
-              style={{ height: '40px', borderColor: 'var(--border-subtle)' }}
-            />
-          </div>
-          <div className="input-group">
-            <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              Fecha Est. de Finalización
-            </label>
-            <input
-              type="date"
-              value={formData.end_date}
-              onChange={e => setFormData({ ...formData, end_date: e.target.value })}
-              style={{ height: '40px', borderColor: 'var(--border-subtle)' }}
-            />
-          </div>
-        </div>
-
-        {/* Límite Lista de Buena Fe */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-          <div className="input-group">
-            <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              Límite Lista Buena Fe *
-            </label>
-            <input
-              type="number"
-              required
-              min="1"
-              value={formData.max_players_buena_fe}
-              onChange={e => setFormData({ ...formData, max_players_buena_fe: parseInt(e.target.value) || '' })}
-              style={{ height: '40px', borderColor: 'var(--border-subtle)' }}
-            />
-          </div>
-          <div></div>
-        </div>
-
-        {/* Zonas */}
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        
+        {/* Sección 1: Información del Torneo */}
         <div>
-          <div style={{ marginBottom: '12px', paddingBottom: '10px', borderBottom: '1px solid var(--border-subtle)' }}>
-            <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              Zonas *
-            </label>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '4px 0 0' }}>
-              Cada zona genera su tabla de posiciones. Podés agregar equipos directamente desde cada zona.
-            </p>
+          <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Trophy size={14} /> Información del Torneo
+          </h3>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Nombre + Categoría */}
+            <div className="responsive-form-grid">
+              <div className="input-group">
+                <label>Nombre del Torneo *</label>
+                <div style={{ position: 'relative' }}>
+                  <FileText size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
+                  <input
+                    type="text" required
+                    value={formData.name}
+                    onChange={e => { setFormData({ ...formData, name: e.target.value }); setError(''); }}
+                    placeholder="Ej. Torneo Apertura 2025"
+                    style={{ paddingLeft: '40px', height: '42px', borderColor: error ? '#e07070' : 'var(--border-subtle)' }}
+                  />
+                </div>
+              </div>
+              <div className="input-group">
+                <label>Categoría *</label>
+                <div style={{ position: 'relative' }}>
+                  <Layers size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c', pointerEvents: 'none', zIndex: 10 }} />
+                  <select
+                    required
+                    value={formData.category}
+                    onChange={e => setFormData({ ...formData, category: e.target.value })}
+                    style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)', width: '100%' }}
+                  >
+                    <option value="" disabled>Selecciona...</option>
+                    {categories.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Fechas */}
+            <div className="responsive-form-grid">
+              <div className="input-group">
+                <label>Fecha de Inicio</label>
+                <div style={{ position: 'relative' }}>
+                  <Calendar size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
+                  <input
+                    type="date"
+                    value={formData.start_date}
+                    onChange={e => setFormData({ ...formData, start_date: e.target.value })}
+                    style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)' }}
+                  />
+                </div>
+              </div>
+              <div className="input-group">
+                <label>Fecha Est. de Finalización</label>
+                <div style={{ position: 'relative' }}>
+                  <Calendar size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
+                  <input
+                    type="date"
+                    value={formData.end_date}
+                    onChange={e => setFormData({ ...formData, end_date: e.target.value })}
+                    style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)' }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Límite Lista de Buena Fe */}
+            <div className="responsive-form-grid">
+              <div className="input-group">
+                <label>Límite Lista Buena Fe *</label>
+                <div style={{ position: 'relative' }}>
+                  <Users size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    value={formData.max_players_buena_fe}
+                    onChange={e => setFormData({ ...formData, max_players_buena_fe: parseInt(e.target.value) || '' })}
+                    style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)' }}
+                  />
+                </div>
+              </div>
+              <div></div>
+            </div>
           </div>
-          <ZonesBuilder
-            zones={zones}
-            onChange={setZones}
-            categoryId={formData.category}
-            savedZones={savedZones}
-            onSaveFirst={saveAndGetZones}
-          />
+        </div>
+
+        {/* Sección 2: Estructura de Zonas */}
+        <div style={{ borderTop: '1px solid #e6dfd3', paddingTop: '20px' }}>
+          <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Layers size={14} /> Configuración de Zonas
+          </h3>
+          
+          <div>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 16px' }}>
+              Cada zona genera su propia tabla de posiciones. Podés agregar y distribuir equipos directamente desde cada zona.
+            </p>
+            
+            <ZonesBuilder
+              zones={zones}
+              onChange={setZones}
+              categoryId={formData.category}
+              savedZones={savedZones}
+              onSaveFirst={saveAndGetZones}
+            />
+          </div>
         </div>
 
         {error && (
-          <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(220,60,60,0.1)', color: '#e07070', fontSize: '13px', border: '1px solid rgba(220,60,60,0.2)' }}>
+          <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'rgba(204, 122, 92, 0.05)', color: '#cc7a5c', fontSize: '13px', border: '1px solid #e5c5bb' }}>
             {error}
           </div>
         )}
 
         {/* Actions */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '16px', borderTop: '1px solid #e6dfd3' }}>
           <button type="button" onClick={onClose} className="secondary" style={{ height: '40px' }}>
             {saved ? 'Cerrar' : 'Cancelar'}
           </button>

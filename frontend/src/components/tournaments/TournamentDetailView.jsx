@@ -611,15 +611,14 @@ export default function TournamentDetailView({ tournament, onBack }) {
     top: '42px',
     right: '12px',
     zIndex: 100,
-    background: 'var(--bg-elevated)',
-    border: '1px solid var(--border-medium)',
+    background: '#ffffff',
+    border: '1px solid #d8cfc0',
     borderRadius: '12px',
-    boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
+    boxShadow: '0 10px 25px rgba(25, 20, 15, 0.08)',
     minWidth: '220px',
     display: 'flex',
     flexDirection: 'column',
     padding: '6px 0',
-    backdropFilter: 'blur(10px)'
   };
 
   const dropdownItemStyles = {
@@ -629,56 +628,33 @@ export default function TournamentDetailView({ tournament, onBack }) {
     padding: '10px 16px',
     fontSize: '0.82rem',
     fontWeight: '600',
-    color: 'var(--text-primary)',
+    color: '#383530',
     textAlign: 'left',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    transition: 'background 0.2s',
+    transition: 'background 0.15s ease, color 0.15s ease',
     height: '38px',
     justifyContent: 'flex-start'
   };
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px', position: 'relative' }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto' }} className="anthropic-theme tournaments-container animate-fade-in">
       
       {/* Header with Back Button */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '16px' }}>
         <button
           onClick={onBack}
-          className="secondary"
-          style={{
-            minWidth: 'auto',
-            width: '40px',
-            height: '40px',
-            padding: 0,
-            borderRadius: '12px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid var(--border-subtle)',
-            cursor: 'pointer'
-          }}
+          className="secondary icon-only"
+          style={{ width: '36px', height: '36px' }}
           title="Volver a la lista"
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft size={18} />
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '14px',
-            background: 'linear-gradient(135deg, var(--brand-beige), var(--brand-beige-dim))',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <Trophy size={22} color="#1a1512" />
-          </div>
           <div>
-            <h1 className="gradient-text" style={{ fontSize: '24px', margin: 0, fontWeight: '800' }}>
+            <h1 className="anthropic-title" style={{ fontSize: '24px', margin: 0, fontWeight: '800' }}>
               {tournament.name}
             </h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '12px', margin: '2px 0 0' }}>
@@ -770,6 +746,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                 <tr>
                                   <th className="hide-on-mobile" style={{ width: '80px' }}>Escudo</th>
                                   <th>Nombre</th>
+                                  <th style={{ width: '60px', textAlign: 'center' }}>PS</th>
                                   <th className="hide-on-mobile" style={{ width: '60px', textAlign: 'center' }}>PJ</th>
                                   <th className="hide-on-mobile" style={{ width: '60px', textAlign: 'center' }}>PG</th>
                                   <th className="hide-on-mobile" style={{ width: '60px', textAlign: 'center' }}>PE</th>
@@ -783,7 +760,6 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                   </th>
                                   <th className="hide-on-mobile" style={{ width: '50px', textAlign: 'center' }}>IND</th>
                                   <th className="hide-on-mobile" style={{ width: '50px', textAlign: 'center' }}>FP</th>
-                                  <th style={{ width: '80px', textAlign: 'center' }}>Puntos</th>
                                   <th style={{ width: '80px', textAlign: 'right' }}>Acciones</th>
                                 </tr>
                               </thead>
@@ -833,20 +809,20 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                           {zt.team_name}
                                         </button>
                                       </td>
+                                      <td style={{ textAlign: 'center', fontWeight: '800', color: 'var(--text-primary)', fontSize: '15px' }}>
+                                        {zt.points}
+                                      </td>
                                       <td className="hide-on-mobile" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{zt.played}</td>
                                       <td className="hide-on-mobile" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{zt.won}</td>
                                       <td className="hide-on-mobile" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{zt.drawn}</td>
                                       <td className="hide-on-mobile" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{zt.lost}</td>
-                                      <td style={{ textAlign: 'center', color: diff >= 0 ? '#81c784' : '#e57373', fontWeight: '700', fontSize: '13px' }}>
+                                      <td style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px' }}>
                                         {diffStr}
                                       </td>
                                       <td className="hide-on-mobile" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{zt.red_cards || 0}</td>
                                       <td className="hide-on-mobile" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{zt.yellow_cards || 0}</td>
                                       <td className="hide-on-mobile" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{zt.indumentaria || 0}</td>
                                       <td className="hide-on-mobile" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{zt.fair_play || 0}</td>
-                                      <td style={{ textAlign: 'center', fontWeight: '800', color: 'var(--text-primary)', fontSize: '15px' }}>
-                                        {zt.points}
-                                      </td>
                                       <td style={{ textAlign: 'right' }}>
                                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                                           <button
@@ -1070,7 +1046,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                           setOpenDropdownRoundId(null);
                                           openEditRoundModal(r);
                                         }}
-                                        className="team-link-hover"
+                                        className="premium-dropdown-item"
                                       >
                                         <Edit size={14} color="var(--brand-beige)" />
                                         Editar información
@@ -1081,7 +1057,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                           setOpenDropdownRoundId(null);
                                           openNewMatchModal(r);
                                         }}
-                                        className="team-link-hover"
+                                        className="premium-dropdown-item"
                                       >
                                         <Plus size={14} color="var(--brand-beige)" />
                                         Nuevo partido
@@ -1092,7 +1068,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                           setOpenDropdownRoundId(null);
                                           handleDeleteRound(r.id);
                                         }}
-                                        className="team-link-hover"
+                                        className="premium-dropdown-item"
                                       >
                                         <Trash2 size={14} color="#e57373" />
                                         Eliminar fecha
@@ -1104,7 +1080,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                           setOpenDropdownRoundId(null);
                                           alert("Generando planillas en Excel... (Funcionalidad en desarrollo)");
                                         }}
-                                        className="team-link-hover"
+                                        className="premium-dropdown-item"
                                       >
                                         <FileSpreadsheet size={14} color="var(--text-muted)" />
                                         Generar planillas en excel
@@ -1115,7 +1091,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                           setOpenDropdownRoundId(null);
                                           alert("Generando planillas en PDF... (Funcionalidad en desarrollo)");
                                         }}
-                                        className="team-link-hover"
+                                        className="premium-dropdown-item"
                                       >
                                         <FileText size={14} color="var(--text-muted)" />
                                         Generar planillas en pdf
@@ -1266,82 +1242,81 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                         </button>
 
                                         {openDropdownMatchId === m.id && (
-                                          <div 
-                                            style={{
-                                              position: 'absolute',
-                                              top: '42px',
-                                              right: '12px',
-                                              zIndex: 100,
-                                              background: 'var(--bg-elevated)',
-                                              border: '1px solid var(--border-medium)',
-                                              borderRadius: '12px',
-                                              boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
-                                              minWidth: '200px',
-                                              display: 'flex',
-                                              flexDirection: 'column',
-                                              padding: '6px 0',
-                                              backdropFilter: 'blur(10px)'
-                                            }}
-                                            onClick={(e) => e.stopPropagation()}
-                                          >
-                                            <button 
-                                              style={dropdownItemStyles} 
-                                              onClick={() => {
-                                                setOpenDropdownMatchId(null);
-                                                openEditMatchModal(m);
-                                              }}
-                                              className="team-link-hover"
-                                            >
-                                              <Edit size={14} color="var(--brand-beige)" />
-                                              Editar Partido
-                                            </button>
-                                            <button 
-                                              style={dropdownItemStyles} 
-                                              onClick={() => {
-                                                setOpenDropdownMatchId(null);
-                                                alert("Cargar Planilla se programará luego.");
-                                              }}
-                                              className="team-link-hover"
-                                            >
-                                              <Plus size={14} color="var(--brand-beige)" />
-                                              Cargar Planilla
-                                            </button>
-                                            <button 
-                                              style={dropdownItemStyles} 
-                                              onClick={() => {
-                                                setOpenDropdownMatchId(null);
-                                                alert("Cargar Resultado se programará luego.");
-                                              }}
-                                              className="team-link-hover"
-                                            >
-                                              <Check size={14} color="var(--brand-beige)" />
-                                              Cargar Resultado
-                                            </button>
-                                            <button 
-                                              style={dropdownItemStyles} 
-                                              onClick={() => {
-                                                setOpenDropdownMatchId(null);
-                                                alert("Generar Planilla se programará luego.");
-                                              }}
-                                              className="team-link-hover"
-                                            >
-                                              <FileText size={14} color="var(--brand-beige)" />
-                                              Generar Planilla
-                                            </button>
-                                            <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '4px 0' }} />
-                                            <button 
-                                              style={{ ...dropdownItemStyles, color: '#e57373' }} 
-                                              onClick={() => {
-                                                setOpenDropdownMatchId(null);
-                                                handleDeleteMatch(m.id);
-                                              }}
-                                              className="team-link-hover"
-                                            >
-                                              <Trash2 size={14} color="#e57373" />
-                                              Eliminar Partido
-                                            </button>
-                                          </div>
-                                        )}
+                                           <div 
+                                             style={{
+                                               position: 'absolute',
+                                               top: '42px',
+                                               right: '12px',
+                                               zIndex: 100,
+                                               background: '#ffffff',
+                                               border: '1px solid #d8cfc0',
+                                               borderRadius: '12px',
+                                               boxShadow: '0 10px 25px rgba(25, 20, 15, 0.08)',
+                                               minWidth: '200px',
+                                               display: 'flex',
+                                               flexDirection: 'column',
+                                               padding: '6px 0',
+                                             }}
+                                             onClick={(e) => e.stopPropagation()}
+                                           >
+                                             <button 
+                                               style={dropdownItemStyles} 
+                                               onClick={() => {
+                                                 setOpenDropdownMatchId(null);
+                                                 openEditMatchModal(m);
+                                               }}
+                                               className="premium-dropdown-item"
+                                             >
+                                               <Edit size={14} color="var(--brand-beige)" />
+                                               Editar Partido
+                                             </button>
+                                             <button 
+                                               style={dropdownItemStyles} 
+                                               onClick={() => {
+                                                 setOpenDropdownMatchId(null);
+                                                 alert("Cargar Planilla se programará luego.");
+                                               }}
+                                               className="premium-dropdown-item"
+                                             >
+                                               <Plus size={14} color="var(--brand-beige)" />
+                                               Cargar Planilla
+                                             </button>
+                                             <button 
+                                               style={dropdownItemStyles} 
+                                               onClick={() => {
+                                                 setOpenDropdownMatchId(null);
+                                                 alert("Cargar Resultado se programará luego.");
+                                               }}
+                                               className="premium-dropdown-item"
+                                             >
+                                               <Check size={14} color="var(--brand-beige)" />
+                                               Cargar Resultado
+                                             </button>
+                                             <button 
+                                               style={dropdownItemStyles} 
+                                               onClick={() => {
+                                                 setOpenDropdownMatchId(null);
+                                                 alert("Generar Planilla se programará luego.");
+                                               }}
+                                               className="premium-dropdown-item"
+                                             >
+                                               <FileText size={14} color="var(--brand-beige)" />
+                                               Generar Planilla
+                                             </button>
+                                             <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '4px 0' }} />
+                                             <button 
+                                               style={{ ...dropdownItemStyles, color: '#e57373' }} 
+                                               onClick={() => {
+                                                 setOpenDropdownMatchId(null);
+                                                 handleDeleteMatch(m.id);
+                                               }}
+                                               className="premium-dropdown-item"
+                                             >
+                                               <Trash2 size={14} color="#e57373" />
+                                               Eliminar Partido
+                                             </button>
+                                           </div>
+                                         )}
                                       </div>
                                     ))
                                   )}
