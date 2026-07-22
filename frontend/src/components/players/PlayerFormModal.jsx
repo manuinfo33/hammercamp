@@ -113,14 +113,14 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
                 <label>Nombre *</label>
                 <div style={{ position: 'relative' }}>
                   <User size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
-                  <input type="text" required value={formData.first_name} onChange={(e) => { setFormData({ ...formData, first_name: e.target.value }); setError(''); }} style={{ paddingLeft: '40px', borderColor: error ? '#e07070' : 'var(--border-subtle)' }} />
+                  <input type="text" required value={formData.first_name} onChange={(e) => { const val = e.target.value.replace(/(^\w|\s\w)/g, m => m.toUpperCase()); setFormData({ ...formData, first_name: val }); setError(''); }} style={{ paddingLeft: '40px', borderColor: error ? '#e07070' : 'var(--border-subtle)' }} />
                 </div>
               </div>
               <div className="input-group">
                 <label>Apellido *</label>
                 <div style={{ position: 'relative' }}>
                   <User size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
-                  <input type="text" required value={formData.last_name} onChange={(e) => { setFormData({ ...formData, last_name: e.target.value }); setError(''); }} style={{ paddingLeft: '40px', borderColor: error ? '#e07070' : 'var(--border-subtle)' }} />
+                  <input type="text" required value={formData.last_name} onChange={(e) => { const val = e.target.value.replace(/(^\w|\s\w)/g, m => m.toUpperCase()); setFormData({ ...formData, last_name: val }); setError(''); }} style={{ paddingLeft: '40px', borderColor: error ? '#e07070' : 'var(--border-subtle)' }} />
                 </div>
               </div>
             </div>

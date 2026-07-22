@@ -30,7 +30,12 @@ const DelegadosView = () => {
     setLoading(true);
     try {
       const response = await api.get(`delegates/?search=${search}`);
-      setDelegates(response.data);
+      const sorted = response.data.sort((a, b) => {
+        const firstCompare = a.first_name.localeCompare(b.first_name, undefined, { sensitivity: 'base' });
+        if (firstCompare !== 0) return firstCompare;
+        return a.last_name.localeCompare(b.last_name, undefined, { sensitivity: 'base' });
+      });
+      setDelegates(sorted);
     } catch (error) {
       console.error("Error fetching delegates:", error);
     } finally {

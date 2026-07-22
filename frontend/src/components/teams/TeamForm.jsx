@@ -144,7 +144,7 @@ const TeamForm = ({ team, onClose, onSuccess, isModal = false }) => {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
           <div className="input-group">
             <label>Nombre</label>
-            <input type="text" required value={formData.name} onChange={(e) => { setFormData({ ...formData, name: e.target.value }); setError(''); }} style={{ borderColor: error ? '#e07070' : 'var(--border-subtle)' }} />
+            <input type="text" required value={formData.name} onChange={(e) => { const val = e.target.value.replace(/(^\w|\s\w)/g, m => m.toUpperCase()); setFormData({ ...formData, name: val }); setError(''); }} style={{ borderColor: error ? '#e07070' : 'var(--border-subtle)' }} />
           </div>
           <div className="input-group">
             <label>Categoría</label>

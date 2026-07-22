@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, Users, Settings, LogOut, User, ChevronLeft, ChevronRight, Contact, Wallet, Trophy, UserCheck, Menu, X, Database, ChevronDown } from 'lucide-react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -13,6 +13,23 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const [mobileDbOpen, setMobileDbOpen] = useState(false);
 
   const isDbActive = ['/equipos', '/delegados', '/jugadores'].includes(location.pathname);
+
+  useEffect(() => {
+    const handleToggleMenu = () => {
+      setMobileMenuOpen(prev => !prev);
+      setMobileUserOpen(false);
+    };
+    const handleToggleUser = () => {
+      setMobileUserOpen(prev => !prev);
+      setMobileMenuOpen(false);
+    };
+    window.addEventListener('toggle-mobile-menu', handleToggleMenu);
+    window.addEventListener('toggle-mobile-user', handleToggleUser);
+    return () => {
+      window.removeEventListener('toggle-mobile-menu', handleToggleMenu);
+      window.removeEventListener('toggle-mobile-user', handleToggleUser);
+    };
+  }, []);
 
   const handleLogout = () => {
     logout();

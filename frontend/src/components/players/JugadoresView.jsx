@@ -20,7 +20,12 @@ const JugadoresView = () => {
     setLoading(true);
     try {
       const response = await api.get(`players/?search=${search}`);
-      setPlayers(response.data);
+      const sorted = response.data.sort((a, b) => {
+        const lastCompare = a.last_name.localeCompare(b.last_name, undefined, { sensitivity: 'base' });
+        if (lastCompare !== 0) return lastCompare;
+        return a.first_name.localeCompare(b.first_name, undefined, { sensitivity: 'base' });
+      });
+      setPlayers(sorted);
     } catch (error) {
       console.error("Error fetching players:", error);
     } finally {

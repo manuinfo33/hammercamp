@@ -19,7 +19,10 @@ const EquiposView = () => {
     try {
       const response = await api.get(`teams/?search=${search}`);
       console.log("DEBUG: Teams fetched from API:", response.data);
-      setTeams(response.data);
+      const sorted = response.data.sort((a, b) => 
+        a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+      );
+      setTeams(sorted);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching teams:", error);

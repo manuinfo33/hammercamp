@@ -109,72 +109,8 @@ const DelegateForm = ({ delegate, onClose, onSuccess }) => {
 
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        {/* Sección 1: Datos Personales */}
+        {/* Sección 1: Acceso */}
         <div>
-          <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <User size={14} /> Datos Personales
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              <div className="input-group">
-                <label>Nombre *</label>
-                <div style={{ position: 'relative' }}>
-                  <User size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
-                  <input type="text" required value={formData.first_name} onChange={(e) => { setFormData({ ...formData, first_name: e.target.value }); setError(''); }} style={{ paddingLeft: '40px', height: '42px', borderColor: error ? '#e07070' : 'var(--border-subtle)' }} />
-                </div>
-              </div>
-              <div className="input-group">
-                <label>Apellido *</label>
-                <div style={{ position: 'relative' }}>
-                  <User size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
-                  <input type="text" required value={formData.last_name} onChange={(e) => { setFormData({ ...formData, last_name: e.target.value }); setError(''); }} style={{ paddingLeft: '40px', height: '42px', borderColor: error ? '#e07070' : 'var(--border-subtle)' }} />
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
-              <div className="input-group">
-                <label>DNI</label>
-                <div style={{ position: 'relative' }}>
-                  <ImageIcon size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
-                  <input type="text" value={formData.dni} onChange={(e) => setFormData({ ...formData, dni: e.target.value })} style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)' }} />
-                </div>
-              </div>
-              <div className="input-group" style={{ gridColumn: 'span 2' }}>
-                <label>Dirección</label>
-                <div style={{ position: 'relative' }}>
-                  <MapPin size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
-                  <input type="text" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)' }} />
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              <div className="input-group">
-                <label>Nacimiento</label>
-                <div style={{ position: 'relative' }}>
-                  <Calendar size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
-                  <input type="date" value={formData.birth_date} onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })} style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)' }} />
-                </div>
-              </div>
-              <div className="input-group">
-                <label>Equipo</label>
-                <div style={{ position: 'relative' }}>
-                  <Users size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c', pointerEvents: 'none', zIndex: 10 }} />
-                  <select value={formData.team} onChange={(e) => setFormData({ ...formData, team: e.target.value })} style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)', width: '100%' }}>
-                    <option value="">Ninguno</option>
-                    {teams.map(team => (
-                      <option key={team.id} value={team.id}>{team.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Sección 2: Acceso */}
-        <div style={{ borderTop: '1px solid #e6dfd3', paddingTop: '20px' }}>
           <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Lock size={14} /> Acceso
           </h3>
@@ -220,6 +156,70 @@ const DelegateForm = ({ delegate, onClose, onSuccess }) => {
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sección 2: Datos Personales */}
+        <div style={{ borderTop: '1px solid #e6dfd3', paddingTop: '20px' }}>
+          <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <User size={14} /> Datos Personales
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div className="input-group">
+                <label>Nombre *</label>
+                <div style={{ position: 'relative' }}>
+                  <User size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
+                  <input type="text" required value={formData.first_name} onChange={(e) => { const val = e.target.value.replace(/(^\w|\s\w)/g, m => m.toUpperCase()); setFormData({ ...formData, first_name: val }); setError(''); }} style={{ paddingLeft: '40px', height: '42px', borderColor: error ? '#e07070' : 'var(--border-subtle)' }} />
+                </div>
+              </div>
+              <div className="input-group">
+                <label>Apellido *</label>
+                <div style={{ position: 'relative' }}>
+                  <User size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
+                  <input type="text" required value={formData.last_name} onChange={(e) => { const val = e.target.value.replace(/(^\w|\s\w)/g, m => m.toUpperCase()); setFormData({ ...formData, last_name: val }); setError(''); }} style={{ paddingLeft: '40px', height: '42px', borderColor: error ? '#e07070' : 'var(--border-subtle)' }} />
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+              <div className="input-group">
+                <label>DNI</label>
+                <div style={{ position: 'relative' }}>
+                  <ImageIcon size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
+                  <input type="text" value={formData.dni} onChange={(e) => setFormData({ ...formData, dni: e.target.value })} style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)' }} />
+                </div>
+              </div>
+              <div className="input-group" style={{ gridColumn: 'span 2' }}>
+                <label>Dirección</label>
+                <div style={{ position: 'relative' }}>
+                  <MapPin size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
+                  <input type="text" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)' }} />
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div className="input-group">
+                <label>Nacimiento</label>
+                <div style={{ position: 'relative' }}>
+                  <Calendar size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
+                  <input type="date" value={formData.birth_date} onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })} style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)' }} />
+                </div>
+              </div>
+              <div className="input-group">
+                <label>Equipo</label>
+                <div style={{ position: 'relative' }}>
+                  <Users size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c', pointerEvents: 'none', zIndex: 10 }} />
+                  <select value={formData.team} onChange={(e) => setFormData({ ...formData, team: e.target.value })} style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)', width: '100%' }}>
+                    <option value="">Ninguno</option>
+                    {teams.map(team => (
+                      <option key={team.id} value={team.id}>{team.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           </div>
