@@ -6,6 +6,7 @@ import DelegadosView from './components/delegates/DelegadosView';
 import JugadoresView from './components/players/JugadoresView';
 import CajaView from './components/caja/CajaView';
 import TorneosView from './components/tournaments/TorneosView';
+import TournamentDetailView from './components/tournaments/TournamentDetailView';
 import UnirPDF from './components/UnirPDF';
 import LoginView from './components/LoginView';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -151,6 +152,8 @@ function App() {
                   <Route path="/jugadores" element={<AdminRoute><JugadoresView /></AdminRoute>} />
                   <Route path="/caja" element={<AdminRoute><CajaView /></AdminRoute>} />
                   <Route path="/torneos" element={<AdminRoute><TorneosView /></AdminRoute>} />
+                  <Route path="/torneos/:id" element={<AdminRoute><TournamentDetailView /></AdminRoute>} />
+                  <Route path="/torneos/:id/:tab" element={<AdminRoute><TournamentDetailView /></AdminRoute>} />
                   <Route path="/configuracion" element={<AdminRoute><ConfiguracionView /></AdminRoute>} />
                   
                   <Route path="/equipo" element={<DelegateRoute><DelegateTeamWrapper /></DelegateRoute>} />

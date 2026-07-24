@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { Plus, Search, Trophy, Trash2, Edit, Calendar, MapPin, ChevronRight, X } from 'lucide-react';
 import TournamentForm from './TournamentForm';
-import TournamentDetailView from './TournamentDetailView';
 
 const TorneosView = () => {
+  const navigate = useNavigate();
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingTournament, setEditingTournament] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
-  const [selectedTournamentForDetail, setSelectedTournamentForDetail] = useState(null);
 
   useEffect(() => {
     fetchTournaments();
@@ -48,18 +48,6 @@ const TorneosView = () => {
     const [y, m, d] = dateStr.split('-');
     return `${d}/${m}/${y}`;
   };
-
-  if (selectedTournamentForDetail) {
-    return (
-      <TournamentDetailView
-        tournament={selectedTournamentForDetail}
-        onBack={() => {
-          setSelectedTournamentForDetail(null);
-          fetchTournaments();
-        }}
-      />
-    );
-  }
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto' }} className="anthropic-theme tournaments-container animate-fade-in">
@@ -148,7 +136,15 @@ const TorneosView = () => {
                 ) : (
                   tournaments.map((t) => (
                     <tr key={t.id}>
-                      <td style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text-primary)' }}>{t.name}</td>
+                      <td style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text-primary)' }}>
+                        <span 
+                          onClick={() => navigate(`/torneos/${t.id}`)}
+                          style={{ cursor: 'pointer', color: 'var(--brand-beige)' }}
+                          className="hover:underline"
+                        >
+                          {t.name}
+                        </span>
+                      </td>
                       <td><span className="badge">{t.category_name}</span></td>
                       <td>
                         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -172,7 +168,7 @@ const TorneosView = () => {
                           ) : (
                             <>
                               <button
-                                onClick={() => setSelectedTournamentForDetail(t)}
+                                onClick={() => navigate(`/torneos/${t.id}`)}
                                 className="secondary"
                                 style={{ padding: '6px 12px', minWidth: 'auto', height: '32px', borderRadius: '8px', fontSize: '12px' }}
                                 title="Ver detalles"

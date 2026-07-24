@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Trophy, Users, Edit, Check, X, Calendar, Clock, Plus, Trash2, Shield, 
   AlertTriangle, MoreVertical, FileSpreadsheet, FileText, MapPin, UserCheck, UserPlus,
@@ -17,10 +18,39 @@ const TABS = [
 ];
 
 export default function TournamentDetailView({ tournament, onBack }) {
+  const { id: paramId, tab: paramTab } = useParams();
+  const navigate = useNavigate();
+
+  const tournamentId = paramId || tournament?.id;
+  const initialTab = (paramTab && ['principal', 'fixture', 'buena_fe'].includes(paramTab)) ? paramTab : 'principal';
+
   const { user, logout } = useAuth();
   const [mobileUserOpen, setMobileUserOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('principal');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [detailedTournament, setDetailedTournament] = useState(null);
+
+  const displayTournament = detailedTournament || tournament || {};
+
+  useEffect(() => {
+    if (paramTab && ['principal', 'fixture', 'buena_fe'].includes(paramTab)) {
+      setActiveTab(paramTab);
+    }
+  }, [paramTab]);
+
+  const handleTabChange = (newTab) => {
+    setActiveTab(newTab);
+    if (tournamentId) {
+      navigate(`/torneos/${tournamentId}/${newTab}`, { replace: true });
+    }
+  };
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate('/torneos');
+    }
+  };
   const [loading, setLoading] = useState(true);
   const [customAlert, setCustomAlert] = useState(null); // { message: string, type: 'success' | 'error' }
   const [alertExiting, setAlertExiting] = useState(false);
@@ -113,9 +143,10 @@ export default function TournamentDetailView({ tournament, onBack }) {
   const [openDropdownMatchId, setOpenDropdownMatchId] = useState(null);
 
   const fetchTournamentDetail = async () => {
+    if (!tournamentId) return;
     try {
       setLoading(true);
-      const res = await api.get(`tournaments/${tournament.id}/`);
+      const res = await api.get(`tournaments/${tournamentId}/`);
       setDetailedTournament(res.data);
     } catch (e) {
       console.error(e);
@@ -126,7 +157,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
   useEffect(() => {
     fetchTournamentDetail();
-  }, [tournament.id]);
+  }, [tournamentId]);
 
   // Set default active zone when detailedTournament is loaded
   useEffect(() => {
@@ -824,7 +855,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
         {/* Top bar: Back Button & Category Badge */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
           <button
-            onClick={onBack}
+            onClick={handleBack}
             className="secondary"
             style={{
               height: '36px',
@@ -840,7 +871,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
             <ArrowLeft size={16} /> Volver a Torneos
           </button>
 
-          {tournament.category_name && (
+          {displayTournament.category_name && (
             <span style={{
               background: '#fbf5f2',
               color: '#cc7a5c',
@@ -851,7 +882,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
               fontWeight: '700',
               letterSpacing: '0.3px'
             }}>
-              Categoría: {tournament.category_name}
+              Categoría: {displayTournament.category_name}
             </span>
           )}
         </div>
@@ -859,7 +890,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
         {/* Title & Description */}
         <div>
           <h1 className="anthropic-title" style={{ fontSize: '28px', margin: 0, fontWeight: '800', color: '#191919', letterSpacing: '-0.5px' }}>
-            {tournament.name}
+            {displayTournament.name}
           </h1>
           <p style={{ color: '#7f776f', fontSize: '13px', margin: '4px 0 0' }}>
             Gestión de fixture, tabla de posiciones y lista de buena fe
@@ -885,7 +916,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className="tournament-tab-btn"
               style={{
                 background: isActive ? '#cc7a5c' : 'transparent',
@@ -2339,7 +2370,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
           <div className="mobile-bottom-nav anthropic-theme">
             <button 
               onClick={() => {
-                setActiveTab('principal');
+                handleTabChange('principal');
                 setMobileUserOpen(false);
               }}
               className={`mobile-bottom-nav-item ${activeTab === 'principal' && !mobileUserOpen ? 'active' : ''}`}
@@ -2348,7 +2379,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
             </button>
             <button 
               onClick={() => {
-                setActiveTab('fixture');
+                handleTabChange('fixture');
                 setMobileUserOpen(false);
               }}
               className={`mobile-bottom-nav-item ${activeTab === 'fixture' && !mobileUserOpen ? 'active' : ''}`}
@@ -2357,7 +2388,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
             </button>
             <button 
               onClick={() => {
-                setActiveTab('buena_fe');
+                handleTabChange('buena_fe');
                 setMobileUserOpen(false);
               }}
               className={`mobile-bottom-nav-item ${activeTab === 'buena_fe' && !mobileUserOpen ? 'active' : ''}`}
@@ -2677,7 +2708,18 @@ const MobileTeamEditor = ({
   };
 
   return (
-    <div style={{ background: '#fcfbfa', minHeight: '100vh', display: 'flex', flexDirection: 'column' }} className="animate-fade-in">
+    <div className="anthropic-theme animate-fade-in" style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 9999,
+      background: '#fcfbfa',
+      overflowY: 'auto',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
       <div style={{
         height: '56px',
         background: '#fdfcfb',
@@ -2762,12 +2804,17 @@ const MobileTeamEditor = ({
                   borderRadius: '50%',
                   width: '18px',
                   height: '18px',
+                  minWidth: '18px',
+                  minHeight: '18px',
+                  maxWidth: '18px',
+                  maxHeight: '18px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: '#ffffff',
                   padding: 0,
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  flexShrink: 0
                 }}
               >
                 <X size={11} />
@@ -2842,26 +2889,28 @@ const MobileTeamEditor = ({
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+          <div style={{ marginTop: '12px' }}>
             <button 
               type="button"
               onClick={() => setShowAddPlayer(true)}
               style={{
+                width: '100%',
+                height: '44px',
                 background: '#038c4c',
                 color: '#ffffff',
                 border: 'none',
-                borderRadius: '8px',
-                padding: '8px 16px',
-                fontSize: '13px',
+                borderRadius: '22px',
+                fontSize: '14px',
                 fontWeight: '700',
+                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '8px',
-                boxShadow: '0 2px 6px rgba(3,140,76,0.15)',
-                cursor: 'pointer'
+                boxShadow: '0 2px 6px rgba(3,140,76,0.3)'
               }}
             >
-              <UserPlus size={16} /> Registrar Jugador
+              <UserPlus size={18} /> Añadir Jugador
             </button>
           </div>
         </div>
