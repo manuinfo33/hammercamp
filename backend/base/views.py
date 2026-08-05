@@ -36,6 +36,29 @@ class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
+    def destroy(self, request, *args, **kwargs):
+        password = (
+            request.headers.get('X-Password') or
+            request.headers.get('x-password') or
+            request.META.get('HTTP_X_PASSWORD') or
+            (request.data and isinstance(request.data, dict) and request.data.get('password')) or
+            request.query_params.get('password')
+        )
+        
+        if not request.user or not request.user.is_authenticated:
+            return Response(
+                {'detail': 'INVALID_PASSWORD', 'message': 'Usuario no autenticado.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+            
+        if not password or not request.user.check_password(password):
+            return Response(
+                {'detail': 'INVALID_PASSWORD', 'message': 'No se pudo eliminar la categoría. Verificá que la contraseña sea correcta.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        return super().destroy(request, *args, **kwargs)
+
 class TeamViewSet(viewsets.ModelViewSet):
     queryset = Team.objects.all()
     serializer_class = TeamSerializer
@@ -65,6 +88,20 @@ class TeamViewSet(viewsets.ModelViewSet):
             team.delegate.team = team
             team.delegate.save()
             print(f"DEBUG: Team {team.name} updated and linked to Delegate {team.delegate}")
+
+    def destroy(self, request, *args, **kwargs):
+        team = self.get_object()
+        if team.zone_teams.exists():
+            zone_team = team.zone_teams.select_related('zone__tournament').first()
+            tournament_name = zone_team.zone.tournament.name if (zone_team and zone_team.zone and zone_team.zone.tournament) else "un torneo"
+            return Response(
+                {
+                    "detail": "ACTIVE_TEAM_CANNOT_BE_DELETED",
+                    "message": f"El equipo \"{team.name}\" no se puede eliminar porque se encuentra activo en el torneo \"{tournament_name}\". Para eliminar este equipo, primero debes eliminar el torneo."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return super().destroy(request, *args, **kwargs)
 
 class DelegateViewSet(viewsets.ModelViewSet):
     queryset = Delegate.objects.all()
@@ -212,6 +249,29 @@ class TournamentViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         serializer = TournamentSerializer(instance, context={'request': request})
         return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        password = (
+            request.headers.get('X-Password') or
+            request.headers.get('x-password') or
+            request.META.get('HTTP_X_PASSWORD') or
+            (request.data and isinstance(request.data, dict) and request.data.get('password')) or
+            request.query_params.get('password')
+        )
+        
+        if not request.user or not request.user.is_authenticated:
+            return Response(
+                {'detail': 'INVALID_PASSWORD', 'message': 'Usuario no autenticado.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+            
+        if not password or not request.user.check_password(password):
+            return Response(
+                {'detail': 'INVALID_PASSWORD', 'message': 'No se pudo eliminar el Torneo. Verificá que la contraseña sea correcta.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        return super().destroy(request, *args, **kwargs)
 
 
 class TournamentZoneViewSet(viewsets.ModelViewSet):

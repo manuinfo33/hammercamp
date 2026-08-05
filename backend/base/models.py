@@ -2,8 +2,33 @@ from django.db import models
 from django.utils import timezone
 
 class Category(models.Model):
+    FOOTBALL_TYPE_CHOICES = [
+        ('Futbol 5', 'Fútbol 5'),
+        ('Futbol 6', 'Fútbol 6'),
+        ('Futbol 7', 'Fútbol 7'),
+        ('Futbol 8', 'Fútbol 8'),
+        ('Futbol 9', 'Fútbol 9'),
+        ('Futbol 10', 'Fútbol 10'),
+        ('Futbol 11', 'Fútbol 11'),
+        ('Otros', 'Otros'),
+    ]
+
+    CATEGORY_TYPE_CHOICES = [
+        ('sin_restriccion', 'Sin restricción de edad'),
+        ('libre', 'Libre (Mayores de 18 años)'),
+        ('senior', 'Senior'),
+    ]
+
     name = models.CharField(max_length=100, unique=True, verbose_name="Nombre")
     description = models.TextField(blank=True, null=True, verbose_name="Descripción")
+    football_type = models.CharField(max_length=20, choices=FOOTBALL_TYPE_CHOICES, default='Futbol 11', verbose_name="Tipo de Fútbol")
+    category_type = models.CharField(max_length=30, choices=CATEGORY_TYPE_CHOICES, default='sin_restriccion', verbose_name="Tipo de Categoría")
+    
+    # Campos específicos para Senior
+    min_age = models.IntegerField(null=True, blank=True, verbose_name="Edad Mínima (Senior)")
+    max_underage_allowed = models.IntegerField(default=0, null=True, blank=True, verbose_name="Cantidad de Menores Permitidos")
+    min_underage_age = models.IntegerField(null=True, blank=True, verbose_name="Edad Mínima de Menores (Senior)")
+    allow_birthday_in_year = models.BooleanField(default=False, verbose_name="Permitir si cumple años en el transcurso del año")
 
     def __str__(self):
         return self.name
@@ -36,7 +61,7 @@ class Delegate(models.Model):
 
 class Team(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="Nombre del Equipo")
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='teams', verbose_name="Categoría")
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='teams', verbose_name="Categoría")
     delegate = models.ForeignKey(Delegate, on_delete=models.SET_NULL, related_name='teams_managed', null=True, verbose_name="Delegado Responsable")
     logo = models.ImageField(upload_to='teams/logos/', blank=True, null=True, verbose_name="Escudo/Logo")
     team_photo = models.ImageField(upload_to='teams/photos/', blank=True, null=True, verbose_name="Foto del Equipo")
@@ -105,7 +130,7 @@ class SaldoSocio(models.Model):
 
 class Tournament(models.Model):
     name = models.CharField(max_length=200, unique=True, verbose_name="Nombre del Torneo")
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='tournaments', verbose_name="Categoría")
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='tournaments', verbose_name="Categoría")
     start_date = models.DateField(blank=True, null=True, verbose_name="Fecha de Inicio")
     end_date = models.DateField(blank=True, null=True, verbose_name="Fecha Estimada de Finalización")
     max_players_buena_fe = models.PositiveIntegerField(default=25, verbose_name="Máximo de Jugadores Lista Buena Fe")

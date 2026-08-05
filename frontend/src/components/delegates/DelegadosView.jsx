@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../api';
-import { Plus, Search, Contact, Trash2, Edit, X } from 'lucide-react';
+import { Plus, Search, Contact, Trash2, Edit, X, Check } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import DelegateForm from './DelegateForm';
 
@@ -11,6 +12,8 @@ const DelegadosView = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingDelegate, setEditingDelegate] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   const location = useLocation();
 
@@ -47,6 +50,11 @@ const DelegadosView = () => {
     try {
       await api.delete(`delegates/${id}/`);
       fetchDelegates();
+      setToastMessage('Delegado eliminado con éxito');
+      setShowToast(true);
+      setTimeout(() => {
+        setShowToast(false);
+      }, 3000);
     } catch (error) {
       console.error("Error deleting delegate:", error);
     } finally {
@@ -91,8 +99,16 @@ const DelegadosView = () => {
           delegate={editingDelegate} 
           onClose={() => setShowForm(false)} 
           onSuccess={() => {
+            const isNew = !editingDelegate;
             setShowForm(false);
             fetchDelegates();
+            if (isNew) {
+              setToastMessage('Delegado creado con éxito');
+              setShowToast(true);
+              setTimeout(() => {
+                setShowToast(false);
+              }, 3000);
+            }
           }} 
         />
       )}
@@ -200,6 +216,50 @@ const DelegadosView = () => {
             </table>
           </div>
         </div>
+      )}
+
+      {/* Toast Notificación centro inferior */}
+      {showToast && createPortal(
+        <div className="toast-pill-container">
+          <div style={{
+            width: '22px',
+            height: '22px',
+            borderRadius: '50%',
+            background: '#2e7d32',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <Check size={14} color="#ffffff" strokeWidth={3} />
+          </div>
+          <span style={{
+            fontSize: '13px',
+            fontWeight: '600',
+            color: '#f5ede4',
+            whiteSpace: 'nowrap'
+          }}>
+            {toastMessage}
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowToast(false)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#a8957e',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '2px',
+              marginLeft: '4px'
+            }}
+          >
+            <X size={14} />
+          </button>
+        </div>,
+        document.body
       )}
     </div>
   );

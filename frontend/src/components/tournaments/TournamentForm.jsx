@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api';
-import { X, Check, Trophy, Calendar, Users, Layers, FileText } from 'lucide-react';
+import { X, Check, Trophy, Calendar, Users, Layers, FileText, Plus, Minus } from 'lucide-react';
 import ZonesBuilder from './ZonesBuilder';
 
 const TournamentForm = ({ tournament, onClose, onSuccess }) => {
+  const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
+  const [isInfoOpen, setIsInfoOpen] = useState(true);
+  const [isZonesOpen, setIsZonesOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: tournament?.name || '',
     category: tournament?.category || '',
@@ -146,113 +150,138 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
         
         {/* Sección 1: Información del Torneo */}
         <div>
-          <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Trophy size={14} /> Información del Torneo
-          </h3>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* Nombre + Categoría */}
-            <div className="responsive-form-grid">
-              <div className="input-group">
-                <label>Nombre del Torneo *</label>
-                <div style={{ position: 'relative' }}>
-                  <FileText size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
-                  <input
-                    type="text" required
-                    value={formData.name}
-                    onChange={e => { setFormData({ ...formData, name: e.target.value }); setError(''); }}
-                    placeholder="Ej. Torneo Apertura 2025"
-                    style={{ paddingLeft: '40px', height: '42px', borderColor: error ? '#e07070' : 'var(--border-subtle)' }}
-                  />
-                </div>
-              </div>
-              <div className="input-group">
-                <label>Categoría *</label>
-                <div style={{ position: 'relative' }}>
-                  <Layers size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c', pointerEvents: 'none', zIndex: 10 }} />
-                  <select
-                    required
-                    value={formData.category}
-                    onChange={e => setFormData({ ...formData, category: e.target.value })}
-                    style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)', width: '100%' }}
-                  >
-                    <option value="" disabled>Selecciona...</option>
-                    {categories.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Fechas */}
-            <div className="responsive-form-grid">
-              <div className="input-group">
-                <label>Fecha de Inicio</label>
-                <div style={{ position: 'relative' }}>
-                  <Calendar size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
-                  <input
-                    type="date"
-                    value={formData.start_date}
-                    onChange={e => setFormData({ ...formData, start_date: e.target.value })}
-                    style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)' }}
-                  />
-                </div>
-              </div>
-              <div className="input-group">
-                <label>Fecha Est. de Finalización</label>
-                <div style={{ position: 'relative' }}>
-                  <Calendar size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
-                  <input
-                    type="date"
-                    value={formData.end_date}
-                    onChange={e => setFormData({ ...formData, end_date: e.target.value })}
-                    style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)' }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Límite Lista de Buena Fe */}
-            <div className="responsive-form-grid">
-              <div className="input-group">
-                <label>Límite Lista Buena Fe *</label>
-                <div style={{ position: 'relative' }}>
-                  <Users size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    value={formData.max_players_buena_fe}
-                    onChange={e => setFormData({ ...formData, max_players_buena_fe: parseInt(e.target.value) || '' })}
-                    style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)' }}
-                  />
-                </div>
-              </div>
-              <div></div>
-            </div>
+          <div
+            onClick={() => setIsInfoOpen(!isInfoOpen)}
+            style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              marginBottom: isInfoOpen ? '16px' : '0', cursor: 'pointer', userSelect: 'none'
+            }}
+          >
+            <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Trophy size={14} /> Información del Torneo
+            </h3>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setIsInfoOpen(!isInfoOpen); }}
+              style={{
+                width: '28px', height: '28px', padding: 0, minWidth: 'unset',
+                borderRadius: '6px', border: '1px solid var(--border-subtle)',
+                background: 'transparent', color: '#cc7a5c', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}
+            >
+              {isInfoOpen ? <Minus size={16} /> : <Plus size={16} />}
+            </button>
           </div>
+          
+          {isInfoOpen && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Nombre + Categoría */}
+              <div className="responsive-form-grid">
+                <div className="input-group">
+                  <label>Nombre del torneo *</label>
+                  <div style={{ position: 'relative' }}>
+                    <FileText size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
+                    <input
+                      type="text" required
+                      value={formData.name}
+                      onChange={e => { setFormData({ ...formData, name: e.target.value }); setError(''); }}
+                      placeholder="Ej. Torneo Apertura 2025"
+                      style={{ paddingLeft: '40px', height: '42px', borderColor: error ? '#e07070' : 'var(--border-subtle)' }}
+                    />
+                  </div>
+                </div>
+                <div className="input-group">
+                  <label>Categoría *</label>
+                  <div style={{ position: 'relative' }}>
+                    <Layers size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c', pointerEvents: 'none', zIndex: 10 }} />
+                    <select
+                      required
+                      value={formData.category}
+                      onChange={e => {
+                        if (e.target.value === 'CREATE_NEW') {
+                          navigate('/categorias', { state: { openForm: true } });
+                          return;
+                        }
+                        setFormData({ ...formData, category: e.target.value });
+                      }}
+                      style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)', width: '100%' }}
+                    >
+                      <option value="" disabled>Selecciona...</option>
+                      {categories.length === 0 && (
+                        <option value="CREATE_NEW" style={{ fontWeight: '600', color: '#cc7a5c' }}>
+                          + Crea una Categoría nueva
+                        </option>
+                      )}
+                      {categories.map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Fecha de Inicio */}
+              <div className="responsive-form-grid">
+                <div className="input-group">
+                  <label>Fecha de Inicio</label>
+                  <div style={{ position: 'relative' }}>
+                    <Calendar size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
+                    <input
+                      type="date"
+                      value={formData.start_date}
+                      onChange={e => setFormData({ ...formData, start_date: e.target.value })}
+                      style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)' }}
+                    />
+                  </div>
+                </div>
+                <div></div>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Sección 2: Estructura de Zonas */}
+        {/* Sección 2: Configuración de Zonas y Equipos */}
         <div style={{ borderTop: '1px solid #e6dfd3', paddingTop: '20px' }}>
-          <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Layers size={14} /> Configuración de Zonas
-          </h3>
-          
-          <div>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 16px' }}>
-              Cada zona genera su propia tabla de posiciones. Podés agregar y distribuir equipos directamente desde cada zona.
-            </p>
-            
-            <ZonesBuilder
-              zones={zones}
-              onChange={setZones}
-              categoryId={formData.category}
-              savedZones={savedZones}
-              onSaveFirst={saveAndGetZones}
-            />
+          <div
+            onClick={() => setIsZonesOpen(!isZonesOpen)}
+            style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              marginBottom: isZonesOpen ? '16px' : '0', cursor: 'pointer', userSelect: 'none'
+            }}
+          >
+            <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Layers size={14} /> Configuración de Zonas y Equipos
+            </h3>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setIsZonesOpen(!isZonesOpen); }}
+              style={{
+                width: '28px', height: '28px', padding: 0, minWidth: 'unset',
+                borderRadius: '6px', border: '1px solid var(--border-subtle)',
+                background: 'transparent', color: '#cc7a5c', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}
+            >
+              {isZonesOpen ? <Minus size={16} /> : <Plus size={16} />}
+            </button>
           </div>
+          
+          {isZonesOpen && (
+            <div>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 16px' }}>
+                Cada zona genera su propia tabla de posiciones. Podés agregar y distribuir equipos directamente desde cada zona.
+              </p>
+              
+              <ZonesBuilder
+                zones={zones}
+                onChange={setZones}
+                categoryId={formData.category}
+                savedZones={savedZones}
+                onSaveFirst={saveAndGetZones}
+              />
+            </div>
+          )}
         </div>
 
         {error && (

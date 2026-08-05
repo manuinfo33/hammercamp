@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, Settings, LogOut, User, ChevronLeft, ChevronRight, Contact, Wallet, Trophy, UserCheck, Menu, X, Database, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut, User, ChevronLeft, ChevronRight, Contact, Wallet, Trophy, UserCheck, Menu, X, Database, ChevronDown, Award } from 'lucide-react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -146,6 +146,10 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                     </div>
                   )}
                 </div>
+                <NavLink to="/categorias" onClick={() => setMobileMenuOpen(false)} className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}>
+                  <Award size={18} />
+                  <span>Categorías</span>
+                </NavLink>
                 <NavLink to="/torneos" onClick={() => setMobileMenuOpen(false)} className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}>
                   <Trophy size={18} />
                   <span>Torneos</span>
@@ -191,7 +195,15 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           padding: '0 24px'
         }}>
           {/* Lado Izquierdo: Marca y Logotipo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div 
+            onClick={() => navigate('/')}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px',
+              cursor: 'pointer',
+            }}
+          >
             <div style={{ width: '32px', height: '32px', flexShrink: 0 }}>
               <img src="/logo-superliga.png" alt="La Superliga Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
@@ -205,7 +217,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           </div>
 
           {/* Contenedor Derecho: Navegación + Separador + Acciones */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
             {/* Navegación Horizontal */}
             <nav style={{ display: 'flex', flexDirection: 'row', gap: '4px', alignItems: 'center' }}>
               <NavLink to="/" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} style={{ padding: '6px 12px', height: '36px' }}>
@@ -251,6 +263,10 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       </NavLink>
                     </div>
                   </div>
+                  <NavLink to="/categorias" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} style={{ padding: '6px 12px', height: '36px' }}>
+                    <Award size={16} />
+                    <span>Categorías</span>
+                  </NavLink>
                   <NavLink to="/torneos" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} style={{ padding: '6px 12px', height: '36px' }}>
                     <Trophy size={16} />
                     <span>Torneos</span>
@@ -277,10 +293,16 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             </nav>
 
             {/* Línea Divisoria Vertical */}
-            <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--border-strong)', opacity: 1 }}></div>
+            <div style={{ width: '1px', height: '22px', backgroundColor: '#d8cfc0' }}></div>
 
-            {/* Lado Derecho: Configuración y Botón Cerrar Sesión */}
+            {/* Lado Derecho: Solo Nombre de Usuario y Controles de Sesión */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              {user && (
+                <span style={{ fontSize: '13px', fontWeight: '600', color: '#191919' }}>
+                  {user.first_name || user.username}
+                </span>
+              )}
+
               {user?.role === 'Administrador' && (
                 <NavLink 
                   to="/configuracion" 

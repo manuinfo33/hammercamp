@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../api';
 import { Plus, Minus, Users, X, Check, Search } from 'lucide-react';
 
@@ -202,7 +203,7 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], onSaveFirs
                   }}
                   onFocus={e => e.target.style.borderColor = 'var(--brand-beige)'}
                   onBlur={e => e.target.style.borderColor = 'var(--border-subtle)'}
-                  placeholder={`Zona ${index + 1}`}
+                  placeholder="Ingresa el nombre de la Zona"
                 />
 
                 {/* Add Teams button — always visible */}
@@ -242,89 +243,100 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], onSaveFirs
                     </span>
                   </div>
 
-                  {/* Search bar inside inline selector */}
-                  <div style={{ position: 'relative' }}>
-                    <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                    <input
-                      type="text"
-                      placeholder="Buscar equipo por nombre..."
-                      value={teamSearch}
-                      onChange={e => setTeamSearch(e.target.value)}
-                      style={{
-                        width: '100%',
-                        paddingLeft: '32px',
-                        height: '32px',
-                        fontSize: '12px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-subtle)',
-                        background: 'var(--input-bg)',
-                        color: 'var(--text-primary)',
-                        outline: 'none'
-                      }}
-                    />
-                  </div>
+                  {availableTeams.length === 0 ? (
+                    <div style={{ padding: '8px 0', fontSize: '13px', color: 'var(--text-muted)' }}>
+                      Debes crear equipos nuevos desde la sección Equipos{' '}
+                      <Link to="/equipos" style={{ color: '#cc7a5c', fontWeight: '700', textDecoration: 'underline' }}>
+                        Pulsa Aquí
+                      </Link>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Search bar inside inline selector */}
+                      <div style={{ position: 'relative' }}>
+                        <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                        <input
+                          type="text"
+                          placeholder="Buscar equipo por nombre..."
+                          value={teamSearch}
+                          onChange={e => setTeamSearch(e.target.value)}
+                          style={{
+                            width: '100%',
+                            paddingLeft: '32px',
+                            height: '32px',
+                            fontSize: '12px',
+                            borderRadius: '6px',
+                            border: '1px solid var(--border-subtle)',
+                            background: 'var(--input-bg)',
+                            color: 'var(--text-primary)',
+                            outline: 'none'
+                          }}
+                        />
+                      </div>
 
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-                    gap: '8px',
-                    maxHeight: '180px',
-                    overflowY: 'auto',
-                    paddingRight: '4px'
-                  }}>
-                    {filteredTeams.length === 0 ? (
-                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '8px 0' }}>
-                        No se encontraron equipos
-                      </span>
-                    ) : (
-                      filteredTeams.map(team => {
-                        const isAssigned = teams.some(zt => zt.team === team.id);
-                        return (
-                          <div
-                            key={team.id}
-                            onClick={() => handleToggleTeam(team.id, savedZone.id, isAssigned, teams)}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              padding: '6px 10px',
-                              borderRadius: '8px',
-                              border: '1px solid var(--border-subtle)',
-                              background: isAssigned ? 'var(--brand-beige-subtle)' : 'transparent',
-                              cursor: 'pointer',
-                              transition: 'all 0.15s'
-                            }}
-                            className="table-row-hover"
-                          >
-                            <div style={{
-                              width: '18px',
-                              height: '18px',
-                              borderRadius: '5px',
-                              border: `2px solid ${isAssigned ? 'var(--brand-beige)' : 'rgba(212, 184, 150, 0.2)'}`,
-                              background: isAssigned ? 'var(--brand-beige)' : 'transparent',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              flexShrink: 0,
-                              transition: 'all 0.15s'
-                            }}>
-                              {isAssigned && <Check size={12} color="#1a1512" strokeWidth={3} />}
-                            </div>
-                            <span style={{
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              color: isAssigned ? 'var(--brand-beige)' : 'var(--text-primary)',
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis'
-                            }}>
-                              {team.name}
-                            </span>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                        gap: '8px',
+                        maxHeight: '180px',
+                        overflowY: 'auto',
+                        paddingRight: '4px'
+                      }}>
+                        {filteredTeams.length === 0 ? (
+                          <span style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '8px 0' }}>
+                            No se encontraron equipos
+                          </span>
+                        ) : (
+                          filteredTeams.map(team => {
+                            const isAssigned = teams.some(zt => zt.team === team.id);
+                            return (
+                              <div
+                                key={team.id}
+                                onClick={() => handleToggleTeam(team.id, savedZone.id, isAssigned, teams)}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  padding: '6px 10px',
+                                  borderRadius: '8px',
+                                  border: '1px solid var(--border-subtle)',
+                                  background: isAssigned ? 'var(--brand-beige-subtle)' : 'transparent',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s'
+                                }}
+                                className="table-row-hover"
+                              >
+                                <div style={{
+                                  width: '18px',
+                                  height: '18px',
+                                  borderRadius: '5px',
+                                  border: `2px solid ${isAssigned ? 'var(--brand-beige)' : 'rgba(212, 184, 150, 0.2)'}`,
+                                  background: isAssigned ? 'var(--brand-beige)' : 'transparent',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  flexShrink: 0,
+                                  transition: 'all 0.15s'
+                                }}>
+                                  {isAssigned && <Check size={12} color="#1a1512" strokeWidth={3} />}
+                                </div>
+                                <span style={{
+                                  fontSize: '12px',
+                                  fontWeight: '600',
+                                  color: isAssigned ? 'var(--brand-beige)' : 'var(--text-primary)',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis'
+                                }}>
+                                  {team.name}
+                                </span>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 

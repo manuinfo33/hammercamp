@@ -78,15 +78,15 @@ const TeamForm = ({ team, onClose, onSuccess, isModal = false }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.delegate) {
-      setError('Debes asignar un delegado responsable al equipo.');
-      return;
-    }
     setSubmitting(true);
     const data = new FormData();
     data.append('name', formData.name);
     data.append('category', formData.category);
-    data.append('delegate', formData.delegate);
+    if (formData.delegate) {
+      data.append('delegate', formData.delegate);
+    } else {
+      data.append('delegate', '');
+    }
     
     if (formData.logo instanceof File) {
       data.append('logo', formData.logo);
@@ -147,9 +147,25 @@ const TeamForm = ({ team, onClose, onSuccess, isModal = false }) => {
             <input type="text" required value={formData.name} onChange={(e) => { const val = e.target.value.replace(/(^\w|\s\w)/g, m => m.toUpperCase()); setFormData({ ...formData, name: val }); setError(''); }} style={{ borderColor: error ? '#e07070' : 'var(--border-subtle)' }} />
           </div>
           <div className="input-group">
-            <label>Categoría</label>
-            <select required value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} style={{ borderColor: 'var(--border-subtle)' }}>
+            <label>Categoría *</label>
+            <select
+              required
+              value={formData.category}
+              onChange={(e) => {
+                if (e.target.value === 'CREATE_NEW') {
+                  navigate('/categorias', { state: { openForm: true } });
+                  return;
+                }
+                setFormData({ ...formData, category: e.target.value });
+              }}
+              style={{ borderColor: 'var(--border-subtle)' }}
+            >
               <option value="" disabled>Selecciona...</option>
+              {categories.length === 0 && (
+                <option value="CREATE_NEW" style={{ fontWeight: '600', color: '#cc7a5c' }}>
+                  + Crea una Categoría nueva
+                </option>
+              )}
               {categories.map(cat => (
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
@@ -158,13 +174,12 @@ const TeamForm = ({ team, onClose, onSuccess, isModal = false }) => {
         </div>
 
         <div className="input-group" style={{ position: 'relative' }}>
-          <label>Delegado Responsable *</label>
+          <label>Delegado Responsable (Opcional)</label>
             <div style={{ display: 'flex', gap: '8px' }}>
               <input 
                 type="text" 
-                placeholder="Buscar delegado por nombre"
+                placeholder="Buscar delegado por nombre (Opcional)"
                 value={searchTerm}
-                required
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
                   setShowDelegates(true);

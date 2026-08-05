@@ -12,6 +12,7 @@ import LoginView from './components/LoginView';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Typewriter from './components/Typewriter';
 
+import CategoriasView from './components/categories/CategoriasView';
 import ConfiguracionView from './components/config/ConfiguracionView';
 import DelegateDashboard from './components/delegates/DelegateDashboard';
 import DelegateWelcomeDashboard from './components/delegates/DelegateWelcomeDashboard';
@@ -151,6 +152,7 @@ function App() {
                   <Route path="/delegados" element={<AdminRoute><DelegadosView /></AdminRoute>} />
                   <Route path="/jugadores" element={<AdminRoute><JugadoresView /></AdminRoute>} />
                   <Route path="/caja" element={<AdminRoute><CajaView /></AdminRoute>} />
+                  <Route path="/categorias" element={<AdminRoute><CategoriasView /></AdminRoute>} />
                   <Route path="/torneos" element={<AdminRoute><TorneosView /></AdminRoute>} />
                   <Route path="/torneos/:id" element={<AdminRoute><TournamentDetailView /></AdminRoute>} />
                   <Route path="/torneos/:id/:tab" element={<AdminRoute><TournamentDetailView /></AdminRoute>} />

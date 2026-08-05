@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../api';
-import { Plus, Search, UserCheck, Trash2, Edit, Eye, Mail, Phone, Calendar, X } from 'lucide-react';
+import { Plus, Search, UserCheck, Trash2, Edit, Eye, Mail, Phone, Calendar, X, Check } from 'lucide-react';
 import PlayerFormModal from './PlayerFormModal';
 
 const JugadoresView = () => {
@@ -11,6 +12,8 @@ const JugadoresView = () => {
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [selectedDniImage, setSelectedDniImage] = useState(null); // to show full DNI in modal overlay
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
     fetchPlayers();
@@ -37,6 +40,11 @@ const JugadoresView = () => {
     try {
       await api.delete(`players/${id}/`);
       fetchPlayers();
+      setToastMessage('Jugador eliminado con éxito');
+      setShowToast(true);
+      setTimeout(() => {
+        setShowToast(false);
+      }, 3000);
     } catch (error) {
       console.error("Error deleting player:", error);
     } finally {
@@ -81,8 +89,16 @@ const JugadoresView = () => {
           player={editingPlayer} 
           onClose={() => setShowForm(false)} 
           onSuccess={() => {
+            const isNew = !editingPlayer;
             setShowForm(false);
             fetchPlayers();
+            if (isNew) {
+              setToastMessage('Jugador creado con éxito');
+              setShowToast(true);
+              setTimeout(() => {
+                setShowToast(false);
+              }, 3000);
+            }
           }} 
         />
       )}
@@ -279,6 +295,50 @@ const JugadoresView = () => {
             <div style={{ color: '#fff', textAlign: 'center', marginTop: '12px', fontSize: '14px', fontWeight: 'bold' }}>Hacé click en cualquier lugar para cerrar</div>
           </div>
         </div>
+      )}
+
+      {/* Toast Notificación centro inferior */}
+      {showToast && createPortal(
+        <div className="toast-pill-container">
+          <div style={{
+            width: '22px',
+            height: '22px',
+            borderRadius: '50%',
+            background: '#2e7d32',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <Check size={14} color="#ffffff" strokeWidth={3} />
+          </div>
+          <span style={{
+            fontSize: '13px',
+            fontWeight: '600',
+            color: '#f5ede4',
+            whiteSpace: 'nowrap'
+          }}>
+            {toastMessage}
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowToast(false)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#a8957e',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '2px',
+              marginLeft: '4px'
+            }}
+          >
+            <X size={14} />
+          </button>
+        </div>,
+        document.body
       )}
     </div>
   );

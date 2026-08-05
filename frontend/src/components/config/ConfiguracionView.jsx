@@ -11,13 +11,15 @@ const ConfiguracionView = () => {
       <div>
         <h1 className="anthropic-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
           <Settings size={30} style={{ color: '#cc7a5c' }} />
-          Configuración
+          Configuración Web Visual
         </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>Administra las opciones globales y visuales del sistema.</p>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>
+          Administra el carrusel de imágenes y la sección de noticias del sitio web.
+        </p>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', flex: 1, minHeight: 0 }}>
-        {/* Menú Horizontal de Configuración */}
+        {/* Menú Horizontal de Configuración Web Visual */}
         <div style={{ display: 'flex', gap: '12px', paddingBottom: '4px', borderBottom: '1px solid #e6dfd3' }}>
           <button
             onClick={() => setActiveTab('carousel')}
@@ -34,13 +36,13 @@ const ConfiguracionView = () => {
               cursor: 'pointer',
               transition: 'all 0.2s ease',
               fontWeight: activeTab === 'carousel' ? '600' : '400',
-              fontSize: '13px'
+              fontSize: '13px',
             }}
           >
             <ImageIcon size={16} style={{ color: activeTab === 'carousel' ? '#cc7a5c' : 'var(--text-muted)' }} />
             Carrusel de Imágenes
           </button>
-          
+
           <button
             onClick={() => setActiveTab('news')}
             style={{
@@ -56,7 +58,7 @@ const ConfiguracionView = () => {
               cursor: 'pointer',
               transition: 'all 0.2s ease',
               fontWeight: activeTab === 'news' ? '600' : '400',
-              fontSize: '13px'
+              fontSize: '13px',
             }}
           >
             <Newspaper size={16} style={{ color: activeTab === 'news' ? '#cc7a5c' : 'var(--text-muted)' }} />
@@ -64,15 +66,17 @@ const ConfiguracionView = () => {
           </button>
         </div>
 
-        {/* Contenido de Configuración */}
-        <div style={{ 
-          background: '#ffffff', 
-          border: '1px solid #e6dfd3', 
-          borderRadius: '12px', 
-          padding: '32px', 
-          boxShadow: '0 4px 20px rgba(25, 20, 15, 0.06)',
-          overflowY: 'auto' 
-        }}>
+        {/* Contenido de Configuración Web Visual */}
+        <div
+          style={{
+            background: '#ffffff',
+            border: '1px solid #e6dfd3',
+            borderRadius: '12px',
+            padding: '32px',
+            boxShadow: '0 4px 20px rgba(25, 20, 15, 0.06)',
+            overflowY: 'auto',
+          }}
+        >
           {activeTab === 'carousel' && <CarouselConfigView />}
           {activeTab === 'news' && <NewsConfigView />}
         </div>
@@ -82,3 +86,4 @@ const ConfiguracionView = () => {
 };
 
 export default ConfiguracionView;
+
