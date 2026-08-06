@@ -1,13 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Sidebar from './Sidebar';
 
 const DashboardLayout = ({ children }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-
   return (
     <div className="dashboard-container">
-      <Sidebar isCollapsed={isCollapsed} toggleSidebar={() => setIsCollapsed(!isCollapsed)} />
-      <main className={`main-content ${isCollapsed ? 'expanded' : ''}`}>
+      <Sidebar />
+      <main className="main-content">
         {children}
       </main>
     </div>
