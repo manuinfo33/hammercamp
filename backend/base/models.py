@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 class Category(models.Model):
     FOOTBALL_TYPE_CHOICES = [
@@ -134,6 +135,18 @@ class Tournament(models.Model):
     start_date = models.DateField(blank=True, null=True, verbose_name="Fecha de Inicio")
     end_date = models.DateField(blank=True, null=True, verbose_name="Fecha Estimada de Finalización")
     max_players_buena_fe = models.PositiveIntegerField(default=25, verbose_name="Máximo de Jugadores Lista Buena Fe")
+    half_duration = models.PositiveIntegerField(default=40, validators=[MinValueValidator(1), MaxValueValidator(200)], verbose_name="Duración de cada Tiempo")
+    tiebreaker_1 = models.CharField(max_length=50, default='Puntos', verbose_name="Criterio 1")
+    tiebreaker_2 = models.CharField(max_length=50, default='Dif. de goles', verbose_name="Criterio 2")
+    tiebreaker_3 = models.CharField(max_length=50, default='Goles a favor', verbose_name="Criterio 3")
+    tiebreaker_4 = models.CharField(max_length=50, default='Fair Play', verbose_name="Criterio 4")
+    tiebreaker_5 = models.CharField(max_length=50, default='Resultado entre ellos', verbose_name="Criterio 5")
+    fp_yellow_pts = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1), MaxValueValidator(300)], verbose_name="Puntos Tarjeta Amarilla")
+    fp_red_pts = models.PositiveIntegerField(default=2, validators=[MinValueValidator(1), MaxValueValidator(300)], verbose_name="Puntos Tarjeta Roja")
+    fp_blue_card_enabled = models.BooleanField(default=False, verbose_name="Habilitar Tarjeta Azul")
+    fp_blue_pts = models.PositiveIntegerField(default=5, validators=[MinValueValidator(1), MaxValueValidator(300)], verbose_name="Puntos Tarjeta Azul")
+    fp_wo_enabled = models.BooleanField(default=False, verbose_name="Habilitar Puntos por WO")
+    fp_wo_pts = models.PositiveIntegerField(default=50, validators=[MinValueValidator(1), MaxValueValidator(100)], verbose_name="Puntos por WO")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Actualizado el")
 

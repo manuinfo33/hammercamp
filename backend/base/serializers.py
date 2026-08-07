@@ -130,6 +130,9 @@ class TournamentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tournament
         fields = ['id', 'name', 'category', 'category_name', 'zones_count', 'max_players_buena_fe',
+                  'half_duration', 'tiebreaker_1', 'tiebreaker_2', 'tiebreaker_3', 'tiebreaker_4', 'tiebreaker_5',
+                  'fp_yellow_pts', 'fp_red_pts', 'fp_blue_card_enabled', 'fp_blue_pts',
+                  'fp_wo_enabled', 'fp_wo_pts',
                   'start_date', 'end_date', 'created_at', 'updated_at', 'zones']
 
     def get_zones_count(self, obj):
@@ -142,7 +145,11 @@ class TournamentCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tournament
-        fields = ['id', 'name', 'category', 'start_date', 'end_date', 'max_players_buena_fe', 'zones_data']
+        fields = ['id', 'name', 'category', 'start_date', 'end_date', 'max_players_buena_fe',
+                  'half_duration', 'tiebreaker_1', 'tiebreaker_2', 'tiebreaker_3', 'tiebreaker_4', 'tiebreaker_5',
+                  'fp_yellow_pts', 'fp_red_pts', 'fp_blue_card_enabled', 'fp_blue_pts',
+                  'fp_wo_enabled', 'fp_wo_pts',
+                  'zones_data']
 
     def create(self, validated_data):
         zones_data = validated_data.pop('zones_data', [])
