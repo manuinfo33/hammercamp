@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
-import { X, Check, Trophy, Calendar, Users, Layers, FileText, Plus, Minus, Clock, ListOrdered, CheckCircle } from 'lucide-react';
+import { X, Check, Trophy, Calendar, Users, Layers, FileText, Plus, Minus, Clock, ListOrdered, CheckCircle, UserCheck, Settings } from 'lucide-react';
 import ZonesBuilder from './ZonesBuilder';
 
 const TournamentForm = ({ tournament, onClose, onSuccess }) => {
@@ -9,6 +9,8 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
   const [categories, setCategories] = useState([]);
   const [isInfoOpen, setIsInfoOpen] = useState(true);
   const [isZonesOpen, setIsZonesOpen] = useState(false);
+  const [isBuenaFeOpen, setIsBuenaFeOpen] = useState(false);
+  const [isExtrasOpen, setIsExtrasOpen] = useState(false);
   const [isTiebreakerOpen, setIsTiebreakerOpen] = useState(false);
   const [isFairPlayOpen, setIsFairPlayOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -16,7 +18,12 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
     category: tournament?.category || '',
     start_date: tournament?.start_date || '',
     end_date: tournament?.end_date || '',
-    max_players_buena_fe: tournament?.max_players_buena_fe || 25,
+    max_players_buena_fe: tournament?.max_players_buena_fe !== undefined && tournament?.max_players_buena_fe !== null ? String(tournament.max_players_buena_fe) : 'unlimited',
+    pts_win: tournament?.pts_win !== undefined && tournament?.pts_win !== null ? tournament.pts_win : 3,
+    pts_draw: tournament?.pts_draw !== undefined && tournament?.pts_draw !== null ? tournament.pts_draw : 1,
+    pts_loss: tournament?.pts_loss !== undefined && tournament?.pts_loss !== null ? tournament.pts_loss : 0,
+    yellow_cards_suspension: tournament?.yellow_cards_suspension !== undefined && tournament?.yellow_cards_suspension !== null ? String(tournament.yellow_cards_suspension) : 'none',
+    description: tournament?.description || '',
     half_duration: tournament?.half_duration !== undefined && tournament?.half_duration !== null ? tournament.half_duration : 40,
     tiebreaker_1: 'Puntos',
     tiebreaker_2: tournament?.tiebreaker_2 || 'Dif. de goles',
@@ -39,8 +46,10 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
   const [tournamentId, setTournamentId] = useState(tournament?.id || null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [nameError, setNameError] = useState(false);
   const [saved, setSaved] = useState(!!tournament); // true if we already have an ID
 
+  const nameInputRef = useRef(null);
   const isDraftCreated = useRef(false);
   const isSubmitted = useRef(false);
   const currentIdRef = useRef(null);
@@ -115,6 +124,14 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
     e.preventDefault();
     setError('');
 
+    if (!formData.name || !formData.name.trim()) {
+      setNameError(true);
+      setIsInfoOpen(true);
+      setError('Debés ingresar un nombre para el torneo.');
+      if (nameInputRef.current) nameInputRef.current.focus();
+      return;
+    }
+
     if (isAnyFieldInvalid()) {
       setError('Por favor, verificá que los campos numéricos contengan valores válidos.');
       return;
@@ -127,7 +144,12 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
       category: formData.category,
       start_date: formData.start_date || null,
       end_date: formData.end_date || null,
-      max_players_buena_fe: formData.max_players_buena_fe,
+      max_players_buena_fe: formData.max_players_buena_fe === 'unlimited' || formData.max_players_buena_fe === '' ? null : Number(formData.max_players_buena_fe),
+      pts_win: Number(formData.pts_win),
+      pts_draw: Number(formData.pts_draw),
+      pts_loss: Number(formData.pts_loss),
+      yellow_cards_suspension: formData.yellow_cards_suspension === 'none' || formData.yellow_cards_suspension === '' ? null : Number(formData.yellow_cards_suspension),
+      description: formData.description || '',
       half_duration: Number(formData.half_duration),
       tiebreaker_1: 'Puntos',
       tiebreaker_2: formData.tiebreaker_2,
@@ -169,7 +191,10 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
     } catch (err) {
       console.error(err);
       if (err.response?.data?.name) {
+        setNameError(true);
+        setIsInfoOpen(true);
         setError('Ya existe un torneo con ese nombre.');
+        if (nameInputRef.current) nameInputRef.current.focus();
       } else {
         setError('Error al guardar el torneo. Verificá los datos.');
       }
@@ -178,7 +203,21 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
   };
 
   const saveAndGetZones = async () => {
-    if (!formData.name || !formData.category) return null;
+    if (!formData.name || !formData.name.trim()) {
+      setNameError(true);
+      setIsInfoOpen(true);
+      setError('Debés ingresar un nombre para el torneo antes de poder seleccionar equipos.');
+      if (nameInputRef.current) {
+        nameInputRef.current.focus();
+      }
+      return null;
+    }
+
+    if (!formData.category) {
+      setError('Para agregar equipos, seleccioná primero una categoría.');
+      return null;
+    }
+
     if (isAnyFieldInvalid()) {
       setError('Por favor, verificá que los campos numéricos contengan valores válidos.');
       return null;
@@ -190,7 +229,12 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
         category: formData.category,
         start_date: formData.start_date || null,
         end_date: formData.end_date || null,
-        max_players_buena_fe: formData.max_players_buena_fe,
+        max_players_buena_fe: formData.max_players_buena_fe === 'unlimited' || formData.max_players_buena_fe === '' ? null : Number(formData.max_players_buena_fe),
+        pts_win: Number(formData.pts_win),
+        pts_draw: Number(formData.pts_draw),
+        pts_loss: Number(formData.pts_loss),
+        yellow_cards_suspension: formData.yellow_cards_suspension === 'none' || formData.yellow_cards_suspension === '' ? null : Number(formData.yellow_cards_suspension),
+        description: formData.description || '',
         half_duration: Number(formData.half_duration),
         tiebreaker_1: 'Puntos',
         tiebreaker_2: formData.tiebreaker_2,
@@ -223,7 +267,14 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
       return fullRes.data.zones;
     } catch (err) {
       console.error(err);
-      setError('Para agregar equipos, completá el nombre y la categoría primero.');
+      if (err.response?.data?.name) {
+        setNameError(true);
+        setIsInfoOpen(true);
+        setError('Ya existe un torneo con ese nombre.');
+        if (nameInputRef.current) nameInputRef.current.focus();
+      } else {
+        setError('Para agregar equipos, completá el nombre y la categoría primero.');
+      }
       return null;
     }
   };
@@ -275,13 +326,29 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
                   <div style={{ position: 'relative' }}>
                     <FileText size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
                     <input
+                      ref={nameInputRef}
                       type="text" required
                       value={formData.name}
-                      onChange={e => { setFormData({ ...formData, name: e.target.value }); setError(''); }}
+                      onChange={e => {
+                        setFormData({ ...formData, name: e.target.value });
+                        setError('');
+                        if (e.target.value.trim()) setNameError(false);
+                      }}
                       placeholder="Ej. Torneo Apertura 2025"
-                      style={{ paddingLeft: '40px', height: '42px', borderColor: error ? '#e07070' : 'var(--border-subtle)' }}
+                      style={{
+                        paddingLeft: '40px',
+                        height: '42px',
+                        borderColor: nameError ? '#e07070' : (error ? '#e07070' : 'var(--border-subtle)'),
+                        boxShadow: nameError ? '0 0 0 3px rgba(224, 112, 112, 0.25)' : 'none',
+                        background: nameError ? 'rgba(224, 112, 112, 0.04)' : 'transparent'
+                      }}
                     />
                   </div>
+                  {nameError && (
+                    <span style={{ color: '#e07070', fontSize: '12px', marginTop: '6px', display: 'block', fontWeight: '400' }}>
+                      Debés ingresar un nombre para el torneo antes de poder seleccionar equipos.
+                    </span>
+                  )}
                 </div>
                 <div className="input-group">
                   <label>Categoría *</label>
@@ -399,6 +466,166 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
                 savedZones={savedZones}
                 onSaveFirst={saveAndGetZones}
               />
+            </div>
+          )}
+        </div>
+
+        {/* Sección: Lista de Buena Fe */}
+        <div style={{ borderTop: '1px solid #e6dfd3', paddingTop: '20px' }}>
+          <div
+            onClick={() => setIsBuenaFeOpen(!isBuenaFeOpen)}
+            style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              marginBottom: isBuenaFeOpen ? '16px' : '0', cursor: 'pointer', userSelect: 'none'
+            }}
+          >
+            <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <UserCheck size={14} /> Lista de Buena Fe
+            </h3>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setIsBuenaFeOpen(!isBuenaFeOpen); }}
+              style={{
+                width: '28px', height: '28px', padding: 0, minWidth: 'unset',
+                borderRadius: '6px', border: '1px solid var(--border-subtle)',
+                background: 'transparent', color: '#cc7a5c', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}
+            >
+              {isBuenaFeOpen ? <Minus size={16} /> : <Plus size={16} />}
+            </button>
+          </div>
+
+          {isBuenaFeOpen && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="input-group">
+                <label>Jugadores en lista de buena fe</label>
+                <div style={{ position: 'relative' }}>
+                  <Users size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c', pointerEvents: 'none', zIndex: 10 }} />
+                  <select
+                    value={formData.max_players_buena_fe}
+                    onChange={e => setFormData({ ...formData, max_players_buena_fe: e.target.value })}
+                    style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)', width: '100%' }}
+                  >
+                    <option value="unlimited">Sin límite</option>
+                    {Array.from({ length: 100 }, (_, i) => i + 1).map(n => (
+                      <option key={n} value={String(n)}>{n} {n === 1 ? 'jugador' : 'jugadores'}</option>
+                    ))}
+                  </select>
+                </div>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                  Establecé la cantidad máxima de jugadores que puede inscribir cada equipo.
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Sección: Configuraciones Extras */}
+        <div style={{ borderTop: '1px solid #e6dfd3', paddingTop: '20px' }}>
+          <div
+            onClick={() => setIsExtrasOpen(!isExtrasOpen)}
+            style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              marginBottom: isExtrasOpen ? '16px' : '0', cursor: 'pointer', userSelect: 'none'
+            }}
+          >
+            <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Settings size={14} /> Configuraciones Extras
+            </h3>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setIsExtrasOpen(!isExtrasOpen); }}
+              style={{
+                width: '28px', height: '28px', padding: 0, minWidth: 'unset',
+                borderRadius: '6px', border: '1px solid var(--border-subtle)',
+                background: 'transparent', color: '#cc7a5c', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}
+            >
+              {isExtrasOpen ? <Minus size={16} /> : <Plus size={16} />}
+            </button>
+          </div>
+
+          {isExtrasOpen && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Puntos por Partido */}
+              <div className="responsive-form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
+                <div className="input-group">
+                  <label>Puntos por partido ganado</label>
+                  <select
+                    value={formData.pts_win}
+                    onChange={e => setFormData({ ...formData, pts_win: Number(e.target.value) })}
+                    style={{ height: '42px', borderColor: 'var(--border-subtle)', width: '100%' }}
+                  >
+                    {[1, 2, 3, 4, 5].map(pts => (
+                      <option key={pts} value={pts}>{pts} {pts === 1 ? 'punto' : 'puntos'}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="input-group">
+                  <label>Puntos por partido empatado</label>
+                  <select
+                    value={formData.pts_draw}
+                    onChange={e => setFormData({ ...formData, pts_draw: Number(e.target.value) })}
+                    style={{ height: '42px', borderColor: 'var(--border-subtle)', width: '100%' }}
+                  >
+                    {[0, 1, 2, 3, 4, 5].map(pts => (
+                      <option key={pts} value={pts}>{pts} {pts === 1 ? 'punto' : 'puntos'}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="input-group">
+                  <label>Puntos por partido perdido</label>
+                  <select
+                    value={formData.pts_loss}
+                    onChange={e => setFormData({ ...formData, pts_loss: Number(e.target.value) })}
+                    style={{ height: '42px', borderColor: 'var(--border-subtle)', width: '100%' }}
+                  >
+                    {[0, 1, 2, 3, 4, 5].map(pts => (
+                      <option key={pts} value={pts}>{pts} {pts === 1 ? 'punto' : 'puntos'}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Amarillas para suspensión */}
+              <div className="input-group">
+                <label>Cantidad de amarillas para suspensión</label>
+                <select
+                  value={formData.yellow_cards_suspension}
+                  onChange={e => setFormData({ ...formData, yellow_cards_suspension: e.target.value })}
+                  style={{ height: '42px', borderColor: 'var(--border-subtle)', width: '100%' }}
+                >
+                  <option value="none">Sin suspensión</option>
+                  {Array.from({ length: 10 }, (_, i) => i + 1).map(num => (
+                    <option key={num} value={String(num)}>{num} {num === 1 ? 'amarilla' : 'amarillas'}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Descripción / Modalidad del torneo */}
+              <div className="input-group">
+                <label>Descripción / Modalidad del torneo</label>
+                <textarea
+                  rows={4}
+                  value={formData.description}
+                  onChange={e => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Ingresá la descripción del torneo, detalles de premiación, formato de juego o reglas específicas..."
+                  style={{
+                    padding: '12px',
+                    fontSize: '13px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-subtle)',
+                    background: 'var(--input-bg)',
+                    color: 'var(--text-primary)',
+                    resize: 'vertical',
+                    fontFamily: 'inherit'
+                  }}
+                />
+              </div>
             </div>
           )}
         </div>

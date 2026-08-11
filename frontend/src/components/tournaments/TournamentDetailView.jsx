@@ -409,7 +409,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
   const handleGenerateFixture = async (zoneId) => {
     const zone = detailedTournament?.zones?.find(z => z.id === zoneId);
     if (!zone || !zone.zone_teams || zone.zone_teams.length < 2) {
-      alert("Se necesitan al menos 2 equipos asignados a esta zona para generar el fixture.");
+      setCustomAlert({ message: "Se necesitan al menos 2 equipos asignados a esta zona para poder generar el fixture.", type: "error" });
       return;
     }
 
@@ -435,38 +435,45 @@ export default function TournamentDetailView({ tournament, onBack }) {
           }))
         });
       }
-      alert("¡Fixture generado con éxito!");
+      setCustomAlert({ message: "¡Fixture generado con éxito!", type: "success" });
       await fetchFixturesForZone(zoneId);
     } catch (e) {
       console.error(e);
-      alert("Hubo un error al guardar el fixture en el servidor.");
+      setCustomAlert({ message: "Hubo un error al guardar el fixture en el servidor.", type: "error" });
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteFixture = async (zoneId) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar el fixture de esta zona? Se perderán todas las fechas y partidos creados.")) {
-      return;
-    }
-    try {
-      setLoading(true);
-      const rounds = fixturesByZone[zoneId] || [];
-      for (const r of rounds) {
-        await api.delete(`match-rounds/${r.id}/`);
+    setCustomConfirm({
+      message: "¿Estás seguro de que deseas eliminar el fixture de esta zona? Se perderán todas las fechas y partidos creados.",
+      onConfirm: async () => {
+        try {
+          setLoading(true);
+          const rounds = fixturesByZone[zoneId] || [];
+          for (const r of rounds) {
+            await api.delete(`match-rounds/${r.id}/`);
+          }
+          setCustomAlert({ message: "Fixture eliminado correctamente.", type: "success" });
+          await fetchFixturesForZone(zoneId);
+        } catch (e) {
+          console.error(e);
+          setCustomAlert({ message: "Hubo un error al eliminar el fixture.", type: "error" });
+        } finally {
+          setLoading(false);
+        }
       }
-      alert("Fixture eliminado correctamente.");
-      await fetchFixturesForZone(zoneId);
-    } catch (e) {
-      console.error(e);
-      alert("Hubo un error al eliminar el fixture.");
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   // Create a new empty round manually
   const handleCreateNewRound = async () => {
+    const currentZone = detailedTournament?.zones?.find(z => z.id === activeZoneId);
+    if (!currentZone || !currentZone.zone_teams || currentZone.zone_teams.length < 2) {
+      setCustomAlert({ message: "Se necesitan al menos 2 equipos cargados en esta zona para agregar fechas.", type: "error" });
+      return;
+    }
     try {
       setLoading(true);
       const nextOrder = (fixturesByZone[activeZoneId] || []).length + 1;
@@ -476,11 +483,11 @@ export default function TournamentDetailView({ tournament, onBack }) {
         order: nextOrder,
         matches: []
       });
-      alert(`Jornada 'Fecha ${nextOrder}' creada con éxito.`);
+      setCustomAlert({ message: `Jornada 'Fecha ${nextOrder}' creada con éxito.`, type: "success" });
       await fetchFixturesForZone(activeZoneId);
     } catch (e) {
       console.error(e);
-      alert("Hubo un error al crear la nueva fecha.");
+      setCustomAlert({ message: "Hubo un error al crear la nueva fecha.", type: "error" });
     } finally {
       setLoading(false);
     }
@@ -497,7 +504,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
   const handleUpdateRound = async (roundId) => {
     if (!editRoundName.trim()) {
-      alert("El nombre de la fecha no puede estar vacío.");
+      setCustomAlert({ message: "El nombre de la fecha no puede estar vacío.", type: "error" });
       return;
     }
     try {
@@ -507,11 +514,11 @@ export default function TournamentDetailView({ tournament, onBack }) {
         date: editRoundDate || null,
         time: editRoundTime || null
       });
-      alert("Fecha actualizada correctamente.");
+      setCustomAlert({ message: "Fecha actualizada correctamente.", type: "success" });
       await fetchFixturesForZone(activeZoneId);
     } catch (e) {
       console.error(e);
-      alert("Error al actualizar los datos de la fecha.");
+      setCustomAlert({ message: "Error al actualizar los datos de la fecha.", type: "error" });
     } finally {
       setLoading(false);
     }
@@ -561,12 +568,12 @@ export default function TournamentDetailView({ tournament, onBack }) {
         impact_zone: matchData.impact_zone || null,
         played: false
       });
-      alert("Partido programado con éxito.");
+      setCustomAlert({ message: "Partido programado con éxito.", type: "success" });
       await fetchFixturesForZone(activeZoneId);
       setShowNewMatchModal(false);
     } catch (e) {
       console.error(e);
-      alert("Hubo un error al guardar el partido.");
+      setCustomAlert({ message: "Hubo un error al guardar el partido.", type: "error" });
     } finally {
       setLoading(false);
     }
@@ -586,11 +593,11 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
   const handleUpdateMatch = async () => {
     if (!editMatchLocal || !editMatchVisitor) {
-      alert("Debe seleccionar ambos equipos.");
+      setCustomAlert({ message: "Debe seleccionar ambos equipos.", type: "error" });
       return;
     }
     if (editMatchLocal === editMatchVisitor) {
-      alert("El equipo local y visitante no pueden ser el mismo.");
+      setCustomAlert({ message: "El equipo local y visitante no pueden ser el mismo.", type: "error" });
       return;
     }
     try {
@@ -603,12 +610,12 @@ export default function TournamentDetailView({ tournament, onBack }) {
         cancha: editMatchCancha || null,
         impact_zone: editMatchZone === 'cruce' ? null : editMatchZone
       });
-      alert("Partido actualizado con éxito.");
+      setCustomAlert({ message: "Partido actualizado con éxito.", type: "success" });
       await fetchFixturesForZone(activeZoneId);
       setShowEditMatchModal(false);
     } catch (e) {
       console.error(e);
-      alert("Hubo un error al guardar los cambios del partido.");
+      setCustomAlert({ message: "Hubo un error al guardar los cambios del partido.", type: "error" });
     } finally {
       setLoading(false);
     }
@@ -707,12 +714,12 @@ export default function TournamentDetailView({ tournament, onBack }) {
   const handleAddPlayerToRoster = async (e) => {
     e.preventDefault();
     if (!selectedPlayerToAdd) {
-      alert("Seleccioná un jugador.");
+      setCustomAlert({ message: "Seleccioná un jugador.", type: "error" });
       return;
     }
     const limit = detailedTournament.max_players_buena_fe;
     if (buenaFePlayers.length >= limit) {
-      alert(`No se pueden agregar más jugadores. El límite de la lista de buena fe para este torneo es de ${limit} jugadores.`);
+      setCustomAlert({ message: `No se pueden agregar más jugadores. El límite de la lista de buena fe para este torneo es de ${limit} jugadores.`, type: "error" });
       return;
     }
     try {
@@ -723,18 +730,18 @@ export default function TournamentDetailView({ tournament, onBack }) {
         player: selectedPlayerToAdd,
         shirt_number: shirtNumberToAdd ? parseInt(shirtNumberToAdd) : null
       });
-      alert("Jugador incorporado con éxito a la lista de buena fe.");
+      setCustomAlert({ message: "Jugador incorporado con éxito a la lista de buena fe.", type: "success" });
       setSelectedPlayerToAdd('');
       setShirtNumberToAdd('');
       fetchBuenaFePlayers();
     } catch (err) {
       console.error(err);
       if (err.response?.data?.player) {
-        alert(Array.isArray(err.response.data.player) ? err.response.data.player[0] : err.response.data.player);
+        setCustomAlert({ message: Array.isArray(err.response.data.player) ? err.response.data.player[0] : err.response.data.player, type: "error" });
       } else if (err.response?.data?.non_field_errors) {
-        alert("El jugador ya está inscrito en la lista de buena fe de este equipo.");
+        setCustomAlert({ message: "El jugador ya está inscrito en la lista de buena fe de este equipo.", type: "error" });
       } else {
-        alert("Error al inscribir al jugador.");
+        setCustomAlert({ message: "Error al inscribir al jugador.", type: "error" });
       }
     } finally {
       setLoadingBuenaFe(false);
@@ -1202,7 +1209,59 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
                 {/* Fixture content for selected zone */}
                 {activeZoneId && (
-                  <div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    
+                    {/* Fixture Control Bar - ALWAYS VISIBLE */}
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center', 
+                      gap: '16px', 
+                      background: '#ffffff', 
+                      padding: '18px 24px', 
+                      borderRadius: '16px', 
+                      border: '1px solid #e6dfd3', 
+                      boxShadow: '0 2px 10px rgba(25, 20, 15, 0.03)'
+                    }}>
+                      <div>
+                        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#191919' }}>
+                          Fixture de {currentZone?.name}
+                        </h3>
+                        <span style={{ fontSize: '12px', color: '#7f776f', marginTop: '2px', display: 'block' }}>
+                          {activeZoneFixtures.length === 0 ? 'Sin fechas creadas' : `${activeZoneFixtures.length} ${activeZoneFixtures.length === 1 ? 'Fecha programada' : 'Fechas programadas'}`}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <button
+                          onClick={handleCreateNewRound}
+                          disabled={currentZone?.zone_teams?.length < 2}
+                          title={currentZone?.zone_teams?.length < 2 ? "Se necesitan al menos 2 equipos para agregar fechas" : "Agregar Nueva Fecha"}
+                          style={{ 
+                            height: '36px', 
+                            fontSize: '0.8rem', 
+                            padding: '0 16px', 
+                            borderRadius: '10px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            opacity: currentZone?.zone_teams?.length < 2 ? 0.5 : 1,
+                            cursor: currentZone?.zone_teams?.length < 2 ? 'not-allowed' : 'pointer'
+                          }}
+                        >
+                          <Plus size={14} /> Nueva Fecha
+                        </button>
+                        {activeZoneFixtures.length > 0 && (
+                          <button
+                            onClick={() => handleDeleteFixture(activeZoneId)}
+                            className="danger"
+                            style={{ height: '36px', fontSize: '0.8rem', padding: '0 16px', borderRadius: '10px' }}
+                          >
+                            <Trash2 size={14} /> Eliminar Fixture Completo
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
                     {activeZoneFixtures.length === 0 ? (
                       /* NO FIXTURE CREATED YET */
                       <div className="glass-card" style={{ padding: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', textAlign: 'center' }}>
@@ -1221,19 +1280,30 @@ export default function TournamentDetailView({ tournament, onBack }) {
                         <div>
                           <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800' }}>Sin Fixture Creado</h3>
                           <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '6px', maxWidth: '400px' }}>
-                            Todavía no se ha generado el fixture para la <strong>{currentZone?.name}</strong>. Selecciona el tipo de fixture y créalo a continuación.
+                            Todavía no se ha generado el fixture para la <strong>{currentZone?.name}</strong>. Podés hacer clic en <strong>"+ Nueva Fecha"</strong> para crear fechas manualmente o seleccionar el tipo de fixture a continuación.
                           </p>
                         </div>
 
                         {currentZone?.zone_teams?.length < 2 ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(220, 100, 50, 0.1)', color: '#ffd54f', border: '1px solid rgba(220, 100, 50, 0.3)', padding: '12px 20px', borderRadius: '10px', fontSize: '13px' }}>
-                            <AlertTriangle size={16} />
-                            Se necesitan al menos 2 equipos en esta zona para poder generar el fixture.
+                          <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '10px', 
+                            background: '#fef2f2', 
+                            color: '#dc2626', 
+                            border: '1px solid #fecaca', 
+                            padding: '12px 20px', 
+                            borderRadius: '10px', 
+                            fontSize: '13px',
+                            fontWeight: '600'
+                          }}>
+                            <AlertTriangle size={18} color="#dc2626" />
+                            <span>Se necesitan al menos 2 equipos en esta zona para poder generar el fixture.</span>
                           </div>
                         ) : (
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', width: '100%', maxWidth: '360px', borderTop: '1px solid var(--border-subtle)', paddingTop: '20px' }}>
                             <div className="input-group" style={{ textAlign: 'left' }}>
-                              <label>Tipo de Fixture</label>
+                              <label>Tipo de Fixture Automático</label>
                               <select 
                                 value={fixtureMode} 
                                 onChange={(e) => setFixtureMode(e.target.value)}
@@ -1247,7 +1317,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                               onClick={() => handleGenerateFixture(activeZoneId)}
                               style={{ width: '100%', height: '42px', borderRadius: '10px' }}
                             >
-                              <Plus size={16} /> Generar Fixture
+                              <Plus size={16} /> Generar Fixture Automático
                             </button>
                           </div>
                         )}
@@ -1255,36 +1325,6 @@ export default function TournamentDetailView({ tournament, onBack }) {
                     ) : (
                       /* FIXTURE EXISTS: DISPLAY STACKED CARDS */
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                        
-                        {/* Control Bar */}
-                        <div style={{ 
-                          display: 'flex', 
-                          justifyContent: 'space-between', 
-                          alignItems: 'center', 
-                          gap: '16px', 
-                          background: '#ffffff', 
-                          padding: '18px 24px', 
-                          borderRadius: '16px', 
-                          border: '1px solid #e6dfd3', 
-                          boxShadow: '0 2px 10px rgba(25, 20, 15, 0.03)',
-                          marginBottom: '12px'
-                        }}>
-                          <div>
-                            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#191919' }}>
-                              Fixture de {currentZone?.name}
-                            </h3>
-                            <span style={{ fontSize: '12px', color: '#7f776f', marginTop: '2px', display: 'block' }}>
-                              {activeZoneFixtures.length} Fechas programadas
-                            </span>
-                          </div>
-                          <button
-                            onClick={() => handleDeleteFixture(activeZoneId)}
-                            className="danger"
-                            style={{ height: '36px', fontSize: '0.8rem', padding: '0 16px', borderRadius: '10px' }}
-                          >
-                            <Trash2 size={14} /> Eliminar Fixture Completo
-                          </button>
-                        </div>
 
                         {/* Stacked Fechas Cards */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -1800,17 +1840,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
         )}
       </div>
 
-      {/* FLOATING ACTION BUTTON (Fixed on screen during scroll) */}
-      {activeTab === 'fixture' && activeZoneId && (
-        <button
-          onClick={handleCreateNewRound}
-          className="floating-plus-btn"
-          title="Agregar Nueva Fecha"
-        >
-          <Plus size={20} strokeWidth={2.5} />
-          <span>Nueva Fecha</span>
-        </button>
-      )}
+
 
       {/* EDIT ROUND MODAL */}
       {showEditRoundModal && (
@@ -2172,60 +2202,52 @@ export default function TournamentDetailView({ tournament, onBack }) {
           </div>
         </div>
       )}
-      {/* Custom alert notification banner */}
-      {customAlert && (
-        <div 
-          className="custom-alert-container"
-          style={{
-            position: 'fixed',
-            top: alertExiting ? '-80px' : '24px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 9999,
-            background: 'rgba(26, 21, 18, 0.95)',
-            border: customAlert.type === 'error' ? '1px solid #e57373' : '1px solid var(--brand-beige)',
-            borderRadius: '12px',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.7)',
-            padding: '16px 24px',
+      {/* Custom alert notification toast pill (matching Equipos & Jugadores sections) */}
+      {customAlert && createPortal(
+        <div className="toast-pill-container">
+          <div style={{
+            width: '22px',
+            height: '22px',
+            borderRadius: '50%',
+            background: customAlert.type === 'error' ? '#c62828' : '#2e7d32',
             display: 'flex',
             alignItems: 'center',
-            gap: '16px',
-            minWidth: '320px',
-            maxWidth: '480px',
-            backdropFilter: 'blur(8px)',
-            opacity: alertExiting ? 0 : 1,
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-          }}
-        >
-          {customAlert.type === 'error' ? (
-            <AlertTriangle size={20} color="#e57373" style={{ flexShrink: 0 }} />
-          ) : (
-            <Check size={20} color="var(--brand-beige)" style={{ flexShrink: 0 }} />
-          )}
-          <span style={{ fontSize: '0.88rem', color: 'var(--text-primary)', fontWeight: '600', flexGrow: 1 }}>
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            {customAlert.type === 'error' ? (
+              <AlertTriangle size={14} color="#ffffff" strokeWidth={2.5} />
+            ) : (
+              <Check size={14} color="#ffffff" strokeWidth={3} />
+            )}
+          </div>
+          <span style={{
+            fontSize: '13px',
+            fontWeight: '600',
+            color: '#f5ede4',
+            whiteSpace: 'nowrap'
+          }}>
             {customAlert.message}
           </span>
           <button
+            type="button"
             onClick={triggerCloseAlert}
             style={{
-              background: customAlert.type === 'error' ? '#e57373' : 'var(--brand-beige)',
-              color: '#1a1512',
+              background: 'none',
               border: 'none',
-              borderRadius: '8px',
-              padding: '6px 14px',
-              fontSize: '0.8rem',
-              fontWeight: '700',
               cursor: 'pointer',
-              transition: 'opacity 0.2s',
-              outline: 'none',
-              flexShrink: 0
+              color: '#a8957e',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '2px',
+              marginLeft: '4px'
             }}
-            onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
-            onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
           >
-            OK
+            <X size={14} />
           </button>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Custom confirmation banner with blocking backdrop overlay */}
