@@ -105,6 +105,14 @@ export default function TournamentDetailView({ tournament, onBack }) {
   const [fixturesByZone, setFixturesByZone] = useState({});
   const [fixtureMode, setFixtureMode] = useState('ida'); // 'ida' or 'ida_vuelta'
 
+  // Inline zone editing state
+  const [editingZoneId, setEditingZoneId] = useState(null);
+  const [editingZoneName, setEditingZoneName] = useState('');
+
+  // New team modal state
+  const [showNewTeamModal, setShowNewTeamModal] = useState(false);
+  const [newTeamZoneId, setNewTeamZoneId] = useState(null);
+
   // Dropdown menu state
   const [openDropdownRoundId, setOpenDropdownRoundId] = useState(null);
   const [openDropdownZoneId, setOpenDropdownZoneId] = useState(null);
@@ -285,12 +293,20 @@ export default function TournamentDetailView({ tournament, onBack }) {
     });
   };
 
-  const handleEditZoneClick = async (zone) => {
-    const newName = window.prompt("Modificar nombre de la zona:", zone.name);
-    if (!newName || newName.trim() === "" || newName === zone.name) return;
+  const handleEditZoneClick = (zone) => {
+    setEditingZoneId(zone.id);
+    setEditingZoneName(zone.name);
+  };
+
+  const saveInlineZoneName = async (zoneId) => {
+    if (!editingZoneName || !editingZoneName.trim()) {
+      setEditingZoneId(null);
+      return;
+    }
     try {
       setLoading(true);
-      await api.patch(`zones/${zone.id}/`, { name: newName.trim() });
+      await api.patch(`zones/${zoneId}/`, { name: editingZoneName.trim() });
+      setEditingZoneId(null);
       setCustomAlert({ message: "Nombre de zona actualizado con éxito.", type: "success" });
       await fetchTournamentDetail();
     } catch (e) {
@@ -301,24 +317,9 @@ export default function TournamentDetailView({ tournament, onBack }) {
     }
   };
 
-  const handleNewTeamClick = async (zoneId) => {
-    const teamName = window.prompt("Nombre del nuevo equipo:");
-    if (!teamName || teamName.trim() === "") return;
-    try {
-      setLoading(true);
-      // 1. Create team
-      const resTeam = await api.post('teams/', { name: teamName.trim() });
-      const newTeamId = resTeam.data.id;
-      // 2. Add to zone
-      await api.post('zone-teams/', [{ zone: zoneId, team: newTeamId }]);
-      setCustomAlert({ message: "Equipo creado y agregado a la zona con éxito.", type: "success" });
-      await fetchTournamentDetail();
-    } catch (e) {
-      console.error(e);
-      setCustomAlert({ message: "Error al crear el equipo.", type: "error" });
-    } finally {
-      setLoading(false);
-    }
+  const handleNewTeamClick = (zoneId) => {
+    setNewTeamZoneId(zoneId);
+    setShowNewTeamModal(true);
   };
 
   const openImportTeamModal = async (zoneId) => {
@@ -971,9 +972,72 @@ export default function TournamentDetailView({ tournament, onBack }) {
                     return (
                       <div key={zone.id} className="glass-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '12px', position: 'relative' }}>
-                          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)' }}>
-                            {zone.name}
-                          </h3>
+                          {editingZoneId === zone.id ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', zIndex: 10 }}>
+                              <input
+                                type="text"
+                                value={editingZoneName}
+                                onChange={(e) => setEditingZoneName(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') saveInlineZoneName(zone.id);
+                                  if (e.key === 'Escape') setEditingZoneId(null);
+                                }}
+                                autoFocus
+                                style={{
+                                  height: '36px',
+                                  padding: '0 12px',
+                                  fontSize: '15px',
+                                  fontWeight: '700',
+                                  borderRadius: '8px',
+                                  border: '1px solid #cc7a5c',
+                                  background: 'var(--input-bg, #ffffff)',
+                                  color: 'var(--text-primary)'
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => saveInlineZoneName(zone.id)}
+                                style={{
+                                  padding: '6px 12px',
+                                  height: '36px',
+                                  background: '#cc7a5c',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  borderRadius: '8px',
+                                  cursor: 'pointer',
+                                  fontSize: '13px',
+                                  fontWeight: '600',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                              >
+                                <Check size={14} /> Guardar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingZoneId(null)}
+                                style={{
+                                  padding: '6px 10px',
+                                  height: '36px',
+                                  background: 'transparent',
+                                  color: 'var(--text-muted)',
+                                  border: '1px solid var(--border-subtle)',
+                                  borderRadius: '8px',
+                                  cursor: 'pointer',
+                                  fontSize: '13px',
+                                  display: 'flex',
+                                  alignItems: 'center'
+                                }}
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ) : (
+                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)' }}>
+                              {zone.name}
+                            </h3>
+                          )}
                           <button
                             type="button"
                             onClick={(e) => {
@@ -2556,6 +2620,86 @@ export default function TournamentDetailView({ tournament, onBack }) {
           </div>
         </div>,
         document.body
+      )}
+
+      {/* Modal para Nuevo Equipo sin salir de Torneos */}
+      {showNewTeamModal && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.65)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 10000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
+          }}
+          onClick={() => setShowNewTeamModal(false)}
+        >
+          <div 
+            style={{
+              background: 'var(--bg-card, #ffffff)',
+              borderRadius: '20px',
+              width: '100%',
+              maxWidth: '680px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+              border: '1px solid var(--border-subtle)',
+              position: 'relative'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{
+              display: 'flex',
+              justify: 'space-between',
+              alignItems: 'center',
+              padding: '20px 24px',
+              borderBottom: '1px solid var(--border-subtle)',
+              position: 'sticky',
+              top: 0,
+              background: 'inherit',
+              zIndex: 10
+            }}>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                Nuevo Equipo
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowNewTeamModal(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div style={{ padding: '24px' }}>
+              <TeamForm
+                isModal={true}
+                defaultCategoryId={detailedTournament?.category}
+                onClose={() => setShowNewTeamModal(false)}
+                onSuccess={async (createdTeam) => {
+                  try {
+                    setLoading(true);
+                    await api.post('zone-teams/', [{ zone: newTeamZoneId, team: createdTeam.id }]);
+                    setShowNewTeamModal(false);
+                    setCustomAlert({ message: 'Equipo creado y agregado a la zona con éxito.', type: 'success' });
+                    await fetchTournamentDetail();
+                  } catch (err) {
+                    console.error(err);
+                    setCustomAlert({ message: 'Equipo creado pero hubo un error al agregarlo a la zona.', type: 'error' });
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

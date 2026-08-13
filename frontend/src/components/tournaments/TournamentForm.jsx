@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
-import { X, Check, Trophy, Calendar, Users, Layers, FileText, Plus, Minus, Clock, ListOrdered, CheckCircle, UserCheck, Settings } from 'lucide-react';
+import { X, Check, Trophy, Calendar, Users, Layers, FileText, Plus, Minus, Clock, ListOrdered, CheckCircle, UserCheck, Settings, ChevronDown } from 'lucide-react';
 import ZonesBuilder from './ZonesBuilder';
 
 const TournamentForm = ({ tournament, onClose, onSuccess }) => {
@@ -18,13 +18,13 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
     category: tournament?.category || '',
     start_date: tournament?.start_date || '',
     end_date: tournament?.end_date || '',
-    max_players_buena_fe: tournament?.max_players_buena_fe !== undefined && tournament?.max_players_buena_fe !== null ? String(tournament.max_players_buena_fe) : 'unlimited',
+    max_players_buena_fe: tournament?.max_players_buena_fe !== undefined && tournament?.max_players_buena_fe !== null ? String(tournament.max_players_buena_fe) : '25',
     pts_win: tournament?.pts_win !== undefined && tournament?.pts_win !== null ? tournament.pts_win : 3,
     pts_draw: tournament?.pts_draw !== undefined && tournament?.pts_draw !== null ? tournament.pts_draw : 1,
     pts_loss: tournament?.pts_loss !== undefined && tournament?.pts_loss !== null ? tournament.pts_loss : 0,
     yellow_cards_suspension: tournament?.yellow_cards_suspension !== undefined && tournament?.yellow_cards_suspension !== null ? String(tournament.yellow_cards_suspension) : 'none',
     description: tournament?.description || '',
-    half_duration: tournament?.half_duration !== undefined && tournament?.half_duration !== null ? tournament.half_duration : 40,
+    half_duration: tournament?.half_duration !== undefined && tournament?.half_duration !== null ? tournament.half_duration : 35,
     tiebreaker_1: 'Puntos',
     tiebreaker_2: tournament?.tiebreaker_2 || 'Dif. de goles',
     tiebreaker_3: tournament?.tiebreaker_3 || 'Goles a favor',
@@ -50,9 +50,21 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
   const [saved, setSaved] = useState(!!tournament); // true if we already have an ID
 
   const nameInputRef = useRef(null);
+  const buenaFeRef = useRef(null);
+  const [isBuenaFeDropdownOpen, setIsBuenaFeDropdownOpen] = useState(false);
   const isDraftCreated = useRef(false);
   const isSubmitted = useRef(false);
   const currentIdRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (buenaFeRef.current && !buenaFeRef.current.contains(e.target)) {
+        setIsBuenaFeDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Sync tournamentId ref so it's always accessible in cleanup
   useEffect(() => {
@@ -90,6 +102,12 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
     return isNaN(val) || val < 1 || val > 200;
   };
 
+  const isMaxPlayersInvalid = () => {
+    if (formData.max_players_buena_fe === '' || formData.max_players_buena_fe === null || formData.max_players_buena_fe === undefined) return false;
+    const val = Number(formData.max_players_buena_fe);
+    return isNaN(val) || val < 0 || val > 200;
+  };
+
   const isFpYellowInvalid = () => {
     if (formData.fp_yellow_pts === '' || formData.fp_yellow_pts === null || formData.fp_yellow_pts === undefined) return true;
     const val = Number(formData.fp_yellow_pts);
@@ -117,7 +135,7 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
   };
 
   const isAnyFieldInvalid = () => {
-    return isHalfDurationInvalid() || isFpYellowInvalid() || isFpRedInvalid() || isFpBlueInvalid() || isFpWoInvalid();
+    return isHalfDurationInvalid() || isMaxPlayersInvalid() || isFpYellowInvalid() || isFpRedInvalid() || isFpBlueInvalid() || isFpWoInvalid();
   };
 
   const handleSubmit = async (e) => {
@@ -499,23 +517,267 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
           {isBuenaFeOpen && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div className="input-group">
-                <label>Jugadores en lista de buena fe</label>
+                <label>Cantidad máxima de jugadores en lista de buena fe</label>
                 <div style={{ position: 'relative' }}>
-                  <Users size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c', pointerEvents: 'none', zIndex: 10 }} />
-                  <select
+                  <Users size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c', pointerEvents: 'none' }} />
+                  <input
+                    type="number"
+                    min={0}
+                    max={200}
                     value={formData.max_players_buena_fe}
-                    onChange={e => setFormData({ ...formData, max_players_buena_fe: e.target.value })}
-                    style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)', width: '100%' }}
-                  >
-                    <option value="unlimited">Sin límite</option>
-                    {Array.from({ length: 100 }, (_, i) => i + 1).map(n => (
-                      <option key={n} value={String(n)}>{n} {n === 1 ? 'jugador' : 'jugadores'}</option>
-                    ))}
-                  </select>
+                    onChange={e => {
+                      setFormData({ ...formData, max_players_buena_fe: e.target.value });
+                      setError('');
+                    }}
+                    style={{
+                      paddingLeft: '40px',
+                      height: '42px',
+                      borderColor: isMaxPlayersInvalid() ? '#e07070' : 'var(--border-subtle)'
+                    }}
+                  />
                 </div>
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
-                  Establecé la cantidad máxima de jugadores que puede inscribir cada equipo.
-                </span>
+                {isMaxPlayersInvalid() && (
+                  <span style={{ color: '#e07070', fontSize: '12px', marginTop: '4px', display: 'block', fontWeight: '500' }}>
+                    Debe ingresar un número entre 0 y 200.
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Sección 4: Puntaje fair play */}
+        <div style={{ borderTop: '1px solid #e6dfd3', paddingTop: '20px' }}>
+          <div
+            onClick={() => setIsFairPlayOpen(!isFairPlayOpen)}
+            style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              marginBottom: isFairPlayOpen ? '16px' : '0', cursor: 'pointer', userSelect: 'none'
+            }}
+          >
+            <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <CheckCircle size={14} /> Puntaje fair play
+            </h3>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setIsFairPlayOpen(!isFairPlayOpen); }}
+              style={{
+                width: '28px', height: '28px', padding: 0, minWidth: 'unset',
+                borderRadius: '6px', border: '1px solid var(--border-subtle)',
+                background: 'transparent', color: '#cc7a5c', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}
+            >
+              {isFairPlayOpen ? <Minus size={16} /> : <Plus size={16} />}
+            </button>
+          </div>
+          
+          {isFairPlayOpen && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0, lineHeight: '1.4' }}>
+                El puntaje de cada tarjeta se utiliza para definir las posiciones de los equipos en la tabla de Fair Play.
+              </p>
+
+              {/* Tarjetas: Amarilla y Roja */}
+              <div className="responsive-form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '14px' }}>
+                {/* AMARILLA */}
+                <div className="input-group">
+                  <label style={{ fontSize: '11px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    AMARILLA
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', color: '#888' }}>
+                      pts:
+                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={300}
+                      value={formData.fp_yellow_pts}
+                      onChange={e => {
+                        setFormData({ ...formData, fp_yellow_pts: e.target.value });
+                        setError('');
+                      }}
+                      style={{
+                        paddingLeft: '45px',
+                        height: '40px',
+                        borderColor: isFpYellowInvalid() ? '#e07070' : 'var(--border-subtle)',
+                        borderRadius: '8px',
+                        fontSize: '13px'
+                      }}
+                    />
+                  </div>
+                  {isFpYellowInvalid() && (
+                    <span style={{ color: '#e07070', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                      Debe ingresar un número entre 1 y 300.
+                    </span>
+                  )}
+                </div>
+
+                {/* ROJA */}
+                <div className="input-group">
+                  <label style={{ fontSize: '11px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    ROJA
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', color: '#888' }}>
+                      pts:
+                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={300}
+                      value={formData.fp_red_pts}
+                      onChange={e => {
+                        setFormData({ ...formData, fp_red_pts: e.target.value });
+                        setError('');
+                      }}
+                      style={{
+                        paddingLeft: '45px',
+                        height: '40px',
+                        borderColor: isFpRedInvalid() ? '#e07070' : 'var(--border-subtle)',
+                        borderRadius: '8px',
+                        fontSize: '13px'
+                      }}
+                    />
+                  </div>
+                  {isFpRedInvalid() && (
+                    <span style={{ color: '#e07070', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                      Debe ingresar un número entre 1 y 300.
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Habilitar tarjeta azul */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '4px' }}>
+                <div>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none' }}>
+                    <div style={{
+                      position: 'relative', width: '36px', height: '20px',
+                      backgroundColor: formData.fp_blue_card_enabled ? '#0284c7' : '#d1d5db',
+                      borderRadius: '10px', transition: 'background-color 0.2s', flexShrink: 0
+                    }}>
+                      <div style={{
+                        position: 'absolute', top: '2px',
+                        left: formData.fp_blue_card_enabled ? '18px' : '2px',
+                        width: '16px', height: '16px', backgroundColor: '#ffffff',
+                        borderRadius: '50%', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                      }} />
+                      <input
+                        type="checkbox"
+                        checked={formData.fp_blue_card_enabled}
+                        onChange={e => setFormData({ ...formData, fp_blue_card_enabled: e.target.checked })}
+                        style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
+                      />
+                    </div>
+                    <span style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-main)' }}>
+                      Habilitar Tarjeta Azul
+                    </span>
+                  </label>
+                </div>
+
+                {formData.fp_blue_card_enabled && (
+                  <div className="input-group" style={{ maxWidth: '180px', marginTop: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      PUNTOS TARJETA AZUL
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', color: '#888' }}>
+                        pts:
+                      </span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={300}
+                        value={formData.fp_blue_pts}
+                        onChange={e => {
+                          setFormData({ ...formData, fp_blue_pts: e.target.value });
+                          setError('');
+                        }}
+                        style={{
+                          paddingLeft: '45px',
+                          height: '38px',
+                          borderColor: isFpBlueInvalid() ? '#e07070' : 'var(--border-subtle)',
+                          borderRadius: '8px',
+                          fontSize: '13px'
+                        }}
+                      />
+                    </div>
+                    {isFpBlueInvalid() && (
+                      <span style={{ color: '#e07070', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                        Debe ingresar un número entre 1 y 300.
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Habilitar Walkover (WO) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '4px' }}>
+                <div>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none' }}>
+                    <div style={{
+                      position: 'relative', width: '36px', height: '20px',
+                      backgroundColor: formData.fp_wo_enabled ? '#0284c7' : '#d1d5db',
+                      borderRadius: '10px', transition: 'background-color 0.2s', flexShrink: 0
+                    }}>
+                      <div style={{
+                        position: 'absolute', top: '2px',
+                        left: formData.fp_wo_enabled ? '18px' : '2px',
+                        width: '16px', height: '16px', backgroundColor: '#ffffff',
+                        borderRadius: '50%', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                      }} />
+                      <input
+                        type="checkbox"
+                        checked={formData.fp_wo_enabled}
+                        onChange={e => setFormData({ ...formData, fp_wo_enabled: e.target.checked })}
+                        style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
+                      />
+                    </div>
+                    <span style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-main)' }}>
+                      Habilitar puntos por Walkover (WO)
+                    </span>
+                  </label>
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0 0', lineHeight: '1.3' }}>
+                    Sumar puntos en la tabla del Fair Play cuando el equipo no se presenta
+                  </p>
+                </div>
+
+                {formData.fp_wo_enabled && (
+                  <div className="input-group" style={{ maxWidth: '180px', marginTop: '6px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      PUNTOS POR WO
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', color: '#888' }}>
+                        pts:
+                      </span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={formData.fp_wo_pts}
+                        onChange={e => {
+                          setFormData({ ...formData, fp_wo_pts: e.target.value });
+                          setError('');
+                        }}
+                        style={{
+                          paddingLeft: '45px',
+                          height: '38px',
+                          borderColor: isFpWoInvalid() ? '#e07070' : 'var(--border-subtle)',
+                          borderRadius: '8px',
+                          fontSize: '13px'
+                        }}
+                      />
+                    </div>
+                    {isFpWoInvalid() && (
+                      <span style={{ color: '#e07070', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                        Debe ingresar un número entre 1 y 100.
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -716,246 +978,6 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
                     </select>
                   </div>
                 ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Sección 4: Puntaje fair play */}
-        <div style={{ borderTop: '1px solid #e6dfd3', paddingTop: '20px' }}>
-          <div
-            onClick={() => setIsFairPlayOpen(!isFairPlayOpen)}
-            style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              marginBottom: isFairPlayOpen ? '16px' : '0', cursor: 'pointer', userSelect: 'none'
-            }}
-          >
-            <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <CheckCircle size={14} /> Puntaje fair play
-            </h3>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setIsFairPlayOpen(!isFairPlayOpen); }}
-              style={{
-                width: '28px', height: '28px', padding: 0, minWidth: 'unset',
-                borderRadius: '6px', border: '1px solid var(--border-subtle)',
-                background: 'transparent', color: '#cc7a5c', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}
-            >
-              {isFairPlayOpen ? <Minus size={16} /> : <Plus size={16} />}
-            </button>
-          </div>
-          
-          {isFairPlayOpen && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-              <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0, lineHeight: '1.4' }}>
-                El puntaje de cada tarjeta se utiliza para definir las posiciones de los equipos en la tabla de Fair Play.
-              </p>
-
-              {/* Tarjetas: Amarilla y Roja */}
-              <div className="responsive-form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '14px' }}>
-                {/* AMARILLA */}
-                <div className="input-group">
-                  <label style={{ fontSize: '11px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    AMARILLA
-                  </label>
-                  <div style={{ position: 'relative' }}>
-                    <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', color: '#888' }}>
-                      pts:
-                    </span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={300}
-                      value={formData.fp_yellow_pts}
-                      onChange={e => {
-                        setFormData({ ...formData, fp_yellow_pts: e.target.value });
-                        setError('');
-                      }}
-                      style={{
-                        paddingLeft: '45px',
-                        height: '40px',
-                        borderColor: isFpYellowInvalid() ? '#e07070' : 'var(--border-subtle)',
-                        borderRadius: '8px',
-                        fontSize: '13px'
-                      }}
-                    />
-                  </div>
-                  {isFpYellowInvalid() && (
-                    <span style={{ color: '#e07070', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                      Debe ingresar un número entre 1 y 300.
-                    </span>
-                  )}
-                </div>
-
-                {/* ROJA */}
-                <div className="input-group">
-                  <label style={{ fontSize: '11px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    ROJA
-                  </label>
-                  <div style={{ position: 'relative' }}>
-                    <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', color: '#888' }}>
-                      pts:
-                    </span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={300}
-                      value={formData.fp_red_pts}
-                      onChange={e => {
-                        setFormData({ ...formData, fp_red_pts: e.target.value });
-                        setError('');
-                      }}
-                      style={{
-                        paddingLeft: '45px',
-                        height: '40px',
-                        borderColor: isFpRedInvalid() ? '#e07070' : 'var(--border-subtle)',
-                        borderRadius: '8px',
-                        fontSize: '13px'
-                      }}
-                    />
-                  </div>
-                  {isFpRedInvalid() && (
-                    <span style={{ color: '#e07070', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                      Debe ingresar un número entre 1 y 300.
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Habilitar tarjeta azul */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '4px' }}>
-                <div>
-                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none' }}>
-                    <div style={{
-                      position: 'relative', width: '36px', height: '20px',
-                      backgroundColor: formData.fp_blue_card_enabled ? '#0284c7' : '#d1d5db',
-                      borderRadius: '10px', transition: 'background-color 0.2s', flexShrink: 0
-                    }}>
-                      <div style={{
-                        position: 'absolute', top: '2px',
-                        left: formData.fp_blue_card_enabled ? '18px' : '2px',
-                        width: '16px', height: '16px', backgroundColor: '#ffffff',
-                        borderRadius: '50%', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-                      }} />
-                      <input
-                        type="checkbox"
-                        checked={formData.fp_blue_card_enabled}
-                        onChange={e => setFormData({ ...formData, fp_blue_card_enabled: e.target.checked })}
-                        style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
-                      />
-                    </div>
-                    <span style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-main)' }}>
-                      Habilitar tarjeta azul
-                    </span>
-                  </label>
-                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0 0', lineHeight: '1.3' }}>
-                    Nuevo parámetro que sirve para sumar puntos en la tabla de Fair Play en base a alguna opcion a elección como (Indumentaria, Llegada tarde, Conducta, etc) elegida por la organización.
-                  </p>
-                </div>
-
-                {formData.fp_blue_card_enabled && (
-                  <div className="input-group" style={{ maxWidth: '180px', marginTop: '6px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      AZUL
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                      <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', color: '#888' }}>
-                        pts:
-                      </span>
-                      <input
-                        type="number"
-                        min={1}
-                        max={300}
-                        value={formData.fp_blue_pts}
-                        onChange={e => {
-                          setFormData({ ...formData, fp_blue_pts: e.target.value });
-                          setError('');
-                        }}
-                        style={{
-                          paddingLeft: '45px',
-                          height: '38px',
-                          borderColor: isFpBlueInvalid() ? '#e07070' : 'var(--border-subtle)',
-                          borderRadius: '8px',
-                          fontSize: '13px'
-                        }}
-                      />
-                    </div>
-                    {isFpBlueInvalid() && (
-                      <span style={{ color: '#e07070', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                        Debe ingresar un número entre 1 y 300.
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Habilitar puntos por Walkover (WO) */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '10px', borderTop: '1px dashed #e6dfd3' }}>
-                <div>
-                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none' }}>
-                    <div style={{
-                      position: 'relative', width: '36px', height: '20px',
-                      backgroundColor: formData.fp_wo_enabled ? '#0284c7' : '#d1d5db',
-                      borderRadius: '10px', transition: 'background-color 0.2s', flexShrink: 0
-                    }}>
-                      <div style={{
-                        position: 'absolute', top: '2px',
-                        left: formData.fp_wo_enabled ? '18px' : '2px',
-                        width: '16px', height: '16px', backgroundColor: '#ffffff',
-                        borderRadius: '50%', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-                      }} />
-                      <input
-                        type="checkbox"
-                        checked={formData.fp_wo_enabled}
-                        onChange={e => setFormData({ ...formData, fp_wo_enabled: e.target.checked })}
-                        style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
-                      />
-                    </div>
-                    <span style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-main)' }}>
-                      Habilitar puntos por Walkover (WO)
-                    </span>
-                  </label>
-                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0 0', lineHeight: '1.3' }}>
-                    Sumar puntos en la tabla del Fair Play cuando el equipo no se presenta
-                  </p>
-                </div>
-
-                {formData.fp_wo_enabled && (
-                  <div className="input-group" style={{ maxWidth: '180px', marginTop: '6px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      PUNTOS POR WO
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                      <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', color: '#888' }}>
-                        pts:
-                      </span>
-                      <input
-                        type="number"
-                        min={1}
-                        max={100}
-                        value={formData.fp_wo_pts}
-                        onChange={e => {
-                          setFormData({ ...formData, fp_wo_pts: e.target.value });
-                          setError('');
-                        }}
-                        style={{
-                          paddingLeft: '45px',
-                          height: '38px',
-                          borderColor: isFpWoInvalid() ? '#e07070' : 'var(--border-subtle)',
-                          borderRadius: '8px',
-                          fontSize: '13px'
-                        }}
-                      />
-                    </div>
-                    {isFpWoInvalid() && (
-                      <span style={{ color: '#e07070', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                        Debe ingresar un número entre 1 y 100.
-                      </span>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           )}
