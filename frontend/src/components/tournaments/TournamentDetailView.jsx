@@ -305,13 +305,21 @@ export default function TournamentDetailView({ tournament, onBack }) {
     }
     try {
       setLoading(true);
-      await api.patch(`zones/${zoneId}/`, { name: editingZoneName.trim() });
+      await api.patch(`tournament-zones/${zoneId}/`, { name: editingZoneName.trim() });
       setEditingZoneId(null);
       setCustomAlert({ message: "Nombre de zona actualizado con éxito.", type: "success" });
       await fetchTournamentDetail();
     } catch (e) {
       console.error(e);
-      setCustomAlert({ message: "Error al actualizar la zona.", type: "error" });
+      let errorMsg = "Error al actualizar la zona.";
+      if (e.response?.data?.non_field_errors) {
+        errorMsg = e.response.data.non_field_errors[0];
+      } else if (e.response?.data?.name) {
+        errorMsg = e.response.data.name[0];
+      } else if (typeof e.response?.data?.detail === 'string') {
+        errorMsg = e.response.data.detail;
+      }
+      setCustomAlert({ message: errorMsg, type: "error" });
     } finally {
       setLoading(false);
     }
@@ -1907,7 +1915,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
 
       {/* EDIT ROUND MODAL */}
-      {showEditRoundModal && (
+      {showEditRoundModal && createPortal(
         <div className="premium-modal-overlay" onClick={() => setShowEditRoundModal(false)}>
           <div className="premium-modal-card" style={{ maxWidth: '460px', padding: '28px' }} onClick={e => e.stopPropagation()}>
 
@@ -1982,11 +1990,12 @@ export default function TournamentDetailView({ tournament, onBack }) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* NEW MATCH MODAL */}
-      {showNewMatchModal && (
+      {showNewMatchModal && createPortal(
         <div className="premium-modal-overlay" onClick={() => setShowNewMatchModal(false)}>
           <div className="premium-modal-card" style={{ maxWidth: '520px', padding: '28px' }} onClick={e => e.stopPropagation()}>
 
@@ -2114,11 +2123,12 @@ export default function TournamentDetailView({ tournament, onBack }) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* EDIT MATCH MODAL */}
-      {showEditMatchModal && (
+      {showEditMatchModal && createPortal(
         <div className="premium-modal-overlay" onClick={() => setShowEditMatchModal(false)}>
           <div className="premium-modal-card" style={{ maxWidth: '520px', padding: '28px' }} onClick={e => e.stopPropagation()}>
 
@@ -2231,7 +2241,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
 
@@ -2314,94 +2325,116 @@ export default function TournamentDetailView({ tournament, onBack }) {
         document.body
       )}
 
-      {/* Custom confirmation banner with blocking backdrop overlay */}
-      {customConfirm && (
-        <>
+      {/* Custom confirmation banner with blocking backdrop overlay (Portal to document.body) */}
+      {customConfirm && createPortal(
+        <div 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.38)',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
+          }}
+          className="animate-fade-in"
+          onClick={() => triggerCloseConfirm(false)}
+        >
           <div 
             style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0, 0, 0, 0.65)',
-              backdropFilter: 'blur(3px)',
-              zIndex: 9998,
-              animation: 'fade-in 0.2s ease-out'
-            }}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-          />
-          <div 
-            className="custom-confirm-container"
-            style={{
-              position: 'fixed',
-              top: confirmExiting ? '-120px' : '24px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 9999,
-              background: 'rgba(26, 21, 18, 0.98)',
-              border: '1px solid var(--brand-beige)',
+              background: '#ffffff',
+              border: '1px solid #e6dfd3',
               borderRadius: '16px',
-              boxShadow: '0 15px 40px rgba(0, 0, 0, 0.8)',
-              padding: '20px 24px',
+              maxWidth: '460px',
+              width: '100%',
+              padding: '24px',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.18)',
               display: 'flex',
               flexDirection: 'column',
               gap: '16px',
-              minWidth: '340px',
-              maxWidth: '500px',
-              backdropFilter: 'blur(10px)',
-              opacity: confirmExiting ? 0 : 1,
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              position: 'relative'
             }}
+            onClick={e => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <AlertTriangle size={22} color="var(--brand-beige)" style={{ flexShrink: 0 }} />
-              <span style={{ fontSize: '0.92rem', color: 'var(--text-primary)', fontWeight: '700', lineHeight: '1.4' }}>
-                {customConfirm.message}
-              </span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  background: '#fff3cd',
+                  border: '1px solid #ffeeba',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <AlertTriangle size={18} color="#856404" />
+                </div>
+                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '700', color: '#191919' }}>
+                  Confirmación
+                </h3>
+              </div>
               <button
+                type="button"
+                onClick={() => triggerCloseConfirm(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: '4px', display: 'flex', alignItems: 'center' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '14px', color: '#383530', margin: 0, lineHeight: '1.5', fontWeight: '500' }}>
+              {customConfirm.message}
+            </p>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '4px' }}>
+              <button
+                type="button"
                 onClick={() => triggerCloseConfirm(false)}
                 style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  color: 'var(--text-secondary)',
-                  border: '1px solid var(--border-subtle)',
+                  height: '38px',
+                  padding: '0 16px',
+                  background: '#ffffff',
+                  border: '1px solid #d8cfc0',
                   borderRadius: '8px',
-                  padding: '8px 16px',
-                  fontSize: '0.82rem',
-                  fontWeight: '700',
+                  color: '#191919',
+                  fontWeight: '600',
+                  fontSize: '13px',
                   cursor: 'pointer',
-                  transition: 'background 0.2s',
-                  outline: 'none'
+                  transition: 'background 0.15s'
                 }}
-                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
               >
                 Cancelar
               </button>
               <button
+                type="button"
                 onClick={() => triggerCloseConfirm(true)}
                 style={{
-                  background: 'var(--brand-beige)',
-                  color: '#1a1512',
+                  height: '38px',
+                  padding: '0 18px',
+                  background: '#191919',
                   border: 'none',
                   borderRadius: '8px',
-                  padding: '8px 16px',
-                  fontSize: '0.82rem',
-                  fontWeight: '800',
+                  color: '#ffffff',
+                  fontWeight: '600',
+                  fontSize: '13px',
                   cursor: 'pointer',
-                  transition: 'opacity 0.2s',
-                  outline: 'none'
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'background 0.15s'
                 }}
-                onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
-                onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#333333'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#191919'; }}
               >
                 Aceptar
               </button>
             </div>
           </div>
-        </>
+        </div>,
+        document.body
       )}
 
       {/* Mobile Bottom Navigation Bar (Portal to document.body) */}
@@ -2496,31 +2529,34 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
       {/* Importar Equipo Modal (Portal to document.body) */}
       {importTeamZoneId && createPortal(
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(25, 21, 18, 0.65)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 10002,
-          padding: '16px'
-        }} className="animate-fade-in">
-          <div style={{
-            background: '#fdfcfb',
-            border: '1px solid #d8cfc0',
-            borderRadius: '16px',
-            width: '100%',
-            maxWidth: '480px',
-            maxHeight: '80vh',
+        <div 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.38)',
             display: 'flex',
-            flexDirection: 'column',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.15)'
-          }}>
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10002,
+            padding: '16px'
+          }} 
+          className="animate-fade-in"
+          onClick={() => setImportTeamZoneId(null)}
+        >
+          <div 
+            style={{
+              background: '#ffffff',
+              border: '1px solid #d8cfc0',
+              borderRadius: '16px',
+              width: '100%',
+              maxWidth: '480px',
+              maxHeight: '80vh',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.18)'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
             {/* Header */}
             <div style={{
               padding: '16px',
@@ -2623,56 +2659,61 @@ export default function TournamentDetailView({ tournament, onBack }) {
       )}
 
       {/* Modal para Nuevo Equipo sin salir de Torneos */}
-      {showNewTeamModal && (
+      {showNewTeamModal && createPortal(
         <div 
           style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.65)',
-            backdropFilter: 'blur(4px)',
-            zIndex: 10000,
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.38)',
+            zIndex: 99999,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             padding: '16px'
           }}
+          className="animate-fade-in"
           onClick={() => setShowNewTeamModal(false)}
         >
           <div 
             style={{
-              background: 'var(--bg-card, #ffffff)',
+              background: '#ffffff',
               borderRadius: '20px',
               width: '100%',
               maxWidth: '680px',
               maxHeight: '90vh',
               overflowY: 'auto',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
-              border: '1px solid var(--border-subtle)',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06)',
               position: 'relative'
             }}
             onClick={e => e.stopPropagation()}
           >
             <div style={{
               display: 'flex',
-              justify: 'space-between',
+              justifyContent: 'space-between',
               alignItems: 'center',
               padding: '20px 24px',
-              borderBottom: '1px solid var(--border-subtle)',
+              borderBottom: '1px solid #eee8df',
               position: 'sticky',
               top: 0,
-              background: 'inherit',
+              background: '#ffffff',
               zIndex: 10
             }}>
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#2d2822' }}>
                 Nuevo Equipo
               </h3>
               <button
                 type="button"
                 onClick={() => setShowNewTeamModal(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  cursor: 'pointer', 
+                  color: '#7f776f',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '6px',
+                  borderRadius: '8px'
+                }}
               >
                 <X size={20} />
               </button>
@@ -2699,7 +2740,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
               />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

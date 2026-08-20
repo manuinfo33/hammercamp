@@ -10,6 +10,7 @@ router.register(r'transacciones', views.TransaccionViewSet, basename='transaccio
 router.register(r'saldo-socios', views.SaldoSocioViewSet)
 router.register(r'tournaments', views.TournamentViewSet)
 router.register(r'tournament-zones', views.TournamentZoneViewSet)
+router.register(r'zones', views.TournamentZoneViewSet, basename='zones')
 router.register(r'zone-teams', views.ZoneTeamViewSet)
 router.register(r'carousel-images', views.CarouselImageViewSet)
 router.register(r'news', views.NewsViewSet)

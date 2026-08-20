@@ -120,6 +120,9 @@ class TournamentZoneSerializer(serializers.ModelSerializer):
     class Meta:
         model = TournamentZone
         fields = ['id', 'tournament', 'name', 'order', 'zone_teams']
+        extra_kwargs = {
+            'tournament': {'required': False}
+        }
 
 
 class TournamentSerializer(serializers.ModelSerializer):

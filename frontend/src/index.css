@@ -703,31 +703,44 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.38);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: 99999;
   padding: 20px;
 }
 
 .modal-card-custom {
-  background: var(--bg-sidebar);
-  border: 1px solid var(--border-medium);
+  background: #ffffff;
+  border: 1px solid #e6dfd3;
   border-radius: 18px;
   width: 100%;
   max-width: 440px;
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
   overflow: hidden;
 }
 
 .modal-header-custom {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border-subtle);
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #eee8df;
+}
+
+.modal-body-custom {
+  padding: 24px;
+  color: var(--text-secondary);
+}
+
+.modal-footer-custom {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #eee8df;
+  background: #fdfcfb;
 }
 
 .modal-close-btn {
