@@ -223,7 +223,7 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], onSaveFirs
                   }}
                 >
                   <Users size={13} />
-                  {saving ? 'Guardando...' : (openZoneSelector === savedZone?.id ? 'Cerrar' : '+ Equipos')}
+                  {saving ? 'Guardando...' : (openZoneSelector === savedZone?.id ? 'Cerrar' : (teams.length > 0 ? `Equipos (${teams.length})` : '+ Equipos'))}
                 </button>
               </div>
 
@@ -231,22 +231,22 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], onSaveFirs
               {savedZone && openZoneSelector === savedZone.id && (
                 <div style={{
                   padding: '14px',
-                  borderBottom: teams.length > 0 ? '1px solid var(--border-subtle)' : 'none',
-                  background: 'rgba(212,184,150,0.02)',
+                  borderTop: '1px solid var(--border-subtle)',
+                  background: 'rgba(34, 197, 94, 0.02)',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '12px'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      Asignar Equipos a {zone.name}
+                      Asignar Equipos a {zone.name} ({teams.length} seleccionados)
                     </span>
                   </div>
 
                   {availableTeams.length === 0 ? (
                     <div style={{ padding: '8px 0', fontSize: '13px', color: 'var(--text-muted)' }}>
                       Debes crear equipos nuevos desde la sección Equipos{' '}
-                      <Link to="/equipos" style={{ color: '#cc7a5c', fontWeight: '700', textDecoration: 'underline' }}>
+                      <Link to="/equipos" style={{ color: '#22c55e', fontWeight: '700', textDecoration: 'underline' }}>
                         Pulsa Aquí
                       </Link>
                     </div>
@@ -278,7 +278,7 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], onSaveFirs
                         display: 'grid',
                         gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
                         gap: '8px',
-                        maxHeight: '180px',
+                        maxHeight: '220px',
                         overflowY: 'auto',
                         paddingRight: '4px'
                       }}>
@@ -299,8 +299,8 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], onSaveFirs
                                   gap: '8px',
                                   padding: '6px 10px',
                                   borderRadius: '8px',
-                                  border: '1px solid var(--border-subtle)',
-                                  background: isAssigned ? 'var(--brand-beige-subtle)' : 'transparent',
+                                  border: `1px solid ${isAssigned ? 'rgba(34, 197, 94, 0.4)' : 'var(--border-subtle)'}`,
+                                  background: isAssigned ? 'rgba(34, 197, 94, 0.12)' : 'transparent',
                                   cursor: 'pointer',
                                   transition: 'all 0.15s'
                                 }}
@@ -310,20 +310,20 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], onSaveFirs
                                   width: '18px',
                                   height: '18px',
                                   borderRadius: '5px',
-                                  border: `2px solid ${isAssigned ? 'var(--brand-beige)' : 'rgba(212, 184, 150, 0.2)'}`,
-                                  background: isAssigned ? 'var(--brand-beige)' : 'transparent',
+                                  border: `2px solid ${isAssigned ? '#22c55e' : 'rgba(212, 184, 150, 0.2)'}`,
+                                  background: isAssigned ? '#22c55e' : 'transparent',
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
                                   flexShrink: 0,
                                   transition: 'all 0.15s'
                                 }}>
-                                  {isAssigned && <Check size={12} color="#1a1512" strokeWidth={3} />}
+                                  {isAssigned && <Check size={12} color="#ffffff" strokeWidth={3} />}
                                 </div>
                                 <span style={{
                                   fontSize: '12px',
                                   fontWeight: '600',
-                                  color: isAssigned ? 'var(--brand-beige)' : 'var(--text-primary)',
+                                  color: isAssigned ? '#22c55e' : 'var(--text-primary)',
                                   whiteSpace: 'nowrap',
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis'
@@ -337,37 +337,6 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], onSaveFirs
                       </div>
                     </>
                   )}
-                </div>
-              )}
-
-              {/* Teams already in zone */}
-              {teams.length > 0 && (
-                <div style={{ padding: '10px 14px 12px' }}>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {teams.map(zt => (
-                      <span key={zt.id} style={{
-                        fontSize: '11px', fontWeight: '600', padding: '3px 8px 3px 10px',
-                        borderRadius: '20px', background: 'var(--brand-beige-subtle)',
-                        color: 'var(--brand-beige)', border: '1px solid var(--border-subtle)',
-                        display: 'inline-flex', alignItems: 'center', gap: '6px'
-                      }}>
-                        {zt.team_name}
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); handleRemoveTeam(zt.id, savedZone.id); }}
-                          style={{
-                            background: 'none', border: 'none', padding: 0, margin: 0,
-                            cursor: 'pointer', color: '#cc7a5c', display: 'flex',
-                            alignItems: 'center', justifyContent: 'center',
-                            minWidth: 'unset', height: 'auto'
-                          }}
-                          title="Eliminar de la zona"
-                        >
-                          <X size={11} style={{ strokeWidth: 2.5 }} />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
                 </div>
               )}
             </div>

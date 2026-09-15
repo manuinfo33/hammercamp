@@ -283,6 +283,7 @@ class Match(models.Model):
     date = models.DateField(blank=True, null=True, verbose_name="Fecha (específica)")
     time = models.TimeField(blank=True, null=True, verbose_name="Hora (específica)")
     cancha = models.CharField(max_length=100, blank=True, null=True, verbose_name="Cancha")
+    arbitro = models.CharField(max_length=150, blank=True, null=True, verbose_name="Árbitro")
     impact_zone = models.ForeignKey(TournamentZone, on_delete=models.SET_NULL, blank=True, null=True, related_name='impact_matches', verbose_name="Zona de Impacto")
 
     def __str__(self):

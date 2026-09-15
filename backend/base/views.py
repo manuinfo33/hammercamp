@@ -312,19 +312,19 @@ class ZoneTeamViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        tournament = instance.zone.tournament
+        zone = instance.zone
         team = instance.team
         
         from django.db.models import Q
         has_matches = Match.objects.filter(
-            match_round__tournament_zone__tournament=tournament
+            Q(match_round__tournament_zone=zone) | Q(impact_zone=zone)
         ).filter(
             Q(local_team=team) | Q(visitor_team=team)
         ).exists()
         
         if has_matches:
             from rest_framework import serializers
-            raise serializers.ValidationError({"detail": "No se puede eliminar el equipo, ya que tiene partidos cargados en el torneo"})
+            raise serializers.ValidationError({"detail": "No se puede eliminar el equipo de esta zona, ya que tiene partidos cargados en la misma."})
             
         return super().destroy(request, *args, **kwargs)
 

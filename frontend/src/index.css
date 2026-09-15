@@ -1608,6 +1608,39 @@ tr:hover td { background: rgba(212, 184, 150, 0.03); }
   transition: all 0.15s ease;
 }
 
+.anthropic-theme input[type="date"],
+.anthropic-theme input[type="time"],
+.anthropic-theme input[type="datetime-local"] {
+  color-scheme: light !important;
+}
+
+.anthropic-theme input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer !important;
+  filter: grayscale(100%) opacity(0.55) !important;
+  opacity: 0.7 !important;
+  display: block !important;
+}
+
+.anthropic-theme input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  filter: grayscale(100%) opacity(0.85) !important;
+  opacity: 1 !important;
+}
+
+.custom-time-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-time-scrollbar::-webkit-scrollbar-track {
+  background: #f8f6f2;
+  border-radius: 4px;
+}
+.custom-time-scrollbar::-webkit-scrollbar-thumb {
+  background: #d0c8bd;
+  border-radius: 4px;
+}
+.custom-time-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #b5ac9f;
+}
+
 .anthropic-theme input::placeholder {
   color: #a69b8c;
 }
@@ -2220,7 +2253,19 @@ body:has(.anthropic-theme),
   }
 
   .fecha-card {
-    border-radius: 8px !important;
+    border-radius: 12px !important;
+  }
+
+  .fecha-card > div:first-child {
+    border-radius: 12px 12px 0 0 !important;
+  }
+
+  .fecha-card > div:last-child {
+    border-radius: 0 0 12px 12px !important;
+  }
+
+  .fecha-card > div:last-child > div:last-child {
+    border-radius: 0 0 12px 12px !important;
   }
 
   .tournament-tab-btn {

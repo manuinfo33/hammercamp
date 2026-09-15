@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Trophy, Users, Edit, Check, X, Calendar, Clock, Plus, Trash2, Shield, 
   AlertTriangle, MoreVertical, FileSpreadsheet, FileText, MapPin, UserCheck, UserPlus,
-  User, Menu, LogOut
+  User, Menu, LogOut, ChevronDown
 } from 'lucide-react';
 import api from '../../api';
 import { createPortal } from 'react-dom';
@@ -16,6 +16,191 @@ const TABS = [
   { id: 'fixture', label: 'Fixture' },
   { id: 'buena_fe', label: 'Lista de Buena Fe' },
 ];
+
+function TimeSelectInput({ value, onChange }) {
+  const [openHour, setOpenHour] = useState(false);
+  const [openMin, setOpenMin] = useState(false);
+  const containerRef = useRef(null);
+  const hourListRef = useRef(null);
+  const minListRef = useRef(null);
+
+  const parts = (value && typeof value === 'string' && value.includes(':')) ? value.split(':') : ['', ''];
+  const hour = parts[0] || '';
+  const minute = parts[1] ? parts[1].slice(0, 2) : '';
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpenHour(false);
+        setOpenMin(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, []);
+
+  // Position at 12 hs by default (or selected hour) on open
+  useEffect(() => {
+    if (openHour && hourListRef.current) {
+      const targetHour = hour || '12';
+      const targetEl = hourListRef.current.querySelector(`[data-hour="${targetHour}"]`);
+      if (targetEl) {
+        targetEl.scrollIntoView({ block: 'center' });
+      }
+    }
+  }, [openHour, hour]);
+
+  // Position at 00 min by default (or selected minute) on open
+  useEffect(() => {
+    if (openMin && minListRef.current) {
+      const targetMin = minute || '00';
+      const targetEl = minListRef.current.querySelector(`[data-min="${targetMin}"]`);
+      if (targetEl) {
+        targetEl.scrollIntoView({ block: 'center' });
+      }
+    }
+  }, [openMin, minute]);
+
+  const handleHourSelect = (selectedHour) => {
+    const curMin = minute || '00';
+    onChange(`${selectedHour.padStart(2, '0')}:${curMin.padStart(2, '0')}`);
+    setOpenHour(false);
+  };
+
+  const handleMinSelect = (selectedMin) => {
+    const curHour = hour || '12';
+    onChange(`${curHour.padStart(2, '0')}:${selectedMin.padStart(2, '0')}`);
+    setOpenMin(false);
+  };
+
+  const hoursList = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+  const minutesList = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'];
+  if (minute && !minutesList.includes(minute)) {
+    minutesList.push(minute);
+    minutesList.sort((a, b) => Number(a) - Number(b));
+  }
+
+  const dropdownStyle = {
+    position: 'absolute',
+    top: 'calc(100% + 4px)',
+    left: 0,
+    right: 0,
+    maxHeight: '160px',
+    overflowY: 'auto',
+    background: '#ffffff',
+    border: '1px solid #d8cfc0',
+    borderRadius: '8px',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.14)',
+    zIndex: 10005,
+    padding: '4px 0',
+  };
+
+  const itemStyle = (isActive) => ({
+    padding: '7px 10px',
+    fontSize: '12px',
+    fontWeight: isActive ? '700' : '500',
+    color: isActive ? '#191919' : '#5c554e',
+    background: isActive ? '#f0ece4' : 'transparent',
+    cursor: 'pointer',
+    textAlign: 'center',
+    transition: 'background 0.1s ease',
+  });
+
+  const buttonStyle = (isOpen, hasVal) => ({
+    width: '100%',
+    height: '38px',
+    background: '#ffffff',
+    border: isOpen ? '1px solid #cc7a5c' : '1px solid #d8cfc0',
+    borderRadius: '6px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '0 10px',
+    fontSize: '13px',
+    fontWeight: '600',
+    color: hasVal ? '#191919' : '#7f776f',
+    cursor: 'pointer',
+    outline: 'none',
+    boxShadow: isOpen ? '0 0 0 3px rgba(204, 122, 92, 0.12)' : 'none',
+    transition: 'all 0.15s ease',
+  });
+
+  return (
+    <div ref={containerRef} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+      {/* Hours dropdown */}
+      <div style={{ position: 'relative' }}>
+        <button
+          type="button"
+          onClick={() => {
+            setOpenHour(!openHour);
+            setOpenMin(false);
+          }}
+          style={buttonStyle(openHour, !!hour)}
+        >
+          <span>{hour ? `${hour} hs` : 'Hora'}</span>
+          <ChevronDown size={13} color="#7f776f" style={{ transform: openHour ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} />
+        </button>
+
+        {openHour && (
+          <div ref={hourListRef} style={dropdownStyle} className="custom-time-scrollbar">
+            {hoursList.map(h => {
+              const isSelected = hour === h;
+              return (
+                <div
+                  key={h}
+                  data-hour={h}
+                  className={`table-row-hover ${isSelected ? 'active-time-opt' : ''}`}
+                  style={itemStyle(isSelected)}
+                  onClick={() => handleHourSelect(h)}
+                >
+                  {h} hs
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Minutes dropdown */}
+      <div style={{ position: 'relative' }}>
+        <button
+          type="button"
+          onClick={() => {
+            setOpenMin(!openMin);
+            setOpenHour(false);
+          }}
+          style={buttonStyle(openMin, !!minute)}
+        >
+          <span>{minute ? `${minute} min` : 'Min'}</span>
+          <ChevronDown size={13} color="#7f776f" style={{ transform: openMin ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} />
+        </button>
+
+        {openMin && (
+          <div ref={minListRef} style={dropdownStyle} className="custom-time-scrollbar">
+            {minutesList.map(m => {
+              const isSelected = minute === m;
+              return (
+                <div
+                  key={m}
+                  data-min={m}
+                  className={`table-row-hover ${isSelected ? 'active-time-opt' : ''}`}
+                  style={itemStyle(isSelected)}
+                  onClick={() => handleMinSelect(m)}
+                >
+                  {m} min
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function TournamentDetailView({ tournament, onBack }) {
   const { id: paramId, tab: paramTab } = useParams();
@@ -70,6 +255,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
     setTimeout(() => {
       if (confirmed && customConfirm?.onConfirm) {
         customConfirm.onConfirm();
+      } else if (!confirmed && customConfirm?.onCancel) {
+        customConfirm.onCancel();
       }
       setCustomConfirm(null);
       setConfirmExiting(false);
@@ -99,6 +286,12 @@ export default function TournamentDetailView({ tournament, onBack }) {
   const [loadingTeam, setLoadingTeam] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [mobileRoster, setMobileRoster] = useState([]);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Fixture states
   const [activeZoneId, setActiveZoneId] = useState('');
@@ -135,6 +328,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
   const [newMatchDate, setNewMatchDate] = useState('');
   const [newMatchTime, setNewMatchTime] = useState('');
   const [newMatchCancha, setNewMatchCancha] = useState('');
+  const [newMatchArbitro, setNewMatchArbitro] = useState('');
   const [newMatchZone, setNewMatchZone] = useState('cruce');
 
   // Edit match modal state
@@ -145,6 +339,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
   const [editMatchDate, setEditMatchDate] = useState('');
   const [editMatchTime, setEditMatchTime] = useState('');
   const [editMatchCancha, setEditMatchCancha] = useState('');
+  const [editMatchArbitro, setEditMatchArbitro] = useState('');
   const [editMatchZone, setEditMatchZone] = useState('cruce');
 
   // Match Dropdown menu state
@@ -174,7 +369,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
     }
   }, [detailedTournament, activeZoneId]);
 
-  // Fetch fixtures for active zone
+  // Fetch fixtures for active zone and all zones in tournament
   const fetchFixturesForZone = async (zoneId) => {
     if (!zoneId) return;
     try {
@@ -185,11 +380,26 @@ export default function TournamentDetailView({ tournament, onBack }) {
     }
   };
 
-  useEffect(() => {
-    if (activeTab === 'fixture' && activeZoneId) {
-      fetchFixturesForZone(activeZoneId);
+  const fetchFixturesForAllZones = async () => {
+    if (!detailedTournament?.zones || detailedTournament.zones.length === 0) return;
+    try {
+      const promises = detailedTournament.zones.map(z => api.get(`match-rounds/?tournament_zone=${z.id}`));
+      const results = await Promise.all(promises);
+      const newFixtures = {};
+      results.forEach((res, i) => {
+        newFixtures[detailedTournament.zones[i].id] = res.data;
+      });
+      setFixturesByZone(prev => ({ ...prev, ...newFixtures }));
+    } catch (e) {
+      console.error(e);
     }
-  }, [activeTab, activeZoneId]);
+  };
+
+  useEffect(() => {
+    if (activeTab === 'fixture' && detailedTournament?.zones?.length) {
+      fetchFixturesForAllZones();
+    }
+  }, [activeTab, detailedTournament]);
 
   // Close dropdowns on outside click and handle resize
   useEffect(() => {
@@ -237,20 +447,19 @@ export default function TournamentDetailView({ tournament, onBack }) {
       setLoadingTeam(true);
       const res = await api.get(`teams/${teamId}/`);
       setSelectedTeam(res.data);
-      if (window.innerWidth <= 768) {
-        const playersRes = await api.get('players/');
-        const gfRes = await api.get(`good-faith-lists/?tournament=${detailedTournament.id}&team=${teamId}`);
-        const gfMap = {};
-        gfRes.data.forEach(r => {
-          gfMap[r.player] = r.id;
-        });
-        const roster = playersRes.data.map(p => ({
-          player: p,
-          isLbf: !!gfMap[p.id],
-          recordId: gfMap[p.id] || null
-        }));
-        setMobileRoster(roster);
-      }
+      
+      const playersRes = await api.get('players/');
+      const gfRes = await api.get(`good-faith-lists/?tournament=${detailedTournament.id}&team=${teamId}`);
+      const gfMap = {};
+      gfRes.data.forEach(r => {
+        gfMap[r.player] = r.id;
+      });
+      const roster = playersRes.data.map(p => ({
+        player: p,
+        isLbf: !!gfMap[p.id],
+        recordId: gfMap[p.id] || null
+      }));
+      setMobileRoster(roster);
       setShowTeamForm(true);
     } catch (e) {
       console.error(e);
@@ -262,12 +471,12 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
   const handleDeleteTeamClick = async (zt) => {
     setCustomConfirm({
-      message: `¿Estás seguro de que deseas eliminar a ${zt.team_name} de este torneo?`,
+      message: `¿Estás seguro de que deseas eliminar a ${zt.team_name} de esta zona?`,
       onConfirm: async () => {
         try {
           setLoading(true);
           await api.delete(`zone-teams/${zt.id}/`);
-          setCustomAlert({ message: "Equipo eliminado del torneo con éxito.", type: "success" });
+          setCustomAlert({ message: "Equipo eliminado de la zona con éxito.", type: "success" });
           await fetchTournamentDetail();
         } catch (e) {
           console.error(e);
@@ -560,6 +769,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
     setNewMatchDate(r.date || '');
     setNewMatchTime(r.time || '');
     setNewMatchCancha('');
+    setNewMatchArbitro('');
     setNewMatchZone(activeZoneId);
     setShowNewMatchModal(true);
   };
@@ -574,11 +784,12 @@ export default function TournamentDetailView({ tournament, onBack }) {
         date: matchData.date || null,
         time: matchData.time || null,
         cancha: matchData.cancha || null,
+        arbitro: matchData.arbitro || null,
         impact_zone: matchData.impact_zone || null,
         played: false
       });
       setCustomAlert({ message: "Partido programado con éxito.", type: "success" });
-      await fetchFixturesForZone(activeZoneId);
+      await fetchFixturesForAllZones();
       setShowNewMatchModal(false);
     } catch (e) {
       console.error(e);
@@ -586,6 +797,84 @@ export default function TournamentDetailView({ tournament, onBack }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleValidateAndCreateMatch = () => {
+    if (!newMatchLocal || !newMatchVisitor) {
+      setCustomAlert({ message: "Debe seleccionar ambos equipos.", type: "error" });
+      return;
+    }
+    if (String(newMatchLocal) === String(newMatchVisitor)) {
+      setCustomAlert({ message: "El Equipo 1 y el Equipo 2 no pueden ser el mismo.", type: "error" });
+      return;
+    }
+
+    const localId = Number(newMatchLocal);
+    const visitorId = Number(newMatchVisitor);
+
+    const allRounds = Object.values(fixturesByZone).flat();
+    const currentRound = allRounds.find(r => r.id === newMatchRoundId);
+
+    // 1. Check if either team already plays in this SAME fecha (round)
+    const teamAlreadyInRound = currentRound?.matches?.some(m => {
+      const mLocal = Number(m.local_team);
+      const mVisitor = Number(m.visitor_team);
+      return mLocal === localId || mVisitor === localId || mLocal === visitorId || mVisitor === visitorId;
+    });
+
+    if (teamAlreadyInRound) {
+      setCustomConfirm({
+        title: "Atención",
+        message: "El equipo que esta intentando ingresar ya tiene un partido en la misma fecha.",
+        confirmText: "OK",
+        singleButton: true,
+        onConfirm: () => {}
+      });
+      return;
+    }
+
+    // 2. Check if this exact matchup (local vs visitor or visitor vs local) already exists in the TARGET impact zone
+    // Each zone is independent: we inspect matches that impact the selected target zone.
+    const isCruce = newMatchZone === 'cruce';
+    const targetZoneId = isCruce ? null : (newMatchZone ? Number(newMatchZone) : Number(activeZoneId));
+
+    let matchAlreadyExistsInZone = false;
+    if (targetZoneId) {
+      const targetZoneRounds = fixturesByZone[targetZoneId] || [];
+      matchAlreadyExistsInZone = targetZoneRounds.some(r =>
+        r.matches?.some(m => {
+          const mLocal = Number(m.local_team);
+          const mVisitor = Number(m.visitor_team);
+          return (mLocal === localId && mVisitor === visitorId) || (mLocal === visitorId && mVisitor === localId);
+        })
+      );
+    }
+
+    const matchData = {
+      local_team: newMatchLocal,
+      visitor_team: newMatchVisitor,
+      date: newMatchDate || null,
+      time: newMatchTime || null,
+      cancha: newMatchCancha || null,
+      arbitro: newMatchArbitro || null,
+      impact_zone: newMatchZone === 'cruce' ? null : newMatchZone
+    };
+
+    if (matchAlreadyExistsInZone) {
+      setCustomConfirm({
+        title: "Atención",
+        message: "El partido ya existe, desea crearlo de todos modos?",
+        confirmText: "OK",
+        cancelText: "CANCELAR",
+        onConfirm: () => {
+          handleCreateNewMatch(matchData);
+        }
+      });
+      return;
+    }
+
+    // Normal direct creation
+    handleCreateNewMatch(matchData);
   };
 
   // Open Edit Match Modal
@@ -596,6 +885,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
     setEditMatchDate(m.date || '');
     setEditMatchTime(m.time ? m.time.slice(0, 5) : '');
     setEditMatchCancha(m.cancha || '');
+    setEditMatchArbitro(m.arbitro || '');
     setEditMatchZone(m.impact_zone ? String(m.impact_zone) : 'cruce');
     setShowEditMatchModal(true);
   };
@@ -606,7 +896,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
       return;
     }
     if (editMatchLocal === editMatchVisitor) {
-      setCustomAlert({ message: "El equipo local y visitante no pueden ser el mismo.", type: "error" });
+      setCustomAlert({ message: "El Equipo 1 y el Equipo 2 no pueden ser el mismo.", type: "error" });
       return;
     }
     try {
@@ -617,10 +907,11 @@ export default function TournamentDetailView({ tournament, onBack }) {
         date: editMatchDate || null,
         time: editMatchTime || null,
         cancha: editMatchCancha || null,
+        arbitro: editMatchArbitro || null,
         impact_zone: editMatchZone === 'cruce' ? null : editMatchZone
       });
       setCustomAlert({ message: "Partido actualizado con éxito.", type: "success" });
-      await fetchFixturesForZone(activeZoneId);
+      await fetchFixturesForAllZones();
       setShowEditMatchModal(false);
     } catch (e) {
       console.error(e);
@@ -669,7 +960,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
     z.zone_teams?.map(zt => ({ id: zt.team, name: zt.team_name })) || []
   ) || [];
 
-  // Deduplicate teams participating in the tournament
+  // Deduplicate teams participating in the tournament and sort alphabetically A-Z
   const tournamentTeams = [];
   const seenTeamIds = new Set();
   allTeams.forEach(t => {
@@ -678,6 +969,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
       tournamentTeams.push(t);
     }
   });
+  tournamentTeams.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
 
   // Set default team for buena_fe when tab becomes active
   useEffect(() => {
@@ -810,47 +1102,27 @@ export default function TournamentDetailView({ tournament, onBack }) {
   };
 
   if (showTeamForm && selectedTeam) {
-    if (!isMobile) {
-      return (
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }} className="anthropic-theme tournaments-container animate-fade-in">
-          <div className="glass-card" style={{ padding: '24px 28px', background: '#ffffff', borderRadius: '16px', border: '1px solid #e6dfd3' }}>
-            <TeamForm
-              team={selectedTeam}
-              onClose={() => {
-                setShowTeamForm(false);
-                setSelectedTeam(null);
-              }}
-              onSuccess={() => {
-                setShowTeamForm(false);
-                setSelectedTeam(null);
-                fetchTournamentDetail();
-              }}
-            />
-          </div>
-        </div>
-      );
-    } else {
-      return (
-        <MobileTeamEditor
-          team={selectedTeam}
-          onClose={() => {
-            setShowTeamForm(false);
-            setSelectedTeam(null);
-          }}
-          onSuccess={() => {
-            setShowTeamForm(false);
-            setSelectedTeam(null);
-            fetchTournamentDetail();
-          }}
-          tournamentId={detailedTournament?.id}
-          mobileRoster={mobileRoster}
-          setMobileRoster={setMobileRoster}
-          reloadMobileRoster={reloadMobileRoster}
-          handleDeleteTeamClick={handleDeleteTeamClick}
-          detailedTournament={detailedTournament}
-        />
-      );
-    }
+    return (
+      <TeamDetailEditor
+        team={selectedTeam}
+        onClose={() => {
+          setShowTeamForm(false);
+          setSelectedTeam(null);
+        }}
+        onSuccess={() => {
+          setShowTeamForm(false);
+          setSelectedTeam(null);
+          fetchTournamentDetail();
+        }}
+        tournamentId={detailedTournament?.id}
+        mobileRoster={mobileRoster}
+        setMobileRoster={setMobileRoster}
+        reloadMobileRoster={reloadMobileRoster}
+        handleDeleteTeamClick={handleDeleteTeamClick}
+        detailedTournament={detailedTournament}
+        isMobile={isMobile}
+      />
+    );
   }
 
   return (
@@ -1552,7 +1824,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                           <div style={{ 
                                             flex: '1 1 0', 
                                             textAlign: 'right', 
-                                            fontWeight: '700', 
+                                            fontWeight: '500', 
                                             fontSize: '0.85rem', 
                                             color: '#191919', 
                                             paddingRight: '10px',
@@ -1630,7 +1902,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                           <div style={{ 
                                             flex: '1 1 0', 
                                             textAlign: 'left', 
-                                            fontWeight: '700', 
+                                            fontWeight: '500', 
                                             fontSize: '0.85rem', 
                                             color: '#191919', 
                                             paddingLeft: '10px', 
@@ -1916,23 +2188,23 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
       {/* EDIT ROUND MODAL */}
       {showEditRoundModal && createPortal(
-        <div className="premium-modal-overlay" onClick={() => setShowEditRoundModal(false)}>
-          <div className="premium-modal-card" style={{ maxWidth: '460px', padding: '28px' }} onClick={e => e.stopPropagation()}>
+        <div className="premium-modal-overlay anthropic-theme" onClick={() => setShowEditRoundModal(false)}>
+          <div className="premium-modal-card" style={{ maxWidth: '460px', padding: isMobile ? '20px 16px' : '28px' }} onClick={e => e.stopPropagation()}>
 
             {/* Header */}
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{
-                  width: '36px', height: '36px', borderRadius: '10px',
-                  background: 'linear-gradient(135deg, rgba(212,184,150,0.15), rgba(212,184,150,0.05))',
-                  border: '1px solid rgba(212,184,150,0.2)',
+                  width: '38px', height: '38px', borderRadius: '10px',
+                  background: 'rgba(204, 122, 92, 0.12)',
+                  border: '1px solid rgba(204, 122, 92, 0.25)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                 }}>
-                  <Calendar size={16} color="var(--brand-beige)" />
+                  <Calendar size={17} color="#cc7a5c" />
                 </div>
                 <div>
-                  <h3>Editar Información de la Fecha</h3>
-                  <p>Modificá el nombre, fecha y horario general</p>
+                  <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '800', color: '#191919' }}>Editar Información de la Fecha</h3>
+                  <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#7f776f' }}>Modificá el nombre, fecha y horario general</p>
                 </div>
               </div>
               <button className="modal-close-btn" onClick={() => setShowEditRoundModal(false)}>
@@ -1954,26 +2226,29 @@ export default function TournamentDetailView({ tournament, onBack }) {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div className="input-group">
-                  <label>Fecha (dd/mm/aaaa)</label>
+                  <label>Fecha</label>
                   <input 
                     type="date" 
                     value={editRoundDate} 
                     onChange={(e) => setEditRoundDate(e.target.value)} 
+                    onClick={(e) => {
+                      try { e.target.showPicker(); } catch(err) {}
+                    }}
+                    style={{ cursor: 'pointer' }}
                   />
                 </div>
                 <div className="input-group">
                   <label>Hora de Inicio</label>
-                  <input 
-                    type="time" 
+                  <TimeSelectInput 
                     value={editRoundTime} 
-                    onChange={(e) => setEditRoundTime(e.target.value)} 
+                    onChange={(val) => setEditRoundTime(val)} 
                   />
                 </div>
               </div>
               <div style={{
-                background: 'rgba(212,184,150,0.04)', border: '1px solid rgba(212,184,150,0.08)',
+                background: 'rgba(204, 122, 92, 0.06)', border: '1px solid rgba(204, 122, 92, 0.15)',
                 borderRadius: '10px', padding: '10px 14px',
-                fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.5'
+                fontSize: '11px', color: '#7f776f', lineHeight: '1.5'
               }}>
                 💡 Si configurás una hora general, todos los partidos de esta fecha usarán ese horario por defecto.
               </div>
@@ -1996,23 +2271,23 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
       {/* NEW MATCH MODAL */}
       {showNewMatchModal && createPortal(
-        <div className="premium-modal-overlay" onClick={() => setShowNewMatchModal(false)}>
-          <div className="premium-modal-card" style={{ maxWidth: '520px', padding: '28px' }} onClick={e => e.stopPropagation()}>
+        <div className="premium-modal-overlay anthropic-theme" onClick={() => setShowNewMatchModal(false)}>
+          <div className="premium-modal-card" style={{ maxWidth: '540px', padding: isMobile ? '20px 16px' : '28px' }} onClick={e => e.stopPropagation()}>
 
             {/* Header */}
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{
-                  width: '36px', height: '36px', borderRadius: '10px',
-                  background: 'linear-gradient(135deg, rgba(129,199,132,0.15), rgba(129,199,132,0.05))',
-                  border: '1px solid rgba(129,199,132,0.2)',
+                  width: '38px', height: '38px', borderRadius: '10px',
+                  background: 'rgba(204, 122, 92, 0.12)',
+                  border: '1px solid rgba(204, 122, 92, 0.25)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                 }}>
-                  <Plus size={16} color="#81c784" />
+                  <Plus size={17} color="#cc7a5c" />
                 </div>
                 <div>
-                  <h3>Nuevo Partido</h3>
-                  <p>Agregá un partido a esta fecha del fixture</p>
+                  <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '800', color: '#191919' }}>Nuevo Partido</h3>
+                  <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#7f776f' }}>Agregá un partido a esta fecha del fixture</p>
                 </div>
               </div>
               <button className="modal-close-btn" onClick={() => setShowNewMatchModal(false)}>
@@ -2023,56 +2298,60 @@ export default function TournamentDetailView({ tournament, onBack }) {
             {/* Body */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-              {/* VS Row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '10px', alignItems: 'end' }}>
+              {/* Team 1 and Team 2 Selection */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
                 <div className="input-group" style={{ margin: 0 }}>
-                  <label>Equipo Local</label>
+                  <label>Equipo 1</label>
                   <select 
                     value={newMatchLocal} 
                     onChange={(e) => setNewMatchLocal(e.target.value)}
                   >
                     <option value="">— Seleccioná —</option>
-                    {allTeams.map(t => (
+                    {tournamentTeams.map(t => (
                       <option key={t.id} value={t.id}>{t.name}</option>
                     ))}
                   </select>
                 </div>
-                <div style={{
-                  padding: '0 6px',
-                  height: '40px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  color: 'var(--brand-beige)',
-                  fontWeight: '900',
-                  fontSize: '12px',
-                  letterSpacing: '1px',
-                  marginTop: '18px'
-                }}>VS</div>
                 <div className="input-group" style={{ margin: 0 }}>
-                  <label>Equipo Visitante</label>
+                  <label>Equipo 2</label>
                   <select 
                     value={newMatchVisitor} 
                     onChange={(e) => setNewMatchVisitor(e.target.value)}
                   >
                     <option value="">— Seleccioná —</option>
-                    {allTeams.map(t => (
+                    {tournamentTeams.map(t => (
                       <option key={t.id} value={t.id}>{t.name}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              {/* Date & Time & Cancha row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-                <div className="input-group">
+              {/* Date & Time Row */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
+                <div className="input-group" style={{ margin: 0 }}>
                   <label>Fecha</label>
-                  <input type="date" value={newMatchDate} onChange={(e) => setNewMatchDate(e.target.value)} />
+                  <input 
+                    type="date" 
+                    value={newMatchDate} 
+                    onChange={(e) => setNewMatchDate(e.target.value)} 
+                    onClick={(e) => {
+                      try { e.target.showPicker(); } catch(err) {}
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  />
                 </div>
-                <div className="input-group">
+                <div className="input-group" style={{ margin: 0 }}>
                   <label>Hora</label>
-                  <input type="time" value={newMatchTime} onChange={(e) => setNewMatchTime(e.target.value)} />
+                  <TimeSelectInput 
+                    value={newMatchTime} 
+                    onChange={(val) => setNewMatchTime(val)} 
+                  />
                 </div>
-                <div className="input-group">
+              </div>
+
+              {/* Cancha & Árbitro Row */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
+                <div className="input-group" style={{ margin: 0 }}>
                   <label>Cancha</label>
                   <input 
                     type="text" 
@@ -2081,9 +2360,19 @@ export default function TournamentDetailView({ tournament, onBack }) {
                     onChange={(e) => setNewMatchCancha(e.target.value)} 
                   />
                 </div>
+                <div className="input-group" style={{ margin: 0 }}>
+                  <label>Árbitro</label>
+                  <input 
+                    type="text" 
+                    placeholder="Ej: Juan Pérez" 
+                    value={newMatchArbitro} 
+                    onChange={(e) => setNewMatchArbitro(e.target.value)} 
+                  />
+                </div>
               </div>
 
-              <div className="input-group">
+              {/* Impact Zone */}
+              <div className="input-group" style={{ margin: 0 }}>
                 <label>Impacto del resultado en zona</label>
                 <select 
                   value={newMatchZone} 
@@ -2101,24 +2390,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
             {/* Footer */}
             <div className="modal-footer">
               <button className="secondary" onClick={() => setShowNewMatchModal(false)}>Cancelar</button>
-              <button onClick={() => {
-                if (!newMatchLocal || !newMatchVisitor) {
-                  alert("Debe seleccionar ambos equipos.");
-                  return;
-                }
-                if (newMatchLocal === newMatchVisitor) {
-                  alert("El equipo local y visitante no pueden ser el mismo.");
-                  return;
-                }
-                handleCreateNewMatch({
-                  local_team: newMatchLocal,
-                  visitor_team: newMatchVisitor,
-                  date: newMatchDate || null,
-                  time: newMatchTime || null,
-                  cancha: newMatchCancha || null,
-                  impact_zone: newMatchZone === 'cruce' ? null : newMatchZone
-                });
-              }}>
+              <button onClick={handleValidateAndCreateMatch}>
                 <Check size={14} /> Agregar Partido
               </button>
             </div>
@@ -2129,23 +2401,23 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
       {/* EDIT MATCH MODAL */}
       {showEditMatchModal && createPortal(
-        <div className="premium-modal-overlay" onClick={() => setShowEditMatchModal(false)}>
-          <div className="premium-modal-card" style={{ maxWidth: '520px', padding: '28px' }} onClick={e => e.stopPropagation()}>
+        <div className="premium-modal-overlay anthropic-theme" onClick={() => setShowEditMatchModal(false)}>
+          <div className="premium-modal-card" style={{ maxWidth: '540px', padding: isMobile ? '20px 16px' : '28px' }} onClick={e => e.stopPropagation()}>
 
             {/* Header */}
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{
-                  width: '36px', height: '36px', borderRadius: '10px',
-                  background: 'linear-gradient(135deg, rgba(129,199,132,0.15), rgba(129,199,132,0.05))',
-                  border: '1px solid rgba(129,199,132,0.2)',
+                  width: '38px', height: '38px', borderRadius: '10px',
+                  background: 'rgba(204, 122, 92, 0.12)',
+                  border: '1px solid rgba(204, 122, 92, 0.25)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                 }}>
-                  <Edit size={16} color="#81c784" />
+                  <Edit size={17} color="#cc7a5c" />
                 </div>
                 <div>
-                  <h3>Editar Partido</h3>
-                  <p>Modificá los datos del partido programado</p>
+                  <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '800', color: '#191919' }}>Editar Partido</h3>
+                  <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#7f776f' }}>Modificá los datos del partido programado</p>
                 </div>
               </div>
               <button className="modal-close-btn" onClick={() => setShowEditMatchModal(false)}>
@@ -2156,56 +2428,60 @@ export default function TournamentDetailView({ tournament, onBack }) {
             {/* Body */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-              {/* VS Row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '10px', alignItems: 'end' }}>
+              {/* Team 1 and Team 2 Selection */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
                 <div className="input-group" style={{ margin: 0 }}>
-                  <label>Equipo Local</label>
+                  <label>Equipo 1</label>
                   <select 
                     value={editMatchLocal} 
                     onChange={(e) => setEditMatchLocal(e.target.value)}
                   >
                     <option value="">— Seleccioná —</option>
-                    {allTeams.map(t => (
+                    {tournamentTeams.map(t => (
                       <option key={t.id} value={t.id}>{t.name}</option>
                     ))}
                   </select>
                 </div>
-                <div style={{
-                  padding: '0 6px',
-                  height: '40px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  color: 'var(--brand-beige)',
-                  fontWeight: '900',
-                  fontSize: '12px',
-                  letterSpacing: '1px',
-                  marginTop: '18px'
-                }}>VS</div>
                 <div className="input-group" style={{ margin: 0 }}>
-                  <label>Equipo Visitante</label>
+                  <label>Equipo 2</label>
                   <select 
                     value={editMatchVisitor} 
                     onChange={(e) => setEditMatchVisitor(e.target.value)}
                   >
                     <option value="">— Seleccioná —</option>
-                    {allTeams.map(t => (
+                    {tournamentTeams.map(t => (
                       <option key={t.id} value={t.id}>{t.name}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              {/* Date & Time & Cancha row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-                <div className="input-group">
+              {/* Date & Time Row */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
+                <div className="input-group" style={{ margin: 0 }}>
                   <label>Fecha</label>
-                  <input type="date" value={editMatchDate} onChange={(e) => setEditMatchDate(e.target.value)} />
+                  <input 
+                    type="date" 
+                    value={editMatchDate} 
+                    onChange={(e) => setEditMatchDate(e.target.value)} 
+                    onClick={(e) => {
+                      try { e.target.showPicker(); } catch(err) {}
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  />
                 </div>
-                <div className="input-group">
+                <div className="input-group" style={{ margin: 0 }}>
                   <label>Hora</label>
-                  <input type="time" value={editMatchTime} onChange={(e) => setEditMatchTime(e.target.value)} />
+                  <TimeSelectInput 
+                    value={editMatchTime} 
+                    onChange={(val) => setEditMatchTime(val)} 
+                  />
                 </div>
-                <div className="input-group">
+              </div>
+
+              {/* Cancha & Árbitro Row */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
+                <div className="input-group" style={{ margin: 0 }}>
                   <label>Cancha</label>
                   <input 
                     type="text" 
@@ -2214,9 +2490,19 @@ export default function TournamentDetailView({ tournament, onBack }) {
                     onChange={(e) => setEditMatchCancha(e.target.value)} 
                   />
                 </div>
+                <div className="input-group" style={{ margin: 0 }}>
+                  <label>Árbitro</label>
+                  <input 
+                    type="text" 
+                    placeholder="Ej: Juan Pérez" 
+                    value={editMatchArbitro} 
+                    onChange={(e) => setEditMatchArbitro(e.target.value)} 
+                  />
+                </div>
               </div>
 
-              <div className="input-group">
+              {/* Impact Zone */}
+              <div className="input-group" style={{ margin: 0 }}>
                 <label>Impacto del resultado en zona</label>
                 <select 
                   value={editMatchZone} 
@@ -2373,7 +2659,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                   <AlertTriangle size={18} color="#856404" />
                 </div>
                 <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '700', color: '#191919' }}>
-                  Confirmación
+                  {customConfirm.title || 'Confirmación'}
                 </h3>
               </div>
               <button
@@ -2390,24 +2676,26 @@ export default function TournamentDetailView({ tournament, onBack }) {
             </p>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '4px' }}>
-              <button
-                type="button"
-                onClick={() => triggerCloseConfirm(false)}
-                style={{
-                  height: '38px',
-                  padding: '0 16px',
-                  background: '#ffffff',
-                  border: '1px solid #d8cfc0',
-                  borderRadius: '8px',
-                  color: '#191919',
-                  fontWeight: '600',
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  transition: 'background 0.15s'
-                }}
-              >
-                Cancelar
-              </button>
+              {!customConfirm.singleButton && (
+                <button
+                  type="button"
+                  onClick={() => triggerCloseConfirm(false)}
+                  style={{
+                    height: '38px',
+                    padding: '0 16px',
+                    background: '#ffffff',
+                    border: '1px solid #d8cfc0',
+                    borderRadius: '8px',
+                    color: '#191919',
+                    fontWeight: '600',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    transition: 'background 0.15s'
+                  }}
+                >
+                  {customConfirm.cancelText || 'Cancelar'}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => triggerCloseConfirm(true)}
@@ -2429,7 +2717,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                 onMouseEnter={(e) => { e.currentTarget.style.background = '#333333'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = '#191919'; }}
               >
-                Aceptar
+                {customConfirm.confirmText || 'Aceptar'}
               </button>
             </div>
           </div>
@@ -2810,7 +3098,7 @@ const EditIconOverlay = ({ onClick }) => {
   );
 };
 
-const MobileTeamEditor = ({ 
+const TeamDetailEditor = ({ 
   team, 
   onClose, 
   onSuccess, 
@@ -2819,7 +3107,8 @@ const MobileTeamEditor = ({
   setMobileRoster,
   reloadMobileRoster,
   handleDeleteTeamClick,
-  detailedTournament
+  detailedTournament,
+  isMobile
 }) => {
   const [teamName, setTeamName] = useState(team.name || '');
   const [logoFile, setLogoFile] = useState(null);
@@ -2915,6 +3204,323 @@ const MobileTeamEditor = ({
     }
   };
 
+  const formContent = (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <input type="file" ref={logoInputRef} onChange={handleLogoChange} style={{ display: 'none' }} accept="image/*" />
+      <input type="file" ref={photoInputRef} onChange={handlePhotoChange} style={{ display: 'none' }} accept="image/*" />
+
+      {/* Escudo & Foto del equipo */}
+      <div style={{ display: 'flex', gap: isMobile ? '16px' : '24px', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: isMobile ? '105px' : '120px' }}>
+          <span style={{ fontSize: '13px', color: '#7f776f', fontWeight: '600' }}>Escudo</span>
+          <div 
+            onClick={() => logoInputRef.current?.click()}
+            style={{ 
+              width: isMobile ? '100px' : '115px', 
+              height: isMobile ? '100px' : '115px', 
+              borderRadius: '8px', 
+              background: '#ffffff', 
+              border: '1px solid #d8cfc0', 
+              position: 'relative', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              overflow: 'hidden',
+              cursor: 'pointer'
+            }}
+          >
+            {logoPreview ? (
+              <img src={logoPreview} alt="Escudo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            ) : (
+              <Users size={32} color="#7f776f" />
+            )}
+            <EditIconOverlay onClick={(e) => { e.stopPropagation(); logoInputRef.current?.click(); }} />
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+          <span style={{ fontSize: '13px', color: '#7f776f', fontWeight: '600' }}>Foto del equipo</span>
+          <div 
+            onClick={() => photoInputRef.current?.click()}
+            style={{ 
+              height: isMobile ? '100px' : '115px', 
+              borderRadius: '8px', 
+              background: '#ffffff', 
+              border: '1px solid #d8cfc0', 
+              position: 'relative', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              overflow: 'hidden',
+              cursor: 'pointer'
+            }}
+          >
+            {photoPreview ? (
+              <img src={photoPreview} alt="Foto del equipo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <FileSpreadsheet size={32} color="#7f776f" />
+            )}
+            <EditIconOverlay onClick={(e) => { e.stopPropagation(); photoInputRef.current?.click(); }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Nombre */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <span style={{ fontSize: '12px', color: '#7f776f', fontWeight: '600' }}>Nombre</span>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <input 
+            type="text" 
+            value={teamName}
+            onChange={(e) => setTeamName(e.target.value)}
+            style={{
+              width: '100%',
+              background: '#ffffff',
+              border: '1px solid #d8cfc0',
+              borderRadius: '8px',
+              padding: '10px 40px 10px 12px',
+              fontSize: '0.92rem',
+              color: '#191919',
+              fontWeight: '600',
+              outline: 'none',
+              height: '42px',
+              boxSizing: 'border-box'
+            }}
+          />
+          {teamName && (
+            <button 
+              type="button" 
+              onClick={() => setTeamName('')}
+              style={{
+                position: 'absolute',
+                right: '12px',
+                background: '#c4b9a3',
+                border: 'none',
+                borderRadius: '50%',
+                width: '18px',
+                height: '18px',
+                minWidth: '18px',
+                minHeight: '18px',
+                maxWidth: '18px',
+                maxHeight: '18px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#ffffff',
+                padding: 0,
+                cursor: 'pointer',
+                flexShrink: 0
+              }}
+            >
+              <X size={11} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* JUGADORES/AS LIST */}
+      <div>
+        <div style={{ background: '#ffffff', border: '1px solid #d8cfc0', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
+          <div style={{
+            background: '#f4efe6',
+            borderBottom: '1px solid #d8cfc0',
+            color: '#7f776f',
+            padding: '12px 16px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontSize: '11px',
+            fontWeight: '700',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}>
+            <span>JUGADORES/AS</span>
+            <span>LBF</span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', maxHeight: '350px', overflowY: 'auto' }}>
+            {mobileRoster.length === 0 ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: '#7f776f', fontSize: '13px' }}>
+                No hay jugadores en el catálogo. ¡Agrega uno nuevo!
+              </div>
+            ) : (
+              mobileRoster.map((item, idx) => (
+                <div 
+                  key={item.player.id} 
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '10px 16px',
+                    borderBottom: idx === mobileRoster.length - 1 ? 'none' : '1px solid #f0eae1',
+                    background: idx % 2 === 0 ? '#fcfbfa' : '#ffffff'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      background: '#eae4d8',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {item.player.photo ? (
+                        <img src={item.player.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <UserCheck size={14} color="#cc7a5c" />
+                      )}
+                    </div>
+                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#191919' }}>
+                      {item.player.last_name}, {item.player.first_name}
+                    </span>
+                  </div>
+                  
+                  <LbfSwitch checked={item.isLbf} onChange={() => handleToggleLbf(idx)} />
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div style={{ marginTop: '12px' }}>
+          <button 
+            type="button"
+            onClick={() => setShowAddPlayer(true)}
+            style={{
+              width: '100%',
+              height: '44px',
+              background: '#038c4c',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '22px',
+              fontSize: '14px',
+              fontWeight: '700',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              boxShadow: '0 2px 6px rgba(3,140,76,0.3)',
+              transition: 'background 0.15s'
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = '#02733e'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = '#038c4c'; }}
+          >
+            <UserPlus size={18} /> Añadir Jugador
+          </button>
+        </div>
+      </div>
+
+      {/* Guardar & Quitar Buttons */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '32px' }}>
+        <button 
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          style={{
+            width: '100%',
+            height: '44px',
+            background: '#4cd964',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '22px',
+            fontSize: '14px',
+            fontWeight: '700',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 6px rgba(76,217,100,0.3)',
+            transition: 'background 0.15s'
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = '#3fc456'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = '#4cd964'; }}
+        >
+          {saving ? "GUARDANDO..." : "GUARDAR"}
+        </button>
+        
+        <button 
+          type="button"
+          onClick={handleRemove}
+          style={{
+            width: '100%',
+            height: '44px',
+            background: '#ff3b30',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '22px',
+            fontSize: '14px',
+            fontWeight: '700',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 6px rgba(255,59,48,0.3)',
+            transition: 'background 0.15s'
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = '#e0352b'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = '#ff3b30'; }}
+        >
+          QUITAR DEL TORNEO
+        </button>
+      </div>
+    </div>
+  );
+
+  if (!isMobile) {
+    return (
+      <div style={{ maxWidth: '640px', margin: '0 auto', padding: '24px 16px 40px' }} className="anthropic-theme animate-fade-in">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <button
+            type="button"
+            onClick={onClose}
+            className="secondary"
+            style={{
+              height: '36px',
+              padding: '0 14px',
+              borderRadius: '10px',
+              fontSize: '13px',
+              fontWeight: '600',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: 'pointer'
+            }}
+          >
+            <ArrowLeft size={16} /> Volver al Torneo
+          </button>
+          <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '800', color: '#191919' }}>
+            {teamName}
+          </h2>
+          <div style={{ width: '130px' }} />
+        </div>
+
+        <div style={{
+          background: '#ffffff',
+          border: '1px solid #e6dfd3',
+          borderRadius: '20px',
+          padding: '28px',
+          boxShadow: '0 4px 24px rgba(25, 20, 15, 0.05)'
+        }}>
+          {formContent}
+        </div>
+
+        {showAddPlayer && (
+          <PlayerFormModal
+            onClose={() => setShowAddPlayer(false)}
+            onSuccess={() => {
+              setShowAddPlayer(false);
+              reloadMobileRoster(team.id);
+            }}
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="anthropic-theme animate-fade-in" style={{
       position: 'fixed',
@@ -2950,223 +3556,8 @@ const MobileTeamEditor = ({
         </button>
       </div>
 
-      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '20px', flex: 1, paddingBottom: '160px', position: 'relative' }}>
-        <input type="file" ref={logoInputRef} onChange={handleLogoChange} style={{ display: 'none' }} accept="image/*" />
-        <input type="file" ref={photoInputRef} onChange={handlePhotoChange} style={{ display: 'none' }} accept="image/*" />
-
-        <div style={{ display: 'flex', gap: '24px', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '105px' }}>
-            <span style={{ fontSize: '13px', color: '#7f776f', fontWeight: '500' }}>Escudo</span>
-            <div style={{ width: '100px', height: '100px', borderRadius: '8px', background: '#ffffff', border: '1px solid #d8cfc0', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-              {logoPreview ? (
-                <img src={logoPreview} alt="Escudo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-              ) : (
-                <Users size={32} color="#7f776f" />
-              )}
-              <EditIconOverlay onClick={() => logoInputRef.current.click()} />
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
-            <span style={{ fontSize: '13px', color: '#7f776f', fontWeight: '500' }}>Foto del equipo</span>
-            <div style={{ height: '100px', borderRadius: '8px', background: '#ffffff', border: '1px solid #d8cfc0', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-              {photoPreview ? (
-                <img src={photoPreview} alt="Foto del equipo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                <FileSpreadsheet size={32} color="#7f776f" />
-              )}
-              <EditIconOverlay onClick={() => photoInputRef.current.click()} />
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <span style={{ fontSize: '12px', color: '#7f776f', fontWeight: '600' }}>Nombre</span>
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <input 
-              type="text" 
-              value={teamName}
-              onChange={(e) => setTeamName(e.target.value)}
-              style={{
-                width: '100%',
-                background: '#ffffff',
-                border: '1px solid #d8cfc0',
-                borderRadius: '8px',
-                padding: '10px 40px 10px 12px',
-                fontSize: '0.92rem',
-                color: '#191919',
-                fontWeight: '600',
-                outline: 'none',
-                height: '42px'
-              }}
-            />
-            {teamName && (
-              <button 
-                type="button" 
-                onClick={() => setTeamName('')}
-                style={{
-                  position: 'absolute',
-                  right: '12px',
-                  background: '#c4b9a3',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: '18px',
-                  height: '18px',
-                  minWidth: '18px',
-                  minHeight: '18px',
-                  maxWidth: '18px',
-                  maxHeight: '18px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#ffffff',
-                  padding: 0,
-                  cursor: 'pointer',
-                  flexShrink: 0
-                }}
-              >
-                <X size={11} />
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <div style={{ background: '#ffffff', border: '1px solid #d8cfc0', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
-            <div style={{
-              background: '#f4efe6',
-              borderBottom: '1px solid #d8cfc0',
-              color: '#7f776f',
-              padding: '12px 16px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              fontSize: '11px',
-              fontWeight: '700',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
-            }}>
-              <span>JUGADORES/AS</span>
-              <span>LBF</span>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', maxHeight: '350px', overflowY: 'auto' }}>
-              {mobileRoster.length === 0 ? (
-                <div style={{ padding: '24px', textAlign: 'center', color: '#7f776f', fontSize: '13px' }}>
-                  No hay jugadores en el catálogo. ¡Agrega uno nuevo!
-                </div>
-              ) : (
-                mobileRoster.map((item, idx) => (
-                  <div 
-                    key={item.player.id} 
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '10px 16px',
-                      borderBottom: idx === mobileRoster.length - 1 ? 'none' : '1px solid #f0eae1',
-                      background: idx % 2 === 0 ? '#fcfbfa' : '#ffffff'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '50%',
-                        background: '#eae4d8',
-                        overflow: 'hidden',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        {item.player.photo ? (
-                          <img src={item.player.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                          <UserCheck size={14} color="#cc7a5c" />
-                        )}
-                      </div>
-                      <span style={{ fontSize: '13px', fontWeight: '600', color: '#191919' }}>
-                        {item.player.last_name}, {item.player.first_name}
-                      </span>
-                    </div>
-                    
-                    <LbfSwitch checked={item.isLbf} onChange={() => handleToggleLbf(idx)} />
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          <div style={{ marginTop: '12px' }}>
-            <button 
-              type="button"
-              onClick={() => setShowAddPlayer(true)}
-              style={{
-                width: '100%',
-                height: '44px',
-                background: '#038c4c',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '22px',
-                fontSize: '14px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                boxShadow: '0 2px 6px rgba(3,140,76,0.3)'
-              }}
-            >
-              <UserPlus size={18} /> Añadir Jugador
-            </button>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '10px' }}>
-          <button 
-            onClick={handleSave}
-            disabled={saving}
-            style={{
-              width: '100%',
-              height: '44px',
-              background: '#4cd964',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '22px',
-              fontSize: '14px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 6px rgba(76,217,100,0.3)'
-            }}
-          >
-            {saving ? "GUARDANDO..." : "GUARDAR"}
-          </button>
-          
-          <button 
-            onClick={handleRemove}
-            style={{
-              width: '100%',
-              height: '44px',
-              background: '#ff3b30',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '22px',
-              fontSize: '14px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 6px rgba(255,59,48,0.3)'
-            }}
-          >
-            QUITAR DEL TORNEO
-          </button>
-        </div>
+      <div style={{ padding: '16px 16px 28px', display: 'flex', flexDirection: 'column', gap: '20px', flex: 1, position: 'relative' }}>
+        {formContent}
       </div>
 
       {showAddPlayer && (

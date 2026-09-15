@@ -271,7 +271,7 @@ function CategoryDetailPage() {
                           <div className="divide-y divide-border/60">
                             {lastRound.matches?.map((m: any) => (
                               <div key={m.id} className="px-6 py-4 flex items-center justify-between gap-3">
-                                <span className="font-semibold text-sm flex-1 text-left truncate">{m.local_team_name}</span>
+                                <span className="font-medium text-sm flex-1 text-left truncate">{m.local_team_name}</span>
                                 <div className="flex flex-col items-center flex-shrink-0 min-w-[100px]">
                                   <span className="font-display text-lg font-bold text-primary">
                                     {m.played ? `${m.local_score} - ${m.visitor_score}` : "VS"}
@@ -282,7 +282,7 @@ function CategoryDetailPage() {
                                   </div>
                                   {m.cancha && <span className="text-[10px] text-muted-foreground mt-0.5">{m.cancha}</span>}
                                 </div>
-                                <span className="font-semibold text-sm flex-1 text-right truncate">{m.visitor_team_name}</span>
+                                <span className="font-medium text-sm flex-1 text-right truncate">{m.visitor_team_name}</span>
                               </div>
                             ))}
                           </div>
@@ -309,7 +309,7 @@ function CategoryDetailPage() {
                           <div className="divide-y divide-border/60">
                             {nextRound.matches?.map((m: any) => (
                               <div key={m.id} className="px-6 py-4 flex items-center justify-between gap-3">
-                                <span className="font-semibold text-sm flex-1 text-left truncate">{m.local_team_name}</span>
+                                <span className="font-medium text-sm flex-1 text-left truncate">{m.local_team_name}</span>
                                 <div className="flex flex-col items-center flex-shrink-0 min-w-[100px]">
                                   <div className="flex gap-2 text-[11px] text-muted-foreground">
                                     {(m.date || nextRound.date) && <span>{fmtDate(m.date || nextRound.date)}</span>}
@@ -317,7 +317,7 @@ function CategoryDetailPage() {
                                   </div>
                                   {m.cancha && <span className="text-[10px] text-muted-foreground mt-0.5">{m.cancha}</span>}
                                 </div>
-                                <span className="font-semibold text-sm flex-1 text-right truncate">{m.visitor_team_name}</span>
+                                <span className="font-medium text-sm flex-1 text-right truncate">{m.visitor_team_name}</span>
                               </div>
                             ))}
                           </div>

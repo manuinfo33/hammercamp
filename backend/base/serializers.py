@@ -222,7 +222,7 @@ class MatchSerializer(serializers.ModelSerializer):
         fields = ['id', 'match_round', 'local_team', 'local_team_name', 'local_team_logo',
                   'visitor_team', 'visitor_team_name', 'visitor_team_logo',
                   'local_score', 'visitor_score', 'played', 'date', 'time',
-                  'cancha', 'impact_zone', 'impact_zone_name']
+                  'cancha', 'arbitro', 'impact_zone', 'impact_zone_name']
         extra_kwargs = {
             'match_round': {'required': False}
         }
