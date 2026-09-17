@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Trophy, Users, Edit, Check, X, Calendar, Clock, Plus, Trash2, Shield, 
@@ -9,6 +9,7 @@ import api from '../../api';
 import { createPortal } from 'react-dom';
 import TeamForm from '../teams/TeamForm';
 import PlayerFormModal from '../players/PlayerFormModal';
+import MatchResultModal from './MatchResultModal';
 import { useAuth } from '../../context/AuthContext';
 
 const TABS = [
@@ -345,6 +346,10 @@ export default function TournamentDetailView({ tournament, onBack }) {
   // Match Dropdown menu state
   const [openDropdownMatchId, setOpenDropdownMatchId] = useState(null);
 
+  // Match Result Modal state
+  const [selectedMatchForScore, setSelectedMatchForScore] = useState(null);
+  const [selectedRoundNameForScore, setSelectedRoundNameForScore] = useState('');
+
   const fetchTournamentDetail = async () => {
     if (!tournamentId) return;
     try {
@@ -627,7 +632,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
   const handleGenerateFixture = async (zoneId) => {
     const zone = detailedTournament?.zones?.find(z => z.id === zoneId);
     if (!zone || !zone.zone_teams || zone.zone_teams.length < 2) {
-      setCustomAlert({ message: "Se necesitan al menos 2 equipos asignados a esta zona para poder generar el fixture.", type: "error" });
+      setCustomAlert({ message: "Se necesitan al menos 2 equipos asignados para poder generar el fixture.", type: "error" });
       return;
     }
 
@@ -654,7 +659,46 @@ export default function TournamentDetailView({ tournament, onBack }) {
         });
       }
       setCustomAlert({ message: "¡Fixture generado con éxito!", type: "success" });
-      await fetchFixturesForZone(zoneId);
+      await fetchFixturesForAllZones();
+    } catch (e) {
+      console.error(e);
+      setCustomAlert({ message: "Hubo un error al guardar el fixture en el servidor.", type: "error" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenerateFixtureAll = async () => {
+    const zonesWithTeams = detailedTournament?.zones?.filter(z => z.zone_teams?.length >= 2) || [];
+    if (zonesWithTeams.length === 0) {
+      setCustomAlert({ message: "Se necesitan al menos 2 equipos asignados en el torneo para poder generar el fixture.", type: "error" });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      for (const zone of zonesWithTeams) {
+        const teams = zone.zone_teams.map(zt => ({
+          id: zt.team,
+          name: zt.team_name,
+        }));
+        const rounds = generateRoundRobin(teams, fixtureMode === 'ida_vuelta');
+        for (const r of rounds) {
+          await api.post('match-rounds/', {
+            tournament_zone: zone.id,
+            name: r.name,
+            order: r.order,
+            matches: r.matches.map(m => ({
+              local_team: m.local.id,
+              visitor_team: m.visitor.id,
+              played: false,
+              impact_zone: zone.id
+            }))
+          });
+        }
+      }
+      setCustomAlert({ message: "¡Fixture generado con éxito!", type: "success" });
+      await fetchFixturesForAllZones();
     } catch (e) {
       console.error(e);
       setCustomAlert({ message: "Hubo un error al guardar el fixture en el servidor.", type: "error" });
@@ -665,7 +709,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
   const handleDeleteFixture = async (zoneId) => {
     setCustomConfirm({
-      message: "¿Estás seguro de que deseas eliminar el fixture de esta zona? Se perderán todas las fechas y partidos creados.",
+      message: "¿Estás seguro de que deseas eliminar el fixture? Se perderán todas las fechas y partidos creados.",
       onConfirm: async () => {
         try {
           setLoading(true);
@@ -674,7 +718,29 @@ export default function TournamentDetailView({ tournament, onBack }) {
             await api.delete(`match-rounds/${r.id}/`);
           }
           setCustomAlert({ message: "Fixture eliminado correctamente.", type: "success" });
-          await fetchFixturesForZone(zoneId);
+          await fetchFixturesForAllZones();
+        } catch (e) {
+          console.error(e);
+          setCustomAlert({ message: "Hubo un error al eliminar el fixture.", type: "error" });
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
+  };
+
+  const handleDeleteAllFixtures = async () => {
+    setCustomConfirm({
+      message: "¿Estás seguro de que deseas eliminar todo el fixture del torneo? Se perderán todas las fechas y partidos creados.",
+      onConfirm: async () => {
+        try {
+          setLoading(true);
+          const allRounds = Object.values(fixturesByZone).flat();
+          for (const r of allRounds) {
+            await api.delete(`match-rounds/${r.id}/`);
+          }
+          setCustomAlert({ message: "Fixture del torneo eliminado correctamente.", type: "success" });
+          await fetchFixturesForAllZones();
         } catch (e) {
           console.error(e);
           setCustomAlert({ message: "Hubo un error al eliminar el fixture.", type: "error" });
@@ -687,22 +753,26 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
   // Create a new empty round manually
   const handleCreateNewRound = async () => {
-    const currentZone = detailedTournament?.zones?.find(z => z.id === activeZoneId);
-    if (!currentZone || !currentZone.zone_teams || currentZone.zone_teams.length < 2) {
-      setCustomAlert({ message: "Se necesitan al menos 2 equipos cargados en esta zona para agregar fechas.", type: "error" });
+    if (tournamentTeams.length < 2) {
+      setCustomAlert({ message: "Se necesitan al menos 2 equipos cargados en el torneo para agregar fechas.", type: "error" });
+      return;
+    }
+    const targetZoneId = detailedTournament?.zones?.[0]?.id;
+    if (!targetZoneId) {
+      setCustomAlert({ message: "El torneo no tiene zonas configuradas.", type: "error" });
       return;
     }
     try {
       setLoading(true);
-      const nextOrder = (fixturesByZone[activeZoneId] || []).length + 1;
+      const nextOrder = unifiedFixtures.length + 1;
       await api.post('match-rounds/', {
-        tournament_zone: activeZoneId,
+        tournament_zone: targetZoneId,
         name: `Fecha ${nextOrder}`,
         order: nextOrder,
         matches: []
       });
       setCustomAlert({ message: `Jornada 'Fecha ${nextOrder}' creada con éxito.`, type: "success" });
-      await fetchFixturesForZone(activeZoneId);
+      await fetchFixturesForAllZones();
     } catch (e) {
       console.error(e);
       setCustomAlert({ message: "Hubo un error al crear la nueva fecha.", type: "error" });
@@ -713,7 +783,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
   // Open Edit Round Modal
   const openEditRoundModal = (r) => {
-    setEditRoundRoundId(r.id);
+    setEditRoundRoundId(r.roundIds?.[0] || r.id);
     setEditRoundName(r.name);
     setEditRoundDate(r.date || '');
     setEditRoundTime(r.time || '');
@@ -733,7 +803,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
         time: editRoundTime || null
       });
       setCustomAlert({ message: "Fecha actualizada correctamente.", type: "success" });
-      await fetchFixturesForZone(activeZoneId);
+      await fetchFixturesForAllZones();
     } catch (e) {
       console.error(e);
       setCustomAlert({ message: "Error al actualizar los datos de la fecha.", type: "error" });
@@ -742,15 +812,18 @@ export default function TournamentDetailView({ tournament, onBack }) {
     }
   };
 
-  const handleDeleteRound = async (roundId) => {
+  const handleDeleteRound = async (roundOrIds) => {
+    const ids = Array.isArray(roundOrIds) ? roundOrIds : [roundOrIds];
     setCustomConfirm({
       message: "¿Estás seguro de que deseas eliminar esta fecha por completo? Se perderán todos sus partidos programados.",
       onConfirm: async () => {
         try {
           setLoading(true);
-          await api.delete(`match-rounds/${roundId}/`);
+          for (const id of ids) {
+            await api.delete(`match-rounds/${id}/`);
+          }
           setCustomAlert({ message: "Fecha eliminada correctamente.", type: "success" });
-          await fetchFixturesForZone(activeZoneId);
+          await fetchFixturesForAllZones();
         } catch (e) {
           console.error(e);
           setCustomAlert({ message: "Hubo un error al eliminar la fecha.", type: "error" });
@@ -763,14 +836,14 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
   // Open New Match Modal
   const openNewMatchModal = (r) => {
-    setNewMatchRoundId(r.id);
+    setNewMatchRoundId(r.roundIds?.[0] || r.id);
     setNewMatchLocal('');
     setNewMatchVisitor('');
     setNewMatchDate(r.date || '');
     setNewMatchTime(r.time || '');
     setNewMatchCancha('');
     setNewMatchArbitro('');
-    setNewMatchZone(activeZoneId);
+    setNewMatchZone(r.tournament_zone || detailedTournament?.zones?.[0]?.id || 'cruce');
     setShowNewMatchModal(true);
   };
 
@@ -940,20 +1013,64 @@ export default function TournamentDetailView({ tournament, onBack }) {
     });
   };
 
-  // Helper to dynamically calculate which team is libre in a round
-  const getLibreTeam = (zoneTeams, roundMatches) => {
-    if (!zoneTeams || zoneTeams.length % 2 === 0) return null;
+  // Helper to dynamically calculate which team is libre in a round across tournament zones
+  const getLibreTeam = (roundMatches) => {
+    if (!detailedTournament?.zones) return null;
     const playingTeamIds = new Set();
-    roundMatches.forEach(m => {
-      playingTeamIds.add(m.local_team);
-      playingTeamIds.add(m.visitor_team);
+    roundMatches?.forEach(m => {
+      playingTeamIds.add(Number(m.local_team));
+      playingTeamIds.add(Number(m.visitor_team));
     });
-    const libreZoneTeam = zoneTeams.find(zt => !playingTeamIds.has(zt.team));
-    return libreZoneTeam ? libreZoneTeam.team_name : null;
+
+    const libreNames = [];
+    detailedTournament.zones.forEach(z => {
+      if (z.zone_teams && z.zone_teams.length % 2 !== 0) {
+        const libreZt = z.zone_teams.find(zt => !playingTeamIds.has(Number(zt.team)));
+        if (libreZt) {
+          libreNames.push(libreZt.team_name);
+        }
+      }
+    });
+    return libreNames.length > 0 ? libreNames.join(', ') : null;
   };
 
+  // Group and unify all fixture rounds across all zones of the tournament
+  const unifiedFixtures = useMemo(() => {
+    const allRounds = Object.values(fixturesByZone).flat();
+    if (!allRounds.length) return [];
+
+    const map = new Map();
+    allRounds.forEach(r => {
+      const key = r.name?.trim().toLowerCase() || `order_${r.order}`;
+      if (!map.has(key)) {
+        map.set(key, {
+          ...r,
+          matches: [...(r.matches || [])],
+          roundIds: [r.id],
+          zones: [r.tournament_zone]
+        });
+      } else {
+        const existing = map.get(key);
+        existing.matches.push(...(r.matches || []));
+        existing.roundIds.push(r.id);
+        if (!existing.zones.includes(r.tournament_zone)) {
+          existing.zones.push(r.tournament_zone);
+        }
+        // Deduplicate matches
+        const seenMatchIds = new Set();
+        existing.matches = existing.matches.filter(m => {
+          if (seenMatchIds.has(m.id)) return false;
+          seenMatchIds.add(m.id);
+          return true;
+        });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => (a.order || 0) - (b.order || 0));
+  }, [fixturesByZone]);
+
   const currentZone = detailedTournament?.zones?.find(z => z.id === activeZoneId);
-  const activeZoneFixtures = fixturesByZone[activeZoneId] || [];
+  const activeZoneFixtures = unifiedFixtures;
 
   // Gather all teams in the tournament for manual match assignment
   const allTeams = detailedTournament?.zones?.flatMap(z => 
@@ -1227,7 +1344,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
       </div>
 
       {/* Tab Content */}
-      <div style={{ paddingBottom: isMobile ? '80px' : (activeTab === 'fixture' && activeZoneFixtures.length > 0 ? '80px' : '0px') }}>
+      <div style={{ paddingBottom: isMobile ? '80px' : (activeTab === 'fixture' && unifiedFixtures.length > 0 ? '80px' : '0px') }}>
         {loading ? (
           <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>Cargando detalles...</div>
         ) : !detailedTournament ? (
@@ -1529,514 +1646,487 @@ export default function TournamentDetailView({ tournament, onBack }) {
             {activeTab === 'fixture' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 
-                {/* Zone Navigation Tabs */}
-                {detailedTournament.zones?.length > 1 && (
-                  <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '12px', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
-                    {detailedTournament.zones.map((zone) => (
-                      <button
-                        key={zone.id}
-                        onClick={() => setActiveZoneId(zone.id)}
-                        className={activeZoneId === zone.id ? "" : "secondary"}
-                        style={{
-                          borderRadius: '20px',
-                          padding: '6px 16px',
-                          fontSize: '0.8rem',
-                          height: '32px',
-                          flexShrink: 0
-                        }}
-                      >
-                        {zone.name}
-                      </button>
-                    ))}
+                {/* Fixture Control Bar - ALWAYS VISIBLE */}
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center', 
+                  gap: '16px', 
+                  background: '#ffffff', 
+                  padding: '18px 24px', 
+                  borderRadius: '16px', 
+                  border: '1px solid #e6dfd3', 
+                  boxShadow: '0 2px 10px rgba(25, 20, 15, 0.03)'
+                }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#191919' }}>
+                      Fixture
+                    </h3>
+                    <span style={{ fontSize: '12px', color: '#7f776f', marginTop: '2px', display: 'block' }}>
+                      {unifiedFixtures.length === 0 ? 'Sin fechas creadas' : `${unifiedFixtures.length} ${unifiedFixtures.length === 1 ? 'Fecha programada' : 'Fechas programadas'}`}
+                    </span>
                   </div>
-                )}
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <button
+                      onClick={handleCreateNewRound}
+                      disabled={tournamentTeams.length < 2}
+                      title={tournamentTeams.length < 2 ? "Se necesitan al menos 2 equipos para agregar fechas" : "Agregar Nueva Fecha"}
+                      style={{ 
+                        height: '36px', 
+                        fontSize: '0.8rem', 
+                        padding: '0 16px', 
+                        borderRadius: '10px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        opacity: tournamentTeams.length < 2 ? 0.5 : 1,
+                        cursor: tournamentTeams.length < 2 ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      <Plus size={14} /> Nueva Fecha
+                    </button>
+                    {unifiedFixtures.length > 0 && (
+                      <button
+                        onClick={handleDeleteAllFixtures}
+                        className="danger"
+                        style={{ height: '36px', fontSize: '0.8rem', padding: '0 16px', borderRadius: '10px' }}
+                      >
+                        <Trash2 size={14} /> Eliminar Fixture Completo
+                      </button>
+                    )}
+                  </div>
+                </div>
 
-                {/* Fixture content for selected zone */}
-                {activeZoneId && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    
-                    {/* Fixture Control Bar - ALWAYS VISIBLE */}
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center', 
-                      gap: '16px', 
-                      background: '#ffffff', 
-                      padding: '18px 24px', 
-                      borderRadius: '16px', 
-                      border: '1px solid #e6dfd3', 
-                      boxShadow: '0 2px 10px rgba(25, 20, 15, 0.03)'
+                {unifiedFixtures.length === 0 ? (
+                  /* NO FIXTURE CREATED YET */
+                  <div className="glass-card" style={{ padding: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', textAlign: 'center' }}>
+                    <div style={{
+                      width: '60px',
+                      height: '60px',
+                      borderRadius: '30px',
+                      background: 'rgba(212, 184, 150, 0.05)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '1px solid var(--border-subtle)'
                     }}>
-                      <div>
-                        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#191919' }}>
-                          Fixture de {currentZone?.name}
-                        </h3>
-                        <span style={{ fontSize: '12px', color: '#7f776f', marginTop: '2px', display: 'block' }}>
-                          {activeZoneFixtures.length === 0 ? 'Sin fechas creadas' : `${activeZoneFixtures.length} ${activeZoneFixtures.length === 1 ? 'Fecha programada' : 'Fechas programadas'}`}
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                        <button
-                          onClick={handleCreateNewRound}
-                          disabled={currentZone?.zone_teams?.length < 2}
-                          title={currentZone?.zone_teams?.length < 2 ? "Se necesitan al menos 2 equipos para agregar fechas" : "Agregar Nueva Fecha"}
-                          style={{ 
-                            height: '36px', 
-                            fontSize: '0.8rem', 
-                            padding: '0 16px', 
-                            borderRadius: '10px',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            opacity: currentZone?.zone_teams?.length < 2 ? 0.5 : 1,
-                            cursor: currentZone?.zone_teams?.length < 2 ? 'not-allowed' : 'pointer'
-                          }}
-                        >
-                          <Plus size={14} /> Nueva Fecha
-                        </button>
-                        {activeZoneFixtures.length > 0 && (
-                          <button
-                            onClick={() => handleDeleteFixture(activeZoneId)}
-                            className="danger"
-                            style={{ height: '36px', fontSize: '0.8rem', padding: '0 16px', borderRadius: '10px' }}
-                          >
-                            <Trash2 size={14} /> Eliminar Fixture Completo
-                          </button>
-                        )}
-                      </div>
+                      <Calendar size={28} color="var(--brand-beige)" />
+                    </div>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800' }}>Sin Fixture Creado</h3>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '6px', maxWidth: '400px' }}>
+                        Todavía no se ha generado el fixture para este torneo. Podés hacer clic en <strong>"+ Nueva Fecha"</strong> para crear fechas manualmente o seleccionar el tipo de fixture a continuación.
+                      </p>
                     </div>
 
-                    {activeZoneFixtures.length === 0 ? (
-                      /* NO FIXTURE CREATED YET */
-                      <div className="glass-card" style={{ padding: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', textAlign: 'center' }}>
-                        <div style={{
-                          width: '60px',
-                          height: '60px',
-                          borderRadius: '30px',
-                          background: 'rgba(212, 184, 150, 0.05)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          border: '1px solid var(--border-subtle)'
-                        }}>
-                          <Calendar size={28} color="var(--brand-beige)" />
-                        </div>
-                        <div>
-                          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800' }}>Sin Fixture Creado</h3>
-                          <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '6px', maxWidth: '400px' }}>
-                            Todavía no se ha generado el fixture para la <strong>{currentZone?.name}</strong>. Podés hacer clic en <strong>"+ Nueva Fecha"</strong> para crear fechas manualmente o seleccionar el tipo de fixture a continuación.
-                          </p>
-                        </div>
-
-                        {currentZone?.zone_teams?.length < 2 ? (
-                          <div style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '10px', 
-                            background: '#fef2f2', 
-                            color: '#dc2626', 
-                            border: '1px solid #fecaca', 
-                            padding: '12px 20px', 
-                            borderRadius: '10px', 
-                            fontSize: '13px',
-                            fontWeight: '600'
-                          }}>
-                            <AlertTriangle size={18} color="#dc2626" />
-                            <span>Se necesitan al menos 2 equipos en esta zona para poder generar el fixture.</span>
-                          </div>
-                        ) : (
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', width: '100%', maxWidth: '360px', borderTop: '1px solid var(--border-subtle)', paddingTop: '20px' }}>
-                            <div className="input-group" style={{ textAlign: 'left' }}>
-                              <label>Tipo de Fixture Automático</label>
-                              <select 
-                                value={fixtureMode} 
-                                onChange={(e) => setFixtureMode(e.target.value)}
-                                style={{ background: 'var(--input-bg)', border: '1px solid var(--border-strong)' }}
-                              >
-                                <option value="ida">Solo IDA</option>
-                                <option value="ida_vuelta">IDA y VUELTA</option>
-                              </select>
-                            </div>
-                            <button
-                              onClick={() => handleGenerateFixture(activeZoneId)}
-                              style={{ width: '100%', height: '42px', borderRadius: '10px' }}
-                            >
-                              <Plus size={16} /> Generar Fixture Automático
-                            </button>
-                          </div>
-                        )}
+                    {tournamentTeams.length < 2 ? (
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '10px', 
+                        background: '#fef2f2', 
+                        color: '#dc2626', 
+                        border: '1px solid #fecaca', 
+                        padding: '12px 20px', 
+                        borderRadius: '10px', 
+                        fontSize: '13px',
+                        fontWeight: '600'
+                      }}>
+                        <AlertTriangle size={18} color="#dc2626" />
+                        <span>Se necesitan al menos 2 equipos en el torneo para poder generar el fixture.</span>
                       </div>
                     ) : (
-                      /* FIXTURE EXISTS: DISPLAY STACKED CARDS */
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', width: '100%', maxWidth: '360px', borderTop: '1px solid var(--border-subtle)', paddingTop: '20px' }}>
+                        <div className="input-group" style={{ textAlign: 'left' }}>
+                          <label>Tipo de Fixture Automático</label>
+                          <select 
+                            value={fixtureMode} 
+                            onChange={(e) => setFixtureMode(e.target.value)}
+                            style={{ background: 'var(--input-bg)', border: '1px solid var(--border-strong)' }}
+                          >
+                            <option value="ida">Solo IDA</option>
+                            <option value="ida_vuelta">IDA y VUELTA</option>
+                          </select>
+                        </div>
+                        <button
+                          onClick={handleGenerateFixtureAll}
+                          style={{ width: '100%', height: '42px', borderRadius: '10px' }}
+                        >
+                          <Plus size={16} /> Generar Fixture Automático
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* FIXTURE EXISTS: DISPLAY STACKED CARDS */
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-                        {/* Stacked Fechas Cards */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                          {activeZoneFixtures.map((r) => {
-                            const libreTeam = getLibreTeam(currentZone?.zone_teams, r.matches);
+                    {/* Stacked Fechas Cards */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                      {unifiedFixtures.map((r) => {
+                        const libreTeam = getLibreTeam(r.matches);
+                        
+                        return (
+                          <div 
+                            key={r.id} 
+                            className="fecha-card" 
+                            style={{ 
+                              padding: 0, 
+                              overflow: 'visible',
+                              border: '1px solid #e6dfd3',
+                              borderRadius: '16px',
+                              boxShadow: '0 4px 20px rgba(25, 20, 15, 0.04)',
+                              background: '#ffffff'
+                            }}
+                          >
                             
-                            return (
-                              <div 
-                                key={r.id} 
-                                className="fecha-card" 
-                                style={{ 
-                                  padding: 0, 
-                                  overflow: 'visible',
-                                  border: '1px solid #e6dfd3',
-                                  borderRadius: '16px',
-                                  boxShadow: '0 4px 20px rgba(25, 20, 15, 0.04)',
-                                  background: '#ffffff'
+                            {/* Card Header (Warm thematic header) */}
+                            <div style={{
+                              background: '#eae4d8',
+                              borderBottom: '1px solid #d8cfc0',
+                              padding: '12px 16px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              position: 'relative',
+                              borderRadius: '16px 16px 0 0'
+                            }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                                <span style={{ fontWeight: '800', letterSpacing: '1.5px', fontSize: '14px', textTransform: 'uppercase', color: '#191919' }}>
+                                  {r.name}
+                                </span>
+                              </div>
+
+                              {/* Kebab/More Options Button */}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenDropdownRoundId(openDropdownRoundId === r.id ? null : r.id);
                                 }}
-                              >
-                                
-                                {/* Card Header (Warm thematic header) */}
-                                <div style={{
-                                  background: '#eae4d8',
-                                  borderBottom: '1px solid #d8cfc0',
-                                  padding: '12px 16px',
+                                style={{
+                                  position: 'absolute',
+                                  right: '16px',
+                                  background: 'none',
+                                  border: 'none',
+                                  padding: '6px',
+                                  color: '#7f776f',
+                                  cursor: 'pointer',
+                                  minWidth: 'auto',
+                                  height: 'auto',
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
-                                  position: 'relative',
-                                  borderRadius: '16px 16px 0 0'
-                                }}>
-                                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-                                    <span style={{ fontWeight: '800', letterSpacing: '1.5px', fontSize: '14px', textTransform: 'uppercase', color: '#191919' }}>
-                                      {r.name}
-                                    </span>
-                                  </div>
+                                  borderRadius: '50%'
+                                }}
+                                className="secondary"
+                              >
+                                <MoreVertical size={16} />
+                              </button>
 
-                                  {/* Kebab/More Options Button */}
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setOpenDropdownRoundId(openDropdownRoundId === r.id ? null : r.id);
+                              {/* Dropdown Menu for Round */}
+                              {openDropdownRoundId === r.id && (
+                                <div style={dropdownStyles} onClick={(e) => e.stopPropagation()}>
+                                  <button 
+                                    style={dropdownItemStyles} 
+                                    onClick={() => {
+                                      setOpenDropdownRoundId(null);
+                                      openEditRoundModal(r);
                                     }}
-                                    style={{
-                                      position: 'absolute',
-                                      right: '16px',
-                                      background: 'none',
-                                      border: 'none',
-                                      padding: '6px',
-                                      color: '#7f776f',
-                                      cursor: 'pointer',
-                                      minWidth: 'auto',
-                                      height: 'auto',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      borderRadius: '50%'
-                                    }}
-                                    className="secondary"
+                                    className="premium-dropdown-item"
                                   >
-                                    <MoreVertical size={16} />
+                                    <Edit size={14} color="#cc7a5c" />
+                                    Editar información
                                   </button>
-
-                                  {/* Dropdown Menu for Round */}
-                                  {openDropdownRoundId === r.id && (
-                                    <div style={dropdownStyles} onClick={(e) => e.stopPropagation()}>
-                                      <button 
-                                        style={dropdownItemStyles} 
-                                        onClick={() => {
-                                          setOpenDropdownRoundId(null);
-                                          openEditRoundModal(r);
-                                        }}
-                                        className="premium-dropdown-item"
-                                      >
-                                        <Edit size={14} color="#cc7a5c" />
-                                        Editar información
-                                      </button>
-                                      <button 
-                                        style={dropdownItemStyles} 
-                                        onClick={() => {
-                                          setOpenDropdownRoundId(null);
-                                          openNewMatchModal(r);
-                                        }}
-                                        className="premium-dropdown-item"
-                                      >
-                                        <Plus size={14} color="#cc7a5c" />
-                                        Nuevo partido
-                                      </button>
-                                      <button 
-                                        style={{ ...dropdownItemStyles, color: '#d9534f' }} 
-                                        onClick={() => {
-                                          setOpenDropdownRoundId(null);
-                                          handleDeleteRound(r.id);
-                                        }}
-                                        className="premium-dropdown-item"
-                                      >
-                                        <Trash2 size={14} color="#d9534f" />
-                                        Eliminar fecha
-                                      </button>
-                                      <div style={{ height: '1px', background: '#e6dfd3', margin: '4px 0' }} />
-                                      <button 
-                                        style={dropdownItemStyles} 
-                                        onClick={() => {
-                                          setOpenDropdownRoundId(null);
-                                          alert("Generando planillas en Excel... (Funcionalidad en desarrollo)");
-                                        }}
-                                        className="premium-dropdown-item"
-                                      >
-                                        <FileSpreadsheet size={14} color="#7f776f" />
-                                        Generar planillas en excel
-                                      </button>
-                                      <button 
-                                        style={dropdownItemStyles} 
-                                        onClick={() => {
-                                          setOpenDropdownRoundId(null);
-                                          alert("Generando planillas en PDF... (Funcionalidad en desarrollo)");
-                                        }}
-                                        className="premium-dropdown-item"
-                                      >
-                                        <FileText size={14} color="#7f776f" />
-                                        Generar planillas en pdf
-                                      </button>
-                                    </div>
-                                  )}
+                                  <button 
+                                    style={dropdownItemStyles} 
+                                    onClick={() => {
+                                      setOpenDropdownRoundId(null);
+                                      openNewMatchModal(r);
+                                    }}
+                                    className="premium-dropdown-item"
+                                  >
+                                    <Plus size={14} color="#cc7a5c" />
+                                    Nuevo partido
+                                  </button>
+                                  <button 
+                                    style={{ ...dropdownItemStyles, color: '#d9534f' }} 
+                                    onClick={() => {
+                                      setOpenDropdownRoundId(null);
+                                      handleDeleteRound(r.roundIds || r.id);
+                                    }}
+                                    className="premium-dropdown-item"
+                                  >
+                                    <Trash2 size={14} color="#d9534f" />
+                                    Eliminar fecha
+                                  </button>
+                                  <div style={{ height: '1px', background: '#e6dfd3', margin: '4px 0' }} />
+                                  <button 
+                                    style={dropdownItemStyles} 
+                                    onClick={() => {
+                                      setOpenDropdownRoundId(null);
+                                      alert("Generando planillas en Excel... (Funcionalidad en desarrollo)");
+                                    }}
+                                    className="premium-dropdown-item"
+                                  >
+                                    <FileSpreadsheet size={14} color="#7f776f" />
+                                    Generar planillas en excel
+                                  </button>
+                                  <button 
+                                    style={dropdownItemStyles} 
+                                    onClick={() => {
+                                      setOpenDropdownRoundId(null);
+                                      alert("Generando planillas en PDF... (Funcionalidad en desarrollo)");
+                                    }}
+                                    className="premium-dropdown-item"
+                                  >
+                                    <FileText size={14} color="#7f776f" />
+                                    Generar planillas en pdf
+                                  </button>
                                 </div>
+                              )}
+                            </div>
 
-                                {/* Card Body (Stacked matches) */}
-                                <div style={{ display: 'flex', flexDirection: 'column', background: '#ffffff', borderRadius: '0 0 16px 16px', overflow: 'visible' }}>
-                                  {r.matches?.length === 0 ? (
-                                    <div style={{ padding: '24px', textAlign: 'center', color: '#7f776f', fontSize: '13px' }}>
-                                      No hay partidos programados en esta fecha.
-                                    </div>
-                                  ) : (
-                                    r.matches.map((m, index) => {
-                                      const isLast = index === r.matches.length - 1 && !libreTeam;
-                                      return (
-                                        <div 
-                                          key={m.id} 
-                                          style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            padding: '8px 16px',
-                                            borderBottom: isLast ? 'none' : '1px solid #f0eae1',
-                                            background: index % 2 === 0 ? '#fcfbfa' : '#ffffff',
-                                            position: 'relative',
-                                            minHeight: '42px',
-                                            borderRadius: isLast ? '0 0 16px 16px' : '0'
-                                          }}
-                                        >
-                                          {/* Local Team */}
-                                          <div style={{ 
-                                            flex: '1 1 0', 
-                                            textAlign: 'right', 
-                                            fontWeight: '500', 
-                                            fontSize: '0.85rem', 
-                                            color: '#191919', 
-                                            paddingRight: '10px',
-                                            wordBreak: 'break-word',
-                                            lineHeight: '1.25'
-                                          }}>
-                                            {m.local_team_name}
-                                          </div>
+                            {/* Card Body (Stacked matches) */}
+                            <div style={{ display: 'flex', flexDirection: 'column', background: '#ffffff', borderRadius: '0 0 16px 16px', overflow: 'visible' }}>
+                              {r.matches?.length === 0 ? (
+                                <div style={{ padding: '24px', textAlign: 'center', color: '#7f776f', fontSize: '13px' }}>
+                                  No hay partidos programados en esta fecha.
+                                </div>
+                              ) : (
+                                r.matches.map((m, index) => {
+                                  const isLast = index === r.matches.length - 1 && !libreTeam;
+                                  return (
+                                    <div 
+                                      key={m.id} 
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: '8px 16px',
+                                        borderBottom: isLast ? 'none' : '1px solid #f0eae1',
+                                        background: index % 2 === 0 ? '#fcfbfa' : '#ffffff',
+                                        position: 'relative',
+                                        minHeight: '42px',
+                                        borderRadius: isLast ? '0 0 16px 16px' : '0'
+                                      }}
+                                    >
+                                      {/* Local Team */}
+                                      <div style={{ 
+                                        flex: '1 1 0', 
+                                        textAlign: 'right', 
+                                        fontWeight: '500', 
+                                        fontSize: '0.85rem', 
+                                        color: '#191919', 
+                                        paddingRight: '10px',
+                                        wordBreak: 'break-word',
+                                        lineHeight: '1.25'
+                                      }}>
+                                        {m.local_team_name}
+                                      </div>
 
-                                          {/* Center Column: Handles all 3 states (Image 1, Image 2, Image 3) */}
+                                      {/* Center Column: Handles all 3 states (Image 1, Image 2, Image 3) */}
+                                      <div style={{ 
+                                        flex: '0 0 100px', 
+                                        display: 'flex', 
+                                        flexDirection: 'column',
+                                        alignItems: 'center', 
+                                        justifyContent: 'center',
+                                        textAlign: 'center',
+                                        gap: '2px',
+                                        userSelect: 'none'
+                                      }}>
+                                        {m.played ? (
+                                          /* IMAGEN 3: Partido Finalizado (FINALIZADO + Marcador, sin fecha ni hora) */
+                                          <>
+                                            <span style={{ 
+                                              fontSize: '8px', 
+                                              fontWeight: '800', 
+                                              color: '#191919', 
+                                              letterSpacing: '0.8px', 
+                                              textTransform: 'uppercase' 
+                                            }}>
+                                              FINALIZADO
+                                            </span>
+                                            <div style={{ 
+                                              display: 'flex', 
+                                              alignItems: 'center', 
+                                              justifyContent: 'center',
+                                              gap: '18px',
+                                              fontSize: '15px', 
+                                              fontWeight: '800', 
+                                              color: '#191919', 
+                                              marginTop: '1px'
+                                            }}>
+                                              <span>{m.local_score ?? 0}</span>
+                                              <span>{m.visitor_score ?? 0}</span>
+                                            </div>
+                                          </>
+                                        ) : (m.date || m.time) ? (
+                                          /* IMAGEN 2: Partido Programado con Fecha y Horario (sin cancha) */
+                                          <>
+                                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#191919' }}>
+                                              {m.date ? m.date.split('-').reverse().slice(0, 2).join('/') : ''}
+                                            </span>
+                                            <span style={{ fontSize: '10px', fontWeight: '600', color: '#7f776f' }}>
+                                              {m.time ? `${m.time.slice(0, 5)} Hs` : ''}
+                                            </span>
+                                          </>
+                                        ) : (
+                                          /* IMAGEN 1: Partido Sin Carga (-  -) */
                                           <div style={{ 
-                                            flex: '0 0 100px', 
                                             display: 'flex', 
-                                            flexDirection: 'column',
                                             alignItems: 'center', 
                                             justifyContent: 'center',
-                                            textAlign: 'center',
-                                            gap: '2px',
-                                            userSelect: 'none'
+                                            gap: '20px',
+                                            fontSize: '15px', 
+                                            fontWeight: '700', 
+                                            color: '#8c827a' 
                                           }}>
-                                            {m.played ? (
-                                              /* IMAGEN 3: Partido Finalizado (FINALIZADO + Marcador, sin fecha ni hora) */
-                                              <>
-                                                <span style={{ 
-                                                  fontSize: '8px', 
-                                                  fontWeight: '800', 
-                                                  color: '#191919', 
-                                                  letterSpacing: '0.8px', 
-                                                  textTransform: 'uppercase' 
-                                                }}>
-                                                  FINALIZADO
-                                                </span>
-                                                <div style={{ 
-                                                  display: 'flex', 
-                                                  alignItems: 'center', 
-                                                  justifyContent: 'center',
-                                                  gap: '18px',
-                                                  fontSize: '15px', 
-                                                  fontWeight: '800', 
-                                                  color: '#191919', 
-                                                  marginTop: '1px'
-                                                }}>
-                                                  <span>{m.local_score ?? 0}</span>
-                                                  <span>{m.visitor_score ?? 0}</span>
-                                                </div>
-                                              </>
-                                            ) : (m.date || m.time) ? (
-                                              /* IMAGEN 2: Partido Programado con Fecha y Horario (sin cancha) */
-                                              <>
-                                                <span style={{ fontSize: '11px', fontWeight: '700', color: '#191919' }}>
-                                                  {m.date ? m.date.split('-').reverse().slice(0, 2).join('/') : ''}
-                                                </span>
-                                                <span style={{ fontSize: '10px', fontWeight: '600', color: '#7f776f' }}>
-                                                  {m.time ? `${m.time.slice(0, 5)} Hs` : ''}
-                                                </span>
-                                              </>
-                                            ) : (
-                                              /* IMAGEN 1: Partido Sin Carga (-  -) */
-                                              <div style={{ 
-                                                display: 'flex', 
-                                                alignItems: 'center', 
-                                                justifyContent: 'center',
-                                                gap: '20px',
-                                                fontSize: '15px', 
-                                                fontWeight: '700', 
-                                                color: '#8c827a' 
-                                              }}>
-                                                <span>-</span>
-                                                <span>-</span>
-                                              </div>
-                                            )}
+                                            <span>-</span>
+                                            <span>-</span>
                                           </div>
+                                        )}
+                                      </div>
 
-                                          {/* Visitor Team */}
-                                          <div style={{ 
-                                            flex: '1 1 0', 
-                                            textAlign: 'left', 
-                                            fontWeight: '500', 
-                                            fontSize: '0.85rem', 
-                                            color: '#191919', 
-                                            paddingLeft: '10px', 
-                                            paddingRight: '32px', 
-                                            wordBreak: 'break-word',
-                                            lineHeight: '1.25'
-                                          }}>
-                                            {m.visitor_team_name}
-                                          </div>
+                                      {/* Visitor Team */}
+                                      <div style={{ 
+                                        flex: '1 1 0', 
+                                        textAlign: 'left', 
+                                        fontWeight: '500', 
+                                        fontSize: '0.85rem', 
+                                        color: '#191919', 
+                                        paddingLeft: '10px', 
+                                        paddingRight: '32px', 
+                                        wordBreak: 'break-word',
+                                        lineHeight: '1.25'
+                                      }}>
+                                        {m.visitor_team_name}
+                                      </div>
 
-                                          {/* Kebab button and Dropdown for Match */}
-                                          <button
-                                            type="button"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setOpenDropdownMatchId(openDropdownMatchId === m.id ? null : m.id);
-                                            }}
-                                            style={{
-                                              position: 'absolute',
-                                              right: '16px',
-                                              top: '50%',
-                                              transform: 'translateY(-50%)',
-                                              background: 'none',
-                                              border: 'none',
-                                              padding: '4px',
-                                              color: '#7f776f',
-                                              cursor: 'pointer',
-                                              minWidth: 'auto',
-                                              height: 'auto',
-                                              display: 'flex',
-                                              alignItems: 'center',
-                                              justifyContent: 'center',
-                                              borderRadius: '50%'
-                                            }}
-                                            className="secondary"
-                                          >
-                                            <MoreVertical size={16} />
-                                          </button>
+                                      {/* Kebab button and Dropdown for Match */}
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setOpenDropdownMatchId(openDropdownMatchId === m.id ? null : m.id);
+                                        }}
+                                        style={{
+                                          position: 'absolute',
+                                          right: '16px',
+                                          top: '50%',
+                                          transform: 'translateY(-50%)',
+                                          background: 'none',
+                                          border: 'none',
+                                          padding: '4px',
+                                          color: '#7f776f',
+                                          cursor: 'pointer',
+                                          minWidth: 'auto',
+                                          height: 'auto',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          borderRadius: '50%'
+                                        }}
+                                        className="secondary"
+                                      >
+                                        <MoreVertical size={16} />
+                                      </button>
 
-                                          {openDropdownMatchId === m.id && (
-                                             <div 
-                                               style={dropdownStyles}
-                                               onClick={(e) => e.stopPropagation()}
-                                             >
-                                               <button 
-                                                 style={dropdownItemStyles} 
-                                                 onClick={() => {
-                                                   setOpenDropdownMatchId(null);
-                                                   openEditMatchModal(m);
-                                                 }}
-                                                 className="premium-dropdown-item"
-                                               >
-                                                 <Edit size={14} color="#cc7a5c" />
-                                                 Editar Partido
-                                               </button>
-                                               <button 
-                                                 style={dropdownItemStyles} 
-                                                 onClick={() => {
-                                                   setOpenDropdownMatchId(null);
-                                                   alert("Cargar Planilla se programará luego.");
-                                                 }}
-                                                 className="premium-dropdown-item"
-                                               >
-                                                 <Plus size={14} color="#cc7a5c" />
-                                                 Cargar Planilla
-                                               </button>
-                                               <button 
-                                                 style={dropdownItemStyles} 
-                                                 onClick={() => {
-                                                   setOpenDropdownMatchId(null);
-                                                   alert("Cargar Resultado se programará luego.");
-                                                 }}
-                                                 className="premium-dropdown-item"
-                                               >
-                                                 <Check size={14} color="#cc7a5c" />
-                                                 Cargar Resultado
-                                               </button>
-                                               <button 
-                                                 style={dropdownItemStyles} 
-                                                 onClick={() => {
-                                                   setOpenDropdownMatchId(null);
-                                                   alert("Generar Planilla se programará luego.");
-                                                 }}
-                                                 className="premium-dropdown-item"
-                                               >
-                                                 <FileText size={14} color="#cc7a5c" />
-                                                 Generar Planilla
-                                               </button>
-                                               <div style={{ height: '1px', background: '#e6dfd3', margin: '4px 0' }} />
-                                               <button 
-                                                 style={{ ...dropdownItemStyles, color: '#d9534f' }} 
-                                                 onClick={() => {
-                                                   setOpenDropdownMatchId(null);
-                                                   handleDeleteMatch(m.id);
-                                                 }}
-                                                 className="premium-dropdown-item"
-                                               >
-                                                 <Trash2 size={14} color="#d9534f" />
-                                                 Eliminar Partido
-                                               </button>
-                                             </div>
-                                           )}
-                                        </div>
-                                      );
-                                    })
-                                  )}
-                                  
-                                  {/* Libre team block inside Fecha card if present */}
-                                  {libreTeam && (
-                                    <div style={{
-                                      background: '#fbf5f2',
-                                      borderTop: '1px solid #e6dfd3',
-                                      padding: '10px 16px',
-                                      fontSize: '0.82rem',
-                                      color: '#cc7a5c',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      gap: '8px',
-                                      borderRadius: '0 0 16px 16px'
-                                    }}>
-                                      <Shield size={14} />
-                                      <span>Equipo Libre de la Jornada: <strong>{libreTeam}</strong></span>
+                                      {openDropdownMatchId === m.id && (
+                                         <div 
+                                           style={dropdownStyles}
+                                           onClick={(e) => e.stopPropagation()}
+                                         >
+                                           <button 
+                                             style={dropdownItemStyles} 
+                                             onClick={() => {
+                                               setOpenDropdownMatchId(null);
+                                               openEditMatchModal(m);
+                                             }}
+                                             className="premium-dropdown-item"
+                                           >
+                                             <Edit size={14} color="#cc7a5c" />
+                                             Editar Partido
+                                           </button>
+                                           <button 
+                                             style={dropdownItemStyles} 
+                                             onClick={() => {
+                                               setOpenDropdownMatchId(null);
+                                               alert("Cargar Planilla se programará luego.");
+                                             }}
+                                             className="premium-dropdown-item"
+                                           >
+                                             <Plus size={14} color="#cc7a5c" />
+                                             Cargar Planilla
+                                           </button>
+                                           <button 
+                                             style={dropdownItemStyles} 
+                                             onClick={() => {
+                                               setOpenDropdownMatchId(null);
+                                               setSelectedMatchForScore(m);
+                                               setSelectedRoundNameForScore(r.name);
+                                             }}
+                                             className="premium-dropdown-item"
+                                           >
+                                             <Check size={14} color="#cc7a5c" />
+                                             Cargar Resultado
+                                           </button>
+                                           <button 
+                                             style={dropdownItemStyles} 
+                                             onClick={() => {
+                                               setOpenDropdownMatchId(null);
+                                               alert("Generar Planilla se programará luego.");
+                                             }}
+                                             className="premium-dropdown-item"
+                                           >
+                                             <FileText size={14} color="#cc7a5c" />
+                                             Generar Planilla
+                                           </button>
+                                           <div style={{ height: '1px', background: '#e6dfd3', margin: '4px 0' }} />
+                                           <button 
+                                             style={{ ...dropdownItemStyles, color: '#d9534f' }} 
+                                             onClick={() => {
+                                               setOpenDropdownMatchId(null);
+                                               handleDeleteMatch(m.id);
+                                             }}
+                                             className="premium-dropdown-item"
+                                           >
+                                             <Trash2 size={14} color="#d9534f" />
+                                             Eliminar Partido
+                                           </button>
+                                         </div>
+                                       )}
                                     </div>
-                                  )}
+                                  );
+                                })
+                              )}
+                              
+                              {/* Libre team block inside Fecha card if present */}
+                              {libreTeam && (
+                                <div style={{
+                                  background: '#fbf5f2',
+                                  borderTop: '1px solid #e6dfd3',
+                                  padding: '10px 16px',
+                                  fontSize: '0.82rem',
+                                  color: '#cc7a5c',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '8px',
+                                  borderRadius: '0 0 16px 16px'
+                                }}>
+                                  <Shield size={14} />
+                                  <span>Equipo Libre de la Jornada: <strong>{libreTeam}</strong></span>
                                 </div>
+                              )}
+                            </div>
 
-                              </div>
-                            );
-                          })}
-                        </div>
+                          </div>
+                        );
+                      })}
+                    </div>
 
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
@@ -2531,6 +2621,22 @@ export default function TournamentDetailView({ tournament, onBack }) {
         document.body
       )}
 
+      {/* Match Result Modal */}
+      {selectedMatchForScore && (
+        <MatchResultModal
+          match={selectedMatchForScore}
+          roundName={selectedRoundNameForScore}
+          tournamentId={detailedTournament?.id}
+          onClose={() => setSelectedMatchForScore(null)}
+          onSuccess={async () => {
+            setSelectedMatchForScore(null);
+            await fetchFixturesForAllZones();
+            await fetchTournamentDetail();
+          }}
+          isMobile={isMobile}
+        />
+      )}
+
 
 
       {/* Global loading overlay for team fetching */}
@@ -2726,7 +2832,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
       )}
 
       {/* Mobile Bottom Navigation Bar (Portal to document.body) */}
-      {isMobile && !showTeamForm && createPortal(
+      {isMobile && !showTeamForm && !selectedMatchForScore && createPortal(
         <>
           {mobileUserOpen && (
             <div className="mobile-dropdown-menu animate-fade-in" style={{

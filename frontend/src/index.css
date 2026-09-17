@@ -2403,6 +2403,201 @@ body:has(.anthropic-theme),
 }
 
 @media (max-width: 768px) {
+  .anthropic-theme.tournaments-container {
+    background-color: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    margin-top: 0 !important;
+  }
+
+  .main-content {
+    padding: 12px 8px !important;
+  }
+
+  .anthropic-theme .glass-card {
+    padding: 16px 12px !important;
+    border-radius: 12px !important;
+  }
+
+  .tournament-tab-btn {
+    padding: 8px 14px !important;
+    font-size: 0.8rem !important;
+  }
+
+  /* Make sure floating button adapts on smaller screens */
+  .floating-plus-btn {
+    bottom: 20px !important;
+    right: 20px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    padding: 0 16px !important;
+    font-size: 13px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 8px 4px !important;
+  }
+
+  .anthropic-theme .glass-card {
+    padding: 12px 10px !important;
+    border-radius: 8px !important;
+  }
+
+  .fecha-card {
+    border-radius: 12px !important;
+  }
+
+  .fecha-card > div:first-child {
+    border-radius: 12px 12px 0 0 !important;
+  }
+
+  .fecha-card > div:last-child {
+    border-radius: 0 0 12px 12px !important;
+  }
+
+  .fecha-card > div:last-child > div:last-child {
+    border-radius: 0 0 12px 12px !important;
+  }
+
+  .tournament-tab-btn {
+    padding: 8px 10px !important;
+    font-size: 0.78rem !important;
+  }
+}
+
+/* Responsive Table Styling */
+.responsive-table {
+  min-width: 700px;
+}
+
+@media (max-width: 768px) {
+  .responsive-table {
+    min-width: 850px !important;
+  }
+}
+
+/* Mobile Bottom Navigation Bar & Actions Hiding */
+@media (max-width: 768px) {
+  /* Keep mobile header visible, but hide the User profile button wrapper */
+  body.in-tournament-detail .mobile-header-actions .mobile-action-wrapper {
+    display: none !important;
+  }
+}
+
+.mobile-bottom-nav {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100vw !important;
+  height: 60px !important;
+  background: #eae4d8 !important; /* Menu background */
+  border-top: 1px solid #d8cfc0 !important; /* Menu border */
+  display: none;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 9999 !important;
+  box-shadow: 0 -4px 15px rgba(25, 20, 15, 0.05) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.mobile-bottom-nav button,
+.mobile-bottom-nav-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  border: none !important;
+  border-top: 3px solid transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  color: #7f776f !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  flex: 1 !important;
+  height: 100% !important;
+  box-shadow: none !important;
+  transform: none !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  min-width: unset !important;
+}
+
+.mobile-bottom-nav button:hover,
+.mobile-bottom-nav-item:hover {
+  background: transparent !important;
+  transform: none !important;
+  box-shadow: none !important;
+  color: #cc7a5c !important;
+}
+
+.mobile-bottom-nav button.active,
+.mobile-bottom-nav-item.active {
+  color: #cc7a5c !important;
+  border-top: 3px solid #cc7a5c !important;
+  background: transparent !important;
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    display: flex !important;
+  }
+  .tournaments-container {
+    padding-bottom: 80px !important;
+  }
+}
+
+/* Compact Positions Table Row Height Reductions */
+.anthropic-theme table.compact-table th {
+  padding: 8px 12px !important;
+  font-size: 11px !important;
+}
+
+.anthropic-theme table.compact-table td {
+  padding: 6px 12px !important;
+  font-size: 13px !important;
+  height: auto !important;
+}
+
+/* =============================================
+   TOAST NOTIFICATION (PILL STYLE & RESPONSIVE ANIMATION)
+   ============================================= */
+@keyframes toastSlideUp {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 40px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+.toast-pill-container {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #1a1512;
+  border: 1px solid rgba(212, 184, 150, 0.25);
+  border-radius: 40px;
+  padding: 10px 18px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  animation: toastSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
   .toast-pill-container {
     bottom: 84px;
     padding: 10px 16px;
@@ -2410,5 +2605,56 @@ body:has(.anthropic-theme),
   }
 }
 
+/* Menú desplegable compacto para selección de goles (0 a 5 goles visibles = 6 items, scroll hasta 99) */
+.score-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 4px;
+  width: 68px;
+  max-height: 204px; /* 6 items completos con padding táctil cómodo */
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #ffffff;
+  border: 1.5px solid #191919;
+  border-radius: 9px;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.28);
+  z-index: 999999;
+  padding: 3px 0;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
+}
 
+.score-dropdown-menu.player-goals {
+  width: 58px;
+  max-height: 196px; /* 6 items para goles de jugadores con espacio táctil */
+}
 
+.score-dropdown-item {
+  height: 33px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 800;
+  color: #191919;
+  cursor: pointer;
+  transition: background 0.1s ease;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.score-dropdown-menu.player-goals .score-dropdown-item {
+  height: 32px;
+  font-size: 14px;
+}
+
+.score-dropdown-item:hover {
+  background: #f4efe6;
+}
+
+.score-dropdown-item.active {
+  background: #EAE4D8;
+  color: #191919;
+}

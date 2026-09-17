@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Category, Team, Delegate, Transaccion, SaldoSocio, Tournament, TournamentZone, ZoneTeam, CarouselImage, MatchRound, Match, Goleador, VallaMenosVencida, Sancionado, Player, GoodFaithList
+from .models import Category, Team, Delegate, Transaccion, SaldoSocio, Tournament, TournamentZone, ZoneTeam, CarouselImage, MatchRound, Match, MatchPlayerStat, Goleador, VallaMenosVencida, Sancionado, Player, GoodFaithList
 
 class UserSerializer(serializers.ModelSerializer):
     role = serializers.SerializerMethodField()
@@ -210,19 +210,40 @@ class NewsSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class MatchPlayerStatSerializer(serializers.ModelSerializer):
+    player_name = serializers.SerializerMethodField()
+    player_dni = serializers.ReadOnlyField(source='player.dni')
+    team_name = serializers.ReadOnlyField(source='team.name')
+
+    class Meta:
+        model = MatchPlayerStat
+        fields = [
+            'id', 'match', 'player', 'player_name', 'player_dni', 'team', 'team_name',
+            'goals', 'yellow_card', 'red_card', 'red_card_suspension_dates',
+            'red_card_reason', 'is_figura', 'played'
+        ]
+
+    def get_player_name(self, obj):
+        return f"{obj.player.first_name} {obj.player.last_name}".strip()
+
+
 class MatchSerializer(serializers.ModelSerializer):
     local_team_name = serializers.ReadOnlyField(source='local_team.name')
     local_team_logo = serializers.SerializerMethodField()
     visitor_team_name = serializers.ReadOnlyField(source='visitor_team.name')
     visitor_team_logo = serializers.SerializerMethodField()
     impact_zone_name = serializers.ReadOnlyField(source='impact_zone.name')
+    points_awarded_to_name = serializers.ReadOnlyField(source='points_awarded_to.name')
+    player_stats = MatchPlayerStatSerializer(many=True, read_only=True)
 
     class Meta:
         model = Match
         fields = ['id', 'match_round', 'local_team', 'local_team_name', 'local_team_logo',
                   'visitor_team', 'visitor_team_name', 'visitor_team_logo',
                   'local_score', 'visitor_score', 'played', 'date', 'time',
-                  'cancha', 'arbitro', 'impact_zone', 'impact_zone_name']
+                  'cancha', 'arbitro', 'impact_zone', 'impact_zone_name',
+                  'penalties', 'local_penalties', 'visitor_penalties', 'status', 'points_awarded_to', 'points_awarded_to_name',
+                  'player_stats']
         extra_kwargs = {
             'match_round': {'required': False}
         }
@@ -289,16 +310,22 @@ class PlayerSerializer(serializers.ModelSerializer):
 
 class GoodFaithListSerializer(serializers.ModelSerializer):
     player_name = serializers.SerializerMethodField()
+    full_name = serializers.SerializerMethodField()
+    first_name = serializers.ReadOnlyField(source='player.first_name')
+    last_name = serializers.ReadOnlyField(source='player.last_name')
     player_dni = serializers.ReadOnlyField(source='player.dni')
     player_photo = serializers.SerializerMethodField()
     team_name = serializers.ReadOnlyField(source='team.name')
 
     class Meta:
         model = GoodFaithList
-        fields = ['id', 'tournament', 'team', 'team_name', 'player', 'player_name', 'player_dni', 'player_photo', 'shirt_number', 'created_at']
+        fields = ['id', 'tournament', 'team', 'team_name', 'player', 'player_name', 'full_name', 'first_name', 'last_name', 'player_dni', 'player_photo', 'shirt_number', 'created_at']
 
     def get_player_name(self, obj):
         return f"{obj.player.last_name}, {obj.player.first_name}"
+
+    def get_full_name(self, obj):
+        return f"{obj.player.first_name} {obj.player.last_name}".strip()
 
     def get_player_photo(self, obj):
         request = self.context.get('request')

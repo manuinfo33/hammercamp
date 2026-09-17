@@ -1,9 +1,15 @@
 from django.contrib import admin
 from .models import (
     Category, Team, Delegate, Tournament, TournamentZone, ZoneTeam,
-    Transaccion, SaldoSocio, CarouselImage, News, MatchRound, Match,
+    Transaccion, SaldoSocio, CarouselImage, News, MatchRound, Match, MatchPlayerStat,
     Goleador, VallaMenosVencida, Sancionado, Player, GoodFaithList
 )
+
+@admin.register(MatchPlayerStat)
+class MatchPlayerStatAdmin(admin.ModelAdmin):
+    list_display = ('id', 'match', 'player', 'team', 'goals', 'yellow_card', 'red_card', 'is_figura', 'played')
+    list_filter = ('match__match_round__tournament_zone__tournament', 'team', 'played', 'yellow_card', 'red_card')
+    search_fields = ('player__first_name', 'player__last_name', 'team__name')
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):

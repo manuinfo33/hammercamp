@@ -285,6 +285,11 @@ class Match(models.Model):
     cancha = models.CharField(max_length=100, blank=True, null=True, verbose_name="Cancha")
     arbitro = models.CharField(max_length=150, blank=True, null=True, verbose_name="Árbitro")
     impact_zone = models.ForeignKey(TournamentZone, on_delete=models.SET_NULL, blank=True, null=True, related_name='impact_matches', verbose_name="Zona de Impacto")
+    penalties = models.BooleanField(default=False, verbose_name="Penales")
+    local_penalties = models.IntegerField(blank=True, null=True, verbose_name="Penales Local")
+    visitor_penalties = models.IntegerField(blank=True, null=True, verbose_name="Penales Visitante")
+    status = models.CharField(max_length=30, default='FINALIZADO', verbose_name="Estado del Partido")
+    points_awarded_to = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True, related_name='awarded_matches', verbose_name="Puntos Otorgados a")
 
     def __str__(self):
         return f"{self.local_team.name} vs {self.visitor_team.name}"
@@ -292,6 +297,27 @@ class Match(models.Model):
     class Meta:
         verbose_name = "Partido"
         verbose_name_plural = "Partidos"
+
+
+class MatchPlayerStat(models.Model):
+    match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name='player_stats', verbose_name="Partido")
+    player = models.ForeignKey('Player', on_delete=models.CASCADE, related_name='match_stats', verbose_name="Jugador")
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='match_player_stats', verbose_name="Equipo")
+    goals = models.PositiveIntegerField(default=0, verbose_name="Goles")
+    yellow_card = models.BooleanField(default=False, verbose_name="Tarjeta Amarilla")
+    red_card = models.BooleanField(default=False, verbose_name="Tarjeta Roja")
+    red_card_suspension_dates = models.CharField(max_length=50, blank=True, null=True, verbose_name="Fechas de Suspensión")
+    red_card_reason = models.TextField(blank=True, null=True, verbose_name="Motivo de Suspensión")
+    is_figura = models.BooleanField(default=False, verbose_name="Figura")
+    played = models.BooleanField(default=False, verbose_name="Jugó")
+
+    def __str__(self):
+        return f"{self.player} - Partido #{self.match_id}"
+
+    class Meta:
+        verbose_name = "Estadística de Jugador en Partido"
+        verbose_name_plural = "Estadísticas de Jugadores en Partidos"
+        unique_together = ('match', 'player')
 
 
 class Goleador(models.Model):

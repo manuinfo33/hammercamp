@@ -6,13 +6,14 @@ from collections import defaultdict
 from pathlib import Path
 from django.conf import settings
 from django.http import HttpResponse
+from django.db import transaction, models
 from rest_framework import viewsets, filters, status
-from rest_framework.decorators import api_view, parser_classes
+from rest_framework.decorators import api_view, parser_classes, action
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from pypdf import PdfWriter, PdfReader, Transformation
-from .models import Category, Team, Delegate, Transaccion, SaldoSocio, Tournament, TournamentZone, ZoneTeam, CarouselImage, MatchRound, Match, Goleador, VallaMenosVencida, Sancionado, Player, GoodFaithList
+from .models import Category, Team, Delegate, Transaccion, SaldoSocio, Tournament, TournamentZone, ZoneTeam, CarouselImage, MatchRound, Match, MatchPlayerStat, Goleador, VallaMenosVencida, Sancionado, Player, GoodFaithList
 from .serializers import (CategorySerializer, TeamSerializer, UserSerializer, DelegateSerializer,
                           TransaccionSerializer, SaldoSocioSerializer,
                           TournamentSerializer, TournamentCreateSerializer,
@@ -628,10 +629,216 @@ class MatchRoundViewSet(viewsets.ModelViewSet):
         return qs.order_by('order')
 
 
+def recalculate_tournament_standings_and_stats(tournament):
+    if not tournament:
+        return
+
+    # 1. Update ZoneTeam standings for all zones in the tournament
+    for zone in tournament.zones.all():
+        for zt in zone.zone_teams.all():
+            team = zt.team
+            matches = Match.objects.filter(
+                models.Q(impact_zone=zone) | (models.Q(impact_zone__isnull=True) & models.Q(match_round__tournament_zone=zone))
+            ).filter(
+                models.Q(local_team=team) | models.Q(visitor_team=team)
+            ).filter(played=True)
+
+            played_count = 0
+            won = 0
+            drawn = 0
+            lost = 0
+            gf = 0
+            ga = 0
+
+            for m in matches:
+                played_count += 1
+                is_local = (m.local_team_id == team.id)
+                
+                # Check for walkover / points awarded
+                if m.points_awarded_to_id:
+                    if m.points_awarded_to_id == team.id:
+                        won += 1
+                    else:
+                        lost += 1
+                elif m.local_score is not None and m.visitor_score is not None:
+                    team_score = m.local_score if is_local else m.visitor_score
+                    opp_score = m.visitor_score if is_local else m.local_score
+                    gf += team_score
+                    ga += opp_score
+                    if team_score > opp_score:
+                        won += 1
+                    elif team_score == opp_score:
+                        drawn += 1
+                    else:
+                        lost += 1
+
+            pts = (won * tournament.pts_win) + (drawn * tournament.pts_draw) + (lost * tournament.pts_loss)
+            
+            stats = MatchPlayerStat.objects.filter(
+                match__in=matches,
+                team=team
+            )
+            yellow_count = stats.filter(yellow_card=True).count()
+            red_count = stats.filter(red_card=True).count()
+            fp = (yellow_count * tournament.fp_yellow_pts) + (red_count * tournament.fp_red_pts)
+
+            zt.played = played_count
+            zt.won = won
+            zt.drawn = drawn
+            zt.lost = lost
+            zt.goals_for = gf
+            zt.goals_against = ga
+            zt.points = pts
+            zt.yellow_cards = yellow_count
+            zt.red_cards = red_count
+            zt.fair_play = fp
+            zt.save()
+
+    # 2. Sync Goleador table
+    player_goals = (
+        MatchPlayerStat.objects.filter(
+            match__match_round__tournament_zone__tournament=tournament,
+            goals__gt=0
+        )
+        .values('player', 'team')
+        .annotate(total_goals=models.Sum('goals'))
+    )
+    
+    active_goleador_keys = set()
+    for entry in player_goals:
+        player_id = entry['player']
+        team_id = entry['team']
+        total = entry['total_goals']
+        player_obj = Player.objects.filter(id=player_id).first()
+        p_name = f"{player_obj.first_name} {player_obj.last_name}".strip() if player_obj else f"Jugador {player_id}"
+        
+        Goleador.objects.update_or_create(
+            tournament=tournament,
+            team_id=team_id,
+            player_name=p_name,
+            defaults={'goals': total}
+        )
+        active_goleador_keys.add((team_id, p_name))
+
+    for g in Goleador.objects.filter(tournament=tournament):
+        if (g.team_id, g.player_name) not in active_goleador_keys:
+            g.delete()
+
+    # 3. Sync Sancionado table
+    red_stats = MatchPlayerStat.objects.filter(
+        match__match_round__tournament_zone__tournament=tournament,
+        red_card=True
+    ).select_related('player', 'team')
+    
+    active_sancionados_keys = set()
+    for s in red_stats:
+        p_name = f"{s.player.first_name} {s.player.last_name}".strip()
+        parts = []
+        if s.red_card_suspension_dates:
+            parts.append(f"{s.red_card_suspension_dates} fechas")
+        if s.red_card_reason:
+            parts.append(s.red_card_reason)
+        reason_str = " - ".join(parts) if parts else "Tarjeta Roja"
+        
+        Sancionado.objects.update_or_create(
+            tournament=tournament,
+            team=s.team,
+            player_name=p_name,
+            defaults={'reason': reason_str}
+        )
+        active_sancionados_keys.add((s.team_id, p_name))
+
+    for sc in Sancionado.objects.filter(tournament=tournament):
+        if (sc.team_id, sc.player_name) not in active_sancionados_keys:
+            sc.delete()
+
+
 class MatchViewSet(viewsets.ModelViewSet):
     queryset = Match.objects.all()
     serializer_class = MatchSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
+
+    @action(detail=True, methods=['post'], url_path='save-result')
+    def save_result(self, request, pk=None):
+        match = self.get_object()
+        data = request.data
+
+        with transaction.atomic():
+            local_score = data.get('local_score')
+            visitor_score = data.get('visitor_score')
+            penalties = data.get('penalties', False)
+            local_penalties = data.get('local_penalties')
+            visitor_penalties = data.get('visitor_penalties')
+            match_status = data.get('status', 'FINALIZADO')
+            points_awarded_to = data.get('points_awarded_to')
+            player_stats = data.get('player_stats', [])
+
+            match.local_score = int(local_score) if local_score is not None and str(local_score).strip() != '' else None
+            match.visitor_score = int(visitor_score) if visitor_score is not None and str(visitor_score).strip() != '' else None
+            match.penalties = bool(penalties)
+            match.local_penalties = int(local_penalties) if penalties and local_penalties is not None and str(local_penalties).strip() != '' else None
+            match.visitor_penalties = int(visitor_penalties) if penalties and visitor_penalties is not None and str(visitor_penalties).strip() != '' else None
+            match.status = match_status
+            match.points_awarded_to_id = points_awarded_to if points_awarded_to else None
+            match.played = (match_status == 'FINALIZADO' or match.local_score is not None or match.points_awarded_to_id is not None)
+            match.save()
+
+            # Replace player stats for this match
+            MatchPlayerStat.objects.filter(match=match).delete()
+            stats_to_create = []
+            for ps in player_stats:
+                played_flag = ps.get('played', False)
+                goals_val = int(ps.get('goals') or 0)
+                yellow_val = bool(ps.get('yellow_card', False))
+                red_val = bool(ps.get('red_card', False))
+                figura_val = bool(ps.get('is_figura', False))
+
+                if played_flag or goals_val > 0 or yellow_val or red_val or figura_val:
+                    stats_to_create.append(MatchPlayerStat(
+                        match=match,
+                        player_id=ps['player'],
+                        team_id=ps['team'],
+                        goals=goals_val,
+                        yellow_card=yellow_val,
+                        red_card=red_val,
+                        red_card_suspension_dates=str(ps.get('red_card_suspension_dates') or '').strip() or None,
+                        red_card_reason=str(ps.get('red_card_reason') or '').strip() or None,
+                        is_figura=figura_val,
+                        played=played_flag or goals_val > 0 or yellow_val or red_val or figura_val
+                    ))
+
+            if stats_to_create:
+                MatchPlayerStat.objects.bulk_create(stats_to_create)
+
+            # Auto recalculate standings & stats
+            tournament = match.match_round.tournament_zone.tournament
+            recalculate_tournament_standings_and_stats(tournament)
+
+        serializer = self.get_serializer(match)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], url_path='clear-result')
+    def clear_result(self, request, pk=None):
+        match = self.get_object()
+
+        with transaction.atomic():
+            match.local_score = None
+            match.visitor_score = None
+            match.played = False
+            match.status = 'PENDIENTE'
+            match.penalties = False
+            match.local_penalties = None
+            match.visitor_penalties = None
+            match.points_awarded_to = None
+            match.save()
+
+            MatchPlayerStat.objects.filter(match=match).delete()
+
+            tournament = match.match_round.tournament_zone.tournament
+            recalculate_tournament_standings_and_stats(tournament)
+
+        serializer = self.get_serializer(match)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class GoleadorViewSet(viewsets.ModelViewSet):
