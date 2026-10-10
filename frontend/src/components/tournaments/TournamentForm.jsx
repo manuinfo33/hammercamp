@@ -35,7 +35,8 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
     fp_blue_card_enabled: tournament?.fp_blue_card_enabled || false,
     fp_blue_pts: tournament?.fp_blue_pts !== undefined && tournament?.fp_blue_pts !== null ? tournament.fp_blue_pts : 5,
     fp_wo_enabled: tournament?.fp_wo_enabled || false,
-    fp_wo_pts: tournament?.fp_wo_pts !== undefined && tournament?.fp_wo_pts !== null ? tournament.fp_wo_pts : 50,
+    fp_wo_pts: tournament?.fp_wo_pts !== undefined && tournament?.fp_wo_pts !== null ? tournament.fp_wo_pts : 4,
+    is_active: tournament?.is_active !== undefined ? tournament.is_active : true,
   });
   const [zones, setZones] = useState(
     tournament?.zones?.length
@@ -48,6 +49,9 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
   const [error, setError] = useState('');
   const [nameError, setNameError] = useState(false);
   const [saved, setSaved] = useState(!!tournament); // true if we already have an ID
+  // Una vez creado el torneo, el Puntaje Fair Play y las Configuraciones Extras (puntos y amarillas)
+  // quedan solo de lectura para no romper las tablas.
+  const isRulesLocked = !!tournament?.id;
 
   const nameInputRef = useRef(null);
   const buenaFeRef = useRef(null);
@@ -180,6 +184,7 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
       fp_blue_pts: Number(formData.fp_blue_pts),
       fp_wo_enabled: !!formData.fp_wo_enabled,
       fp_wo_pts: Number(formData.fp_wo_pts),
+      is_active: formData.is_active !== undefined ? !!formData.is_active : true,
       zones_data: zones.map((z, i) => ({
         id: z.id,
         name: z.name,
@@ -213,6 +218,8 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
         setIsInfoOpen(true);
         setError('Ya existe un torneo con ese nombre.');
         if (nameInputRef.current) nameInputRef.current.focus();
+      } else if (err.response?.data?.detail) {
+        setError(Array.isArray(err.response.data.detail) ? err.response.data.detail[0] : err.response.data.detail);
       } else {
         setError('Error al guardar el torneo. Verificá los datos.');
       }
@@ -265,6 +272,7 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
         fp_blue_pts: Number(formData.fp_blue_pts),
         fp_wo_enabled: !!formData.fp_wo_enabled,
         fp_wo_pts: Number(formData.fp_wo_pts),
+        is_active: formData.is_active !== undefined ? !!formData.is_active : true,
         zones_data: zones.map((z, i) => ({ id: z.id, name: z.name, order: i })),
       };
       let res;
@@ -482,7 +490,11 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
                 onChange={setZones}
                 categoryId={formData.category}
                 savedZones={savedZones}
+                tournamentId={tournamentId}
                 onSaveFirst={saveAndGetZones}
+                onZoneDeleted={(deletedZoneId) => {
+                  setSavedZones(prev => prev.filter(z => z.id !== deletedZoneId));
+                }}
               />
             </div>
           )}
@@ -573,7 +585,13 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
           </div>
           
           {isFairPlayOpen && (
+            <fieldset disabled={isRulesLocked} className={isRulesLocked ? 'locked-rules-fieldset' : ''} style={{ border: 'none', padding: 0, margin: 0, minWidth: 0 }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              {isRulesLocked && (
+                <div className="locked-rules-notice">
+                  El puntaje Fair Play no puede modificarse una vez creado el torneo.
+                </div>
+              )}
               <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0, lineHeight: '1.4' }}>
                 El puntaje de cada tarjeta se utiliza para definir las posiciones de los equipos en la tabla de Fair Play.
               </p>
@@ -780,6 +798,7 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
                 )}
               </div>
             </div>
+            </fieldset>
           )}
         </div>
 
@@ -811,6 +830,12 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
 
           {isExtrasOpen && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <fieldset disabled={isRulesLocked} className={isRulesLocked ? 'locked-rules-fieldset' : ''} style={{ border: 'none', padding: 0, margin: 0, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {isRulesLocked && (
+                <div className="locked-rules-notice">
+                  Los puntos por partido y las amarillas para suspensión no pueden modificarse una vez creado el torneo.
+                </div>
+              )}
               {/* Puntos por Partido */}
               <div className="responsive-form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
                 <div className="input-group">
@@ -867,6 +892,7 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
                   ))}
                 </select>
               </div>
+              </fieldset>
 
               {/* Descripción / Modalidad del torneo */}
               <div className="input-group">

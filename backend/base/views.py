@@ -79,6 +79,16 @@ class TeamViewSet(viewsets.ModelViewSet):
         remove_team_photo = self.request.data.get('remove_team_photo') == 'true'
         
         team = serializer.instance
+        new_category = serializer.validated_data.get('category')
+        if new_category and team.category_id != new_category.id:
+            if team.zone_teams.exists():
+                zone_team = team.zone_teams.select_related('zone__tournament').first()
+                tournament_name = zone_team.zone.tournament.name if (zone_team and zone_team.zone and zone_team.zone.tournament) else "un torneo"
+                from rest_framework import serializers
+                raise serializers.ValidationError({
+                    "category": f"El equipo \"{team.name}\" se encuentra actualmente activo en el torneo \"{tournament_name}\". No se puede cambiar de categoría mientras esté participando en el torneo."
+                })
+
         if remove_logo:
             team.logo = None
         if remove_team_photo:
@@ -251,6 +261,16 @@ class TournamentViewSet(viewsets.ModelViewSet):
         serializer = TournamentSerializer(instance, context={'request': request})
         return Response(serializer.data)
 
+    @action(detail=True, methods=['get'], url_path='fair-play')
+    def fair_play(self, request, pk=None):
+        from .standings import build_fair_play_table
+        tournament = self.get_object()
+        return Response({
+            'blue_card_enabled': tournament.fp_blue_card_enabled,
+            'wo_enabled': tournament.fp_wo_enabled,
+            'rows': build_fair_play_table(tournament, request),
+        })
+
     def destroy(self, request, *args, **kwargs):
         password = (
             request.headers.get('X-Password') or
@@ -288,6 +308,24 @@ class TournamentZoneViewSet(viewsets.ModelViewSet):
         if tournament_id:
             qs = qs.filter(tournament_id=tournament_id)
         return qs
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        from django.db.models import Q
+        has_matches = Match.objects.filter(
+            Q(match_round__tournament_zone=instance) | Q(impact_zone=instance)
+        ).exists()
+        if has_matches:
+            from rest_framework import serializers
+            raise serializers.ValidationError({
+                "detail": "No se puede eliminar la zona ya que los equipos cargados ya tienen partidos asignados en el torneo."
+            })
+        if instance.zone_teams.exists():
+            from rest_framework import serializers
+            raise serializers.ValidationError({
+                "detail": "No se puede eliminar la zona porque tiene equipos asignados. Quitalos primero para poder eliminarla."
+            })
+        return super().destroy(request, *args, **kwargs)
 
 
 class ZoneTeamViewSet(viewsets.ModelViewSet):
@@ -649,6 +687,7 @@ def recalculate_tournament_standings_and_stats(tournament):
             lost = 0
             gf = 0
             ga = 0
+            wo_count = 0
 
             for m in matches:
                 played_count += 1
@@ -660,6 +699,8 @@ def recalculate_tournament_standings_and_stats(tournament):
                         won += 1
                     else:
                         lost += 1
+                        # El equipo que pierde los puntos es el que no se presentó (WO)
+                        wo_count += 1
                 elif m.local_score is not None and m.visitor_score is not None:
                     team_score = m.local_score if is_local else m.visitor_score
                     opp_score = m.visitor_score if is_local else m.local_score
@@ -680,7 +721,12 @@ def recalculate_tournament_standings_and_stats(tournament):
             )
             yellow_count = stats.filter(yellow_card=True).count()
             red_count = stats.filter(red_card=True).count()
+            blue_count = 0  # La carga de tarjetas azules todavía no está habilitada en el resultado del partido
             fp = (yellow_count * tournament.fp_yellow_pts) + (red_count * tournament.fp_red_pts)
+            if tournament.fp_blue_card_enabled:
+                fp += blue_count * tournament.fp_blue_pts
+            if tournament.fp_wo_enabled:
+                fp += wo_count * tournament.fp_wo_pts
 
             zt.played = played_count
             zt.won = won
@@ -691,6 +737,8 @@ def recalculate_tournament_standings_and_stats(tournament):
             zt.points = pts
             zt.yellow_cards = yellow_count
             zt.red_cards = red_count
+            zt.blue_cards = blue_count
+            zt.wo_count = wo_count
             zt.fair_play = fp
             zt.save()
 

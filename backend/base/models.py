@@ -151,7 +151,8 @@ class Tournament(models.Model):
     fp_blue_card_enabled = models.BooleanField(default=False, verbose_name="Habilitar Tarjeta Azul")
     fp_blue_pts = models.PositiveIntegerField(default=5, validators=[MinValueValidator(1), MaxValueValidator(300)], verbose_name="Puntos Tarjeta Azul")
     fp_wo_enabled = models.BooleanField(default=False, verbose_name="Habilitar Puntos por WO")
-    fp_wo_pts = models.PositiveIntegerField(default=50, validators=[MinValueValidator(1), MaxValueValidator(100)], verbose_name="Puntos por WO")
+    fp_wo_pts = models.PositiveIntegerField(default=4, validators=[MinValueValidator(1), MaxValueValidator(100)], verbose_name="Puntos por WO")
+    is_active = models.BooleanField(default=True, verbose_name="Torneo Activo")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Actualizado el")
 
@@ -191,6 +192,8 @@ class ZoneTeam(models.Model):
     goals_against = models.IntegerField(default=0, verbose_name="GC")
     yellow_cards = models.IntegerField(default=0, verbose_name="Tarjetas Amarillas")
     red_cards = models.IntegerField(default=0, verbose_name="Tarjetas Rojas")
+    blue_cards = models.IntegerField(default=0, verbose_name="Tarjetas Azules")
+    wo_count = models.IntegerField(default=0, verbose_name="Walkovers (WO)")
     indumentaria = models.IntegerField(default=0, verbose_name="Indumentaria")
     fair_play = models.IntegerField(default=0, verbose_name="Fair Play")
 

@@ -101,22 +101,22 @@ export function Header() {
           {/* Mini Ads Carousel */}
           <div className="flex items-center gap-2">
             <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-semibold">Auspicia:</span>
-            <div className="w-[75px] h-[56px] relative overflow-hidden border border-border/30 rounded-sm bg-surface/30 flex items-center justify-center p-0">
+            <div className="w-[75px] h-[56px] relative overflow-hidden border border-border/40 rounded-xl bg-surface/30 flex items-center justify-center p-0 shadow-xs">
               <img
                 src={ads[currentAdIndex].image}
                 alt={ads[currentAdIndex].name}
-                className="w-full h-full object-cover animate-in fade-in duration-500"
+                className="w-full h-full object-cover animate-in fade-in duration-500 rounded-xl"
                 key={ads[currentAdIndex].id}
               />
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <a href="#" aria-label="Facebook" className="p-2 border border-border/40 rounded-sm text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all flex items-center justify-center">
-              <Facebook className="size-5" />
+            <a href="#" aria-label="Facebook" className="p-2.5 border border-border/40 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all flex items-center justify-center">
+              <Facebook className="size-4" />
             </a>
-            <a href="#" aria-label="Instagram" className="p-2 border border-border/40 rounded-sm text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all flex items-center justify-center">
-              <Instagram className="size-5" />
+            <a href="#" aria-label="Instagram" className="p-2.5 border border-border/40 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all flex items-center justify-center">
+              <Instagram className="size-4" />
             </a>
           </div>
         </div>
@@ -125,7 +125,7 @@ export function Header() {
           {user ? (
             <div className="relative">
               <button
-                className="p-2 border border-border rounded-sm text-primary flex items-center justify-center"
+                className="p-2 border border-border rounded-xl text-primary flex items-center justify-center"
                 onClick={() => setMobileUserMenuOpen((v) => !v)}
                 aria-label="User Menu"
               >
@@ -171,7 +171,7 @@ export function Header() {
             </div>
           ) : (
             <button
-              className="p-2 border border-border rounded-sm text-muted-foreground flex items-center justify-center"
+              className="p-2 border border-border rounded-xl text-muted-foreground flex items-center justify-center"
               onClick={() => setIsLoginOpen(true)}
               aria-label="Acceso"
             >
@@ -180,7 +180,7 @@ export function Header() {
           )}
 
           <button
-            className="p-2 border border-border rounded-sm flex items-center justify-center"
+            className="p-2 border border-border rounded-xl flex items-center justify-center"
             onClick={() => setOpen((v) => !v)}
             aria-label="Menu"
           >

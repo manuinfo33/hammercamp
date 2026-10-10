@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../../api';
-import { X, Upload, Check, Image as ImageIcon, UserPlus, Pencil, Trash2 } from 'lucide-react';
+import { X, Upload, Check, Image as ImageIcon, UserPlus, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const TeamForm = ({ team, onClose, onSuccess, isModal = false, defaultCategoryId = '' }) => {
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [delegates, setDelegates] = useState([]);
+  const [customAlert, setCustomAlert] = useState(null); // { title, message }
   
   const [formData, setFormData] = useState({
     name: team?.name || '',
@@ -113,7 +115,15 @@ const TeamForm = ({ team, onClose, onSuccess, isModal = false, defaultCategoryId
       onSuccess(response.data);
     } catch (error) {
       console.error("Error saving team:", error);
-      if (error.response?.data?.name) {
+      if (error.response?.data?.category) {
+        const catErr = Array.isArray(error.response.data.category) 
+          ? error.response.data.category[0] 
+          : error.response.data.category;
+        setCustomAlert({
+          title: 'Atención',
+          message: catErr
+        });
+      } else if (error.response?.data?.name) {
         setError(error.response.data.name[0]);
       } else {
         setError('Hubo un error al guardar el equipo. Por favor, verifica los datos e intenta de nuevo.');
@@ -282,11 +292,19 @@ const TeamForm = ({ team, onClose, onSuccess, isModal = false, defaultCategoryId
               required
               value={formData.category}
               onChange={(e) => {
-                if (e.target.value === 'CREATE_NEW') {
+                const newCatId = e.target.value;
+                if (newCatId === 'CREATE_NEW') {
                   navigate('/categorias', { state: { openForm: true } });
                   return;
                 }
-                setFormData({ ...formData, category: e.target.value });
+                if (team?.is_active && String(team.category) !== String(newCatId)) {
+                  setCustomAlert({
+                    title: 'Atención',
+                    message: `El equipo "${team.name}" se encuentra actualmente activo en el torneo "${team.current_tournament || 'un torneo'}". No se puede cambiar de categoría mientras esté participando en el torneo.`
+                  });
+                  return;
+                }
+                setFormData({ ...formData, category: newCatId });
               }}
               style={{ borderColor: 'var(--border-subtle)', height: '42px' }}
             >
@@ -363,6 +381,80 @@ const TeamForm = ({ team, onClose, onSuccess, isModal = false, defaultCategoryId
           </button>
         </div>
       </form>
+
+      {/* Alerta Modal con el diseño estándar */}
+      {customAlert && createPortal(
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(8, 7, 6, 0.82)',
+          backdropFilter: 'blur(5px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '440px',
+            width: '100%',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            animation: 'fadeIn 0.2s ease-out'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: '#fff3cd',
+                color: '#856404',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <AlertTriangle size={22} />
+              </div>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#191919' }}>
+                {customAlert.title || 'Atención'}
+              </h3>
+            </div>
+            
+            <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5', color: '#383530' }}>
+              {customAlert.message}
+            </p>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+              <button
+                type="button"
+                onClick={() => setCustomAlert(null)}
+                style={{
+                  background: '#191919',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 20px',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  cursor: 'pointer'
+                }}
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
     </div>
   );

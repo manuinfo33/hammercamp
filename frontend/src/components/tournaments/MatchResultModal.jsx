@@ -1589,24 +1589,24 @@ const MatchResultModal = ({
           right: 0,
           bottom: 0,
           zIndex: 1000000,
-          background: 'rgba(0, 0, 0, 0.65)',
-          backdropFilter: 'blur(3px)',
+          background: 'rgba(8, 7, 6, 0.82)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           padding: '16px'
-        }}>
+        }} onClick={handleRedCardCancel}>
           <div style={{
             background: '#ffffff',
             borderRadius: '16px',
             width: '100%',
             maxWidth: '380px',
             padding: '24px',
-            boxShadow: '0 8px 30px rgba(0,0,0,0.25)',
+            boxShadow: '0 12px 32px rgba(0,0,0,0.25)',
             display: 'flex',
             flexDirection: 'column',
-            gap: '16px'
-          }} className="animate-fade-in" onClick={e => e.stopPropagation()}>
+            gap: '16px',
+            border: '1px solid #e6dfd3'
+          }} className="animate-fade-in anthropic-theme" onClick={e => e.stopPropagation()}>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{
@@ -1645,6 +1645,7 @@ const MatchResultModal = ({
                     height: '42px',
                     borderRadius: '8px',
                     border: redCardError ? '1.5px solid #ef4444' : '1.5px solid #d8cfc0',
+                    background: '#ffffff',
                     padding: '0 12px',
                     fontSize: '14px',
                     fontWeight: '600',
@@ -1684,7 +1685,7 @@ const MatchResultModal = ({
                       height: '40px',
                       borderRadius: '8px',
                       border: '1px solid #d8cfc0',
-                      background: '#f3f4f6',
+                      background: '#ffffff',
                       color: '#4b5563',
                       fontWeight: '700',
                       fontSize: '13px',
@@ -1730,7 +1731,8 @@ const MatchResultModal = ({
                     width: '100%',
                     borderRadius: '8px',
                     border: '1.5px solid #d8cfc0',
-                    padding: '8px 12px',
+                    background: '#ffffff',
+                    padding: '10px 12px',
                     fontSize: '13px',
                     fontWeight: '500',
                     color: '#191919',
@@ -1755,7 +1757,7 @@ const MatchResultModal = ({
                       height: '40px',
                       borderRadius: '8px',
                       border: '1px solid #d8cfc0',
-                      background: '#f3f4f6',
+                      background: '#ffffff',
                       color: '#4b5563',
                       fontWeight: '700',
                       fontSize: '13px',
@@ -1772,7 +1774,7 @@ const MatchResultModal = ({
                       height: '40px',
                       borderRadius: '8px',
                       border: 'none',
-                      background: '#ef4444',
+                      background: '#191919',
                       color: '#ffffff',
                       fontWeight: '700',
                       fontSize: '13px',
@@ -1784,7 +1786,6 @@ const MatchResultModal = ({
                 </div>
               </>
             )}
-
           </div>
         </div>,
         document.body
@@ -1801,13 +1802,12 @@ const MatchResultModal = ({
           right: 0,
           bottom: 0,
           zIndex: 1000000,
-          background: 'rgba(0, 0, 0, 0.65)',
-          backdropFilter: 'blur(3px)',
+          background: 'rgba(8, 7, 6, 0.82)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           padding: '16px'
-        }}>
+        }} onClick={() => setShowConfirmDelete(false)}>
           <div style={{
             background: '#ffffff',
             borderRadius: '16px',

@@ -105,7 +105,7 @@ class ZoneTeamSerializer(serializers.ModelSerializer):
         model = ZoneTeam
         fields = ['id', 'zone', 'team', 'team_name', 'team_logo',
                   'points', 'played', 'won', 'drawn', 'lost', 'goals_for', 'goals_against',
-                  'yellow_cards', 'red_cards', 'indumentaria', 'fair_play']
+                  'yellow_cards', 'red_cards', 'blue_cards', 'wo_count', 'indumentaria', 'fair_play']
 
     def get_team_logo(self, obj):
         request = self.context.get('request')
@@ -115,7 +115,8 @@ class ZoneTeamSerializer(serializers.ModelSerializer):
 
 
 class TournamentZoneSerializer(serializers.ModelSerializer):
-    zone_teams = ZoneTeamSerializer(many=True, read_only=True)
+    # Ordenados según los criterios de desempate configurados en el torneo
+    zone_teams = serializers.SerializerMethodField()
 
     class Meta:
         model = TournamentZone
@@ -123,6 +124,11 @@ class TournamentZoneSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'tournament': {'required': False}
         }
+
+    def get_zone_teams(self, obj):
+        from .standings import sort_zone_teams
+        ordered = sort_zone_teams(obj.tournament, obj, obj.zone_teams.select_related('team').all())
+        return ZoneTeamSerializer(ordered, many=True, context=self.context).data
 
 
 class TournamentSerializer(serializers.ModelSerializer):
@@ -136,7 +142,7 @@ class TournamentSerializer(serializers.ModelSerializer):
                   'pts_win', 'pts_draw', 'pts_loss', 'yellow_cards_suspension', 'description',
                   'half_duration', 'tiebreaker_1', 'tiebreaker_2', 'tiebreaker_3', 'tiebreaker_4', 'tiebreaker_5',
                   'fp_yellow_pts', 'fp_red_pts', 'fp_blue_card_enabled', 'fp_blue_pts',
-                  'fp_wo_enabled', 'fp_wo_pts',
+                  'fp_wo_enabled', 'fp_wo_pts', 'is_active',
                   'start_date', 'end_date', 'created_at', 'updated_at', 'zones']
 
     def get_zones_count(self, obj):
@@ -153,7 +159,7 @@ class TournamentCreateSerializer(serializers.ModelSerializer):
                   'pts_win', 'pts_draw', 'pts_loss', 'yellow_cards_suspension', 'description',
                   'half_duration', 'tiebreaker_1', 'tiebreaker_2', 'tiebreaker_3', 'tiebreaker_4', 'tiebreaker_5',
                   'fp_yellow_pts', 'fp_red_pts', 'fp_blue_card_enabled', 'fp_blue_pts',
-                  'fp_wo_enabled', 'fp_wo_pts',
+                  'fp_wo_enabled', 'fp_wo_pts', 'is_active',
                   'zones_data']
 
     def create(self, validated_data):
@@ -167,8 +173,22 @@ class TournamentCreateSerializer(serializers.ModelSerializer):
             )
         return tournament
 
+    # Reglas que rigen el torneo: no se pueden modificar una vez que el torneo tiene fixture
+    LOCKED_FIELDS = [
+        'pts_win', 'pts_draw', 'pts_loss', 'yellow_cards_suspension',
+        'fp_yellow_pts', 'fp_red_pts', 'fp_blue_card_enabled', 'fp_blue_pts',
+        'fp_wo_enabled', 'fp_wo_pts',
+    ]
+
     def update(self, instance, validated_data):
         zones_data = validated_data.pop('zones_data', None)
+        has_fixture = Match.objects.filter(match_round__tournament_zone__tournament=instance).exists()
+        if has_fixture:
+            changed = [f for f in self.LOCKED_FIELDS if f in validated_data and validated_data[f] != getattr(instance, f)]
+            if changed:
+                raise serializers.ValidationError({
+                    "detail": "El Puntaje Fair Play y las Configuraciones Extras no pueden modificarse una vez creado el torneo."
+                })
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
@@ -192,6 +212,18 @@ class TournamentCreateSerializer(serializers.ModelSerializer):
                     seen_ids.add(new_zone.id)
             for zone_id, zone in existing.items():
                 if zone_id not in seen_ids:
+                    from django.db.models import Q
+                    has_matches = Match.objects.filter(
+                        Q(match_round__tournament_zone=zone) | Q(impact_zone=zone)
+                    ).exists()
+                    if has_matches:
+                        raise serializers.ValidationError({
+                            "detail": f"No se puede eliminar la zona '{zone.name}' ya que los equipos cargados ya tienen partidos asignados en el torneo."
+                        })
+                    if zone.zone_teams.exists():
+                        raise serializers.ValidationError({
+                            "detail": f"No se puede eliminar la zona '{zone.name}' porque contiene equipos asignados. Quitalos primero para poder eliminarla."
+                        })
                     zone.delete()
         return instance
 

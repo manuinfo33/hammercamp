@@ -1487,6 +1487,24 @@ tr:hover td { background: rgba(212, 184, 150, 0.03); }
     left: 16px !important;
     transform: none !important;
   }
+
+  /* Modales centradas en el área visible sobre la barra de navegación inferior móvil */
+  .premium-modal-overlay {
+    bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
+    padding: 12px 14px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+  }
+
+  .premium-modal-card {
+    max-height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    border-radius: 16px !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
 }
 
 
@@ -2122,7 +2140,7 @@ body:has(.anthropic-theme),
 
 .zone-card-header {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr auto auto;
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
@@ -2141,17 +2159,21 @@ body:has(.anthropic-theme),
 
 @media (max-width: 580px) {
   .zone-card-header {
-    grid-template-columns: auto 1fr;
+    grid-template-columns: auto 1fr auto;
     row-gap: 8px;
   }
   .zone-card-header .zone-input {
-    grid-column: span 2;
+    grid-column: span 3;
     width: 100%;
     order: 2;
   }
   .zone-card-header .zone-action-btn {
     grid-column: 2;
     justify-self: end;
+    order: 1;
+  }
+  .zone-card-header .zone-delete-btn {
+    grid-column: 3;
     order: 1;
   }
 }
@@ -2361,12 +2383,19 @@ body:has(.anthropic-theme),
 .anthropic-theme table.compact-table th {
   padding: 8px 12px !important;
   font-size: 11px !important;
+  height: 42px !important;
+  box-sizing: border-box !important;
+}
+
+.anthropic-theme table.compact-table tr {
+  height: 48px !important;
 }
 
 .anthropic-theme table.compact-table td {
   padding: 6px 12px !important;
   font-size: 13px !important;
-  height: auto !important;
+  height: 48px !important;
+  box-sizing: border-box !important;
 }
 
 /* =============================================
@@ -2556,12 +2585,19 @@ body:has(.anthropic-theme),
 .anthropic-theme table.compact-table th {
   padding: 8px 12px !important;
   font-size: 11px !important;
+  height: 42px !important;
+  box-sizing: border-box !important;
+}
+
+.anthropic-theme table.compact-table tr {
+  height: 48px !important;
 }
 
 .anthropic-theme table.compact-table td {
   padding: 6px 12px !important;
   font-size: 13px !important;
-  height: auto !important;
+  height: 48px !important;
+  box-sizing: border-box !important;
 }
 
 /* =============================================
@@ -2657,4 +2693,31 @@ body:has(.anthropic-theme),
 .score-dropdown-item.active {
   background: #EAE4D8;
   color: #191919;
+}
+
+/* Reglas del torneo bloqueadas (solo lectura al editar) */
+.locked-rules-notice {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #f8f6f2;
+  border: 1px solid #e6dfd3;
+  color: #7f776f;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.locked-rules-fieldset input:disabled,
+.locked-rules-fieldset select:disabled {
+  background: #f8f6f2 !important;
+  color: #666 !important;
+  cursor: not-allowed !important;
+  opacity: 1;
+}
+
+.locked-rules-fieldset label {
+  cursor: not-allowed !important;
+}
+
+.locked-rules-fieldset label > div {
+  opacity: 0.7;
 }

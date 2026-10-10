@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api';
-import { Plus, Search, Trophy, Trash2, Edit2, Calendar, Eye, X, Check } from 'lucide-react';
+import { Plus, Search, Trophy, Trash2, Edit2, Calendar, Eye, X, Check, ChevronRight, Layers, Users, Award } from 'lucide-react';
 import TournamentForm from './TournamentForm';
 
 const TorneosView = () => {
@@ -69,6 +69,23 @@ const TorneosView = () => {
       setDeleteError('No se pudo eliminar el Torneo. Verificá que la contraseña sea correcta');
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleToggleActive = async (tournament, e) => {
+    e.stopPropagation();
+    const newStatus = !tournament.is_active;
+    try {
+      // Optimistic update
+      setTournaments(prev => prev.map(t => t.id === tournament.id ? { ...t, is_active: newStatus } : t));
+      await api.patch(`tournaments/${tournament.id}/`, { is_active: newStatus });
+      setToastMessage(`Torneo ${newStatus ? 'activado' : 'desactivado'} con éxito`);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2500);
+    } catch (err) {
+      console.error('Error toggling tournament active status:', err);
+      // Revert on error
+      setTournaments(prev => prev.map(t => t.id === tournament.id ? { ...t, is_active: !newStatus } : t));
     }
   };
 
@@ -174,198 +191,315 @@ const TorneosView = () => {
               <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>No hay torneos registrados.</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: '16px' }}>
-              {tournaments.map((t) => (
-                <div
-                  key={t.id}
-                  style={{
-                    background: '#ffffff',
-                    border: '1px solid #e6dfd3',
-                    borderRadius: '12px',
-                    padding: '20px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    gap: '14px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  <div>
-                    {/* Header de la Card */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                      <h3 
-                        onClick={() => navigate(`/torneos/${t.id}`)}
-                        style={{ 
-                          margin: 0, 
-                          fontSize: '16px', 
-                          fontWeight: '600', 
-                          color: '#191919',
-                          cursor: 'pointer',
-                        }}
-                        className="hover:underline"
-                        title="Ver detalles del torneo"
-                      >
-                        {t.name}
-                      </h3>
-                      {t.category_name ? (
-                        <span
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '20px' }}>
+              {tournaments.map((t) => {
+                const totalTeams = t.zones?.reduce((acc, z) => acc + (z.zone_teams?.length || 0), 0) || 0;
+                const totalZones = t.zones?.length || 0;
+
+                return (
+                  <div
+                    key={t.id}
+                    onClick={() => navigate(`/torneos/${t.id}`)}
+                    style={{
+                      background: '#ffffff',
+                      border: '1px solid #e6dfd3',
+                      borderRadius: '16px',
+                      padding: '20px 22px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      gap: '18px',
+                      boxShadow: '0 4px 16px rgba(25, 20, 15, 0.03)',
+                      transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                      cursor: 'pointer',
+                      position: 'relative'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#cc7a5c';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 8px 24px rgba(204, 122, 92, 0.12)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#e6dfd3';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 16px rgba(25, 20, 15, 0.03)';
+                    }}
+                  >
+                    <div>
+                      {/* Main Tournament Title & Click indicator */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                          <h3
+                            style={{
+                              margin: 0,
+                              fontFamily: "'Outfit', system-ui, sans-serif",
+                              fontSize: '19px',
+                              fontWeight: '700',
+                              color: '#191919',
+                              letterSpacing: '-0.3px',
+                              lineHeight: 1.3,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}
+                            title={t.name}
+                          >
+                            {t.name}
+                          </h3>
+                        </div>
+
+                        <div
                           style={{
-                            fontSize: '11px',
-                            fontWeight: '600',
-                            padding: '4px 10px',
-                            borderRadius: '6px',
-                            backgroundColor: '#eef7ed',
-                            color: '#2e7d32',
-                            border: '1px solid #c8e6c9',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {t.category_name}
-                        </span>
-                      ) : (
-                        <span
-                          title="Debes asignarle una categoría a este torneo"
-                          style={{
-                            fontSize: '11px',
-                            fontWeight: '600',
-                            padding: '4px 10px',
-                            borderRadius: '6px',
-                            backgroundColor: '#fff3e0',
-                            color: '#d97706',
-                            border: '1px solid #ffedd5',
-                            whiteSpace: 'nowrap',
-                            display: 'inline-flex',
+                            width: '28px',
+                            height: '28px',
+                            borderRadius: '50%',
+                            background: '#faf8f5',
+                            display: 'flex',
                             alignItems: 'center',
-                            gap: '6px'
+                            justifyContent: 'center',
+                            color: '#8c827a',
+                            flexShrink: 0
                           }}
                         >
-                          <span style={{
+                          <ChevronRight size={16} />
+                        </div>
+                      </div>
+
+                      {/* Recuadro de Información (Zonas, Equipos, Categoría, Fecha Inicio, Estado) */}
+                      <div style={{
+                        marginTop: '16px',
+                        padding: '14px 16px',
+                        background: '#faf8f5',
+                        borderRadius: '12px',
+                        border: '1px solid #efe9e0',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '14px'
+                      }}>
+                        {/* Grid de Métricas */}
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(2, 1fr)',
+                          gap: '12px 14px'
+                        }}>
+                          {/* Zonas */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '8px',
+                              background: '#ffffff',
+                              border: '1px solid #e6dfd3',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: '#cc7a5c',
+                              flexShrink: 0
+                            }}>
+                              <Layers size={15} />
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '10.5px', color: '#8c827a', fontWeight: '500', textTransform: 'uppercase' }}>Zonas</div>
+                              <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#191919' }}>{totalZones} {totalZones === 1 ? 'Zona' : 'Zonas'}</div>
+                            </div>
+                          </div>
+
+                          {/* Equipos */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '8px',
+                              background: '#ffffff',
+                              border: '1px solid #e6dfd3',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: '#cc7a5c',
+                              flexShrink: 0
+                            }}>
+                              <Users size={15} />
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '10.5px', color: '#8c827a', fontWeight: '500', textTransform: 'uppercase' }}>Equipos</div>
+                              <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#191919' }}>{totalTeams} {totalTeams === 1 ? 'Equipo' : 'Equipos'}</div>
+                            </div>
+                          </div>
+
+                          {/* Categoría */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '8px',
+                              background: '#ffffff',
+                              border: '1px solid #e6dfd3',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: '#cc7a5c',
+                              flexShrink: 0
+                            }}>
+                              <Award size={15} />
+                            </div>
+                            <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                              <div style={{ fontSize: '10.5px', color: '#8c827a', fontWeight: '500', textTransform: 'uppercase' }}>Categoría</div>
+                              <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#191919', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={t.category_name || 'Sin Categoría'}>
+                                {t.category_name || 'Sin Categoría'}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Fecha de Inicio */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '8px',
+                              background: '#ffffff',
+                              border: '1px solid #e6dfd3',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: '#cc7a5c',
+                              flexShrink: 0
+                            }}>
+                              <Calendar size={15} />
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '10.5px', color: '#8c827a', fontWeight: '500', textTransform: 'uppercase' }}>Fecha de Inicio</div>
+                              <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#191919' }}>
+                                {t.start_date ? formatDate(t.start_date) : 'Sin fecha'}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bottom Action Footer: Activo/Inactivo a la izquierda, Editar y Eliminar a la derecha */}
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        paddingTop: '12px',
+                        borderTop: '1px solid #f2ede4',
+                        gap: '8px'
+                      }}
+                    >
+                      {/* Botón de estado Activo/Inactivo (mismo alto 32px que los botones de acción) */}
+                      <button
+                        type="button"
+                        onClick={(e) => handleToggleActive(t, e)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '0 12px',
+                          height: '32px',
+                          minHeight: '32px',
+                          borderRadius: '9999px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          border: t.is_active !== false ? '1px solid #bbf7d0' : '1px solid #fecaca',
+                          background: t.is_active !== false ? '#f0fdf4' : '#fef2f2',
+                          color: t.is_active !== false ? '#15803d' : '#b91c1c',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                          outline: 'none',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+                        }}
+                        title={`Hacé clic para cambiar a ${t.is_active !== false ? 'Inactivo' : 'Activo'}`}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'scale(1.03)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                      >
+                        <span
+                          style={{
                             width: '7px',
                             height: '7px',
                             borderRadius: '50%',
-                            backgroundColor: '#e07070',
-                            display: 'inline-block',
-                            boxShadow: '0 0 0 2px rgba(224, 112, 112, 0.25)'
-                          }}></span>
-                          Sin Categoría
-                        </span>
-                      )}
-                    </div>
+                            background: t.is_active !== false ? '#22c55e' : '#ef4444',
+                            display: 'inline-block'
+                          }}
+                        />
+                        {t.is_active !== false ? 'Activo' : 'Inactivo'}
+                      </button>
 
-                    {/* Detalle de Fechas y Zonas */}
-                    <div
-                      style={{
-                        marginTop: '14px',
-                        padding: '12px',
-                        background: '#faf8f5',
-                        borderRadius: '8px',
-                        border: '1px solid #efe9e0',
-                        fontSize: '12px',
-                        color: '#444',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Calendar size={14} style={{ color: '#cc7a5c' }} />
-                        <span><strong>Fecha de Inicio:</strong> {formatDate(t.start_date)}</span>
-                      </div>
-                      <div>
-                        <strong>Zonas:</strong>{' '}
-                        {t.zones?.length > 0 ? (
-                          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '6px' }}>
-                            {t.zones.map(z => (
-                              <span 
-                                key={z.id} 
-                                style={{ 
-                                  fontSize: '11px', 
-                                  padding: '2px 8px',
-                                  borderRadius: '4px',
-                                  backgroundColor: '#eae4d8',
-                                  color: '#191919',
-                                  fontWeight: '500'
-                                }}
-                              >
-                                {z.name} ({z.zone_teams?.length || 0})
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          <span style={{ color: 'var(--text-muted)' }}>Sin zonas configuradas</span>
-                        )}
+                      {/* Botones de acción a la derecha */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <button
+                          onClick={() => { setEditingTournament(t); setShowForm(true); }}
+                          type="button"
+                          className="secondary icon-only"
+                          style={{
+                            width: '32px',
+                            height: '32px',
+                            minWidth: '32px',
+                            padding: 0,
+                            borderRadius: '6px',
+                            border: '1px solid #d8cfc0',
+                            background: '#ffffff',
+                            color: '#59534d',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.15s ease'
+                          }}
+                          title="Editar información del torneo"
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = '#191919';
+                            e.currentTarget.style.color = '#191919';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = '#d8cfc0';
+                            e.currentTarget.style.color = '#59534d';
+                          }}
+                        >
+                          <Edit2 size={13} />
+                        </button>
+                        <button
+                          onClick={() => handleOpenDeleteModal(t)}
+                          type="button"
+                          className="secondary icon-only"
+                          style={{
+                            width: '32px',
+                            height: '32px',
+                            minWidth: '32px',
+                            padding: 0,
+                            borderRadius: '6px',
+                            border: '1px solid #f3d4d4',
+                            background: '#ffffff',
+                            color: '#c62828',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.15s ease'
+                          }}
+                          title="Eliminar torneo"
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#fef2f2';
+                            e.currentTarget.style.borderColor = '#e07070';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#ffffff';
+                            e.currentTarget.style.borderColor = '#f3d4d4';
+                          }}
+                        >
+                          <Trash2 size={13} />
+                        </button>
                       </div>
                     </div>
                   </div>
-
-                  {/* Acciones */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'flex-end',
-                      gap: '8px',
-                      paddingTop: '10px',
-                      borderTop: '1px solid #f2ede4',
-                    }}
-                  >
-                    <button
-                      onClick={() => navigate(`/torneos/${t.id}`)}
-                      style={{
-                        background: 'none',
-                        border: '1px solid #d8cfc0',
-                        borderRadius: '6px',
-                        padding: '6px 12px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        fontSize: '12px',
-                        color: '#191919',
-                        fontWeight: '500',
-                      }}
-                    >
-                      <Eye size={14} /> Ver Torneo
-                    </button>
-                    <button
-                      onClick={() => { setEditingTournament(t); setShowForm(true); }}
-                      style={{
-                        background: 'none',
-                        border: '1px solid #d8cfc0',
-                        borderRadius: '6px',
-                        padding: '6px 12px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        fontSize: '12px',
-                        color: '#444',
-                        fontWeight: '500',
-                      }}
-                    >
-                      <Edit2 size={14} /> Editar
-                    </button>
-                    <button
-                      onClick={() => handleOpenDeleteModal(t)}
-                      style={{
-                        background: 'none',
-                        border: '1px solid #f1c5c5',
-                        borderRadius: '6px',
-                        padding: '6px 12px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        fontSize: '12px',
-                        color: '#c62828',
-                        fontWeight: '500',
-                      }}
-                    >
-                      <Trash2 size={14} /> Eliminar
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </>

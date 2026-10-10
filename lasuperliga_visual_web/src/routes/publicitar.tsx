@@ -21,7 +21,7 @@ function Page() {
         </p>
         <a
           href="mailto:publicidad@cancha7.com.ar"
-          className="mt-8 inline-flex items-center bg-primary text-primary-foreground font-bold uppercase tracking-[0.2em] text-xs px-6 py-3 hover:brightness-110 transition"
+          className="mt-8 inline-flex items-center bg-primary text-primary-foreground font-bold uppercase tracking-[0.2em] text-xs px-6 py-3 rounded-xl hover:brightness-110 shadow-sm transition-all"
         >
           Quiero publicitar
         </a>

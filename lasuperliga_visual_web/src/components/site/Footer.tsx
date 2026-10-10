@@ -19,10 +19,10 @@ export function Footer() {
             fechas y todas las novedades de cada categoría.
           </p>
           <div className="flex gap-3 mt-5">
-            <a href="#" className="size-9 grid place-items-center border border-border rounded-sm text-muted-foreground hover:text-primary hover:border-primary transition-colors" aria-label="Facebook">
+            <a href="#" className="size-9 grid place-items-center border border-border/50 rounded-xl text-muted-foreground hover:text-primary hover:border-primary transition-all duration-200" aria-label="Facebook">
               <Facebook className="size-4" />
             </a>
-            <a href="#" className="size-9 grid place-items-center border border-border rounded-sm text-muted-foreground hover:text-primary hover:border-primary transition-colors" aria-label="Instagram">
+            <a href="#" className="size-9 grid place-items-center border border-border/50 rounded-xl text-muted-foreground hover:text-primary hover:border-primary transition-all duration-200" aria-label="Instagram">
               <Instagram className="size-4" />
             </a>
           </div>

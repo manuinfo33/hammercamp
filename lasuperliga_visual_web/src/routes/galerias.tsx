@@ -17,7 +17,7 @@ function Page() {
         <h1 className="font-display text-4xl md:text-6xl font-bold uppercase mt-3">Galerías</h1>
         <div className="mt-10 grid grid-cols-2 md:grid-cols-3 gap-3">
           {[...news, ...news].map((n, i) => (
-            <div key={i} className="aspect-square overflow-hidden group">
+            <div key={i} className="aspect-square rounded-2xl border border-border/40 shadow-sm overflow-hidden group">
               <img src={n.image} alt={n.title} loading="lazy" className="size-full object-cover group-hover:scale-105 transition-transform duration-500" />
             </div>
           ))}

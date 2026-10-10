@@ -95,13 +95,13 @@ function Page() {
         )}
 
         {!loading && error && (
-          <div className="max-w-md mx-auto text-center py-20 bg-surface border border-border/60 p-8 rounded-sm">
+          <div className="max-w-md mx-auto text-center py-20 bg-surface border border-border/70 p-8 rounded-2xl shadow-sm">
             <AlertTriangle className="size-12 mx-auto text-red-500 mb-4" />
             <h2 className="text-xl font-bold font-display uppercase">Acceso No Autorizado</h2>
             <p className="text-sm text-muted-foreground mt-2">{error}</p>
             <Link
               to="/"
-              className="mt-6 inline-flex items-center justify-center bg-primary text-primary-foreground font-bold uppercase tracking-[0.2em] text-xs px-6 py-3 hover:brightness-110 transition"
+              className="mt-6 inline-flex items-center justify-center bg-primary text-primary-foreground font-bold uppercase tracking-[0.2em] text-xs px-6 py-3 rounded-xl hover:brightness-110 shadow-sm transition-all"
             >
               Volver al Inicio
             </Link>
@@ -111,9 +111,9 @@ function Page() {
         {!loading && !error && user && (
           <div className="space-y-8">
             {/* Tarjeta de Información de Delegado */}
-            <div className="bg-surface border border-border/60 p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="bg-surface rounded-2xl border border-border/70 p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] bg-tag text-tag-foreground px-2 py-1 rounded-sm">
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] bg-tag text-tag-foreground px-3 py-1 rounded-full shadow-xs">
                   Delegado Oficial
                 </span>
                 <h2 className="text-2xl font-bold uppercase font-display mt-3">
@@ -122,22 +122,25 @@ function Page() {
                 <p className="text-xs text-muted-foreground mt-1">Usuario: {user.username} | Email: {user.email}</p>
               </div>
               <div className="flex gap-4">
-                <div className="bg-muted px-4 py-3 text-center border border-border/40 rounded-sm">
+                <div className="bg-muted/70 px-5 py-3 text-center border border-border/40 rounded-xl shadow-xs">
                   <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Equipo</div>
-                  <div className="font-display font-semibold text-lg">{user.team_name}</div>
+                  <div className="font-display font-semibold text-lg text-primary">{user.team_name}</div>
                 </div>
               </div>
             </div>
 
             {/* Tabla de Jugadores */}
             <section className="space-y-4">
-              <h2 className="font-display text-2xl font-bold uppercase border-l-4 border-primary pl-4">
-                Lista de Buena Fe
-              </h2>
+              <div className="flex items-center gap-3">
+                <span className="w-1.5 h-6 bg-primary rounded-full inline-block shadow-sm" />
+                <h2 className="font-display text-2xl font-bold uppercase">
+                  Lista de Buena Fe
+                </h2>
+              </div>
               
-              <div className="bg-surface border border-border/60 overflow-x-auto">
+              <div className="bg-surface rounded-2xl border border-border/70 shadow-sm overflow-hidden">
                 <table className="w-full text-left text-sm whitespace-nowrap">
-                  <thead className="bg-surface-elevated text-xs uppercase tracking-widest text-muted-foreground">
+                  <thead className="bg-surface-elevated/70 border-b border-border/70 text-xs uppercase tracking-widest text-muted-foreground">
                     <tr>
                       <th className="px-6 py-4 font-semibold w-16 text-center">N°</th>
                       <th className="px-6 py-4 font-semibold">Jugador</th>

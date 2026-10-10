@@ -36,13 +36,13 @@ function Page() {
               <Link 
                 key={c.id} 
                 to={`/categorias/${c.id}`}
-                className="bg-surface border border-border/60 p-6 hover:border-primary transition-colors flex flex-col items-start group"
+                className="bg-surface rounded-2xl border border-border/70 p-6 shadow-sm hover:shadow-md hover:border-primary/60 transition-all duration-200 flex flex-col items-start group"
               >
-                <span className="inline-block bg-tag text-tag-foreground text-[10px] font-bold uppercase tracking-[0.2em] px-2.5 py-1 rounded-sm group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                <span className="inline-block bg-tag text-tag-foreground text-[10px] font-bold uppercase tracking-[0.2em] px-3 py-1 rounded-full group-hover:bg-primary group-hover:text-primary-foreground shadow-xs transition-colors">
                   {c.name}
                 </span>
                 <h2 className="mt-4 font-display text-2xl font-bold uppercase group-hover:text-primary transition-colors">{c.name}</h2>
-                <p className="mt-2 text-sm text-muted-foreground">Ver información, estadísticas y tablas de la categoría.</p>
+                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">Ver información, estadísticas y tablas de la categoría.</p>
               </Link>
             ))
           )}

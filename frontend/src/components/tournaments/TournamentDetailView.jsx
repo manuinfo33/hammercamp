@@ -14,6 +14,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const TABS = [
   { id: 'principal', label: 'Principal' },
+  { id: 'fair_play', label: 'Fair Play' },
   { id: 'fixture', label: 'Fixture' },
   { id: 'buena_fe', label: 'Lista de Buena Fe' },
 ];
@@ -349,13 +350,20 @@ export default function TournamentDetailView({ tournament, onBack }) {
   // Match Result Modal state
   const [selectedMatchForScore, setSelectedMatchForScore] = useState(null);
   const [selectedRoundNameForScore, setSelectedRoundNameForScore] = useState('');
+  const [fairPlayData, setFairPlayData] = useState(null);
 
   const fetchTournamentDetail = async () => {
     if (!tournamentId) return;
     try {
       setLoading(true);
-      const res = await api.get(`tournaments/${tournamentId}/`);
+      const [res, fpRes] = await Promise.all([
+        api.get(`tournaments/${tournamentId}/`),
+        api.get(`tournaments/${tournamentId}/fair-play/`).catch(() => null)
+      ]);
       setDetailedTournament(res.data);
+      if (fpRes?.data) {
+        setFairPlayData(fpRes.data);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -411,6 +419,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
     const handleOutsideClick = () => {
       setOpenDropdownRoundId(null);
       setOpenDropdownMatchId(null);
+      setOpenDropdownZoneId(null);
     };
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
@@ -1245,73 +1254,66 @@ export default function TournamentDetailView({ tournament, onBack }) {
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto' }} className="anthropic-theme tournaments-container animate-fade-in">
       
-      {/* Header Card with Back Button & Category Badge */}
-      <div className="glass-card hide-on-mobile" style={{
-        padding: '24px 28px',
-        marginBottom: '24px',
-        background: '#ffffff',
-        border: '1px solid #e6dfd3',
-        borderRadius: '20px',
-        boxShadow: '0 4px 20px rgba(25, 20, 15, 0.04)',
+      {/* Refined Header: Back icon button and tournament title side by side */}
+      <div className="hide-on-mobile" style={{
+        marginBottom: '22px',
         display: 'flex',
-        flexDirection: 'column',
-        gap: '16px'
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '12px'
       }}>
-        {/* Top bar: Back Button & Category Badge */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button
             onClick={handleBack}
-            className="secondary"
+            type="button"
+            className="secondary icon-only"
             style={{
-              height: '36px',
-              padding: '0 14px',
-              borderRadius: '10px',
-              fontSize: '13px',
+              width: '34px',
+              height: '34px',
+              minWidth: '34px',
+              padding: 0,
+              borderRadius: '8px',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px'
+              justifyContent: 'center',
+              cursor: 'pointer',
+              border: '1px solid #d8cfc0',
+              background: '#ffffff',
+              color: '#191919',
+              transition: 'all 0.15s ease'
             }}
-            title="Volver a la lista de torneos"
+            title="Volver a Torneos"
           >
-            <ArrowLeft size={16} /> Volver a Torneos
+            <ArrowLeft size={16} />
           </button>
 
-          {displayTournament.category_name && (
-            <span style={{
-              background: '#fbf5f2',
-              color: '#cc7a5c',
-              border: '1px solid #e5c5bb',
-              padding: '6px 14px',
-              borderRadius: '20px',
-              fontSize: '12px',
-              fontWeight: '700',
-              letterSpacing: '0.3px'
-            }}>
-              Categoría: {displayTournament.category_name}
-            </span>
-          )}
-        </div>
-
-        {/* Title & Description */}
-        <div>
-          <h1 className="anthropic-title" style={{ fontSize: '28px', margin: 0, fontWeight: '800', color: '#191919', letterSpacing: '-0.5px' }}>
+          <h1 style={{
+            margin: 0,
+            fontFamily: "'Outfit', system-ui, sans-serif",
+            fontSize: '24px',
+            fontWeight: '700',
+            color: '#191919',
+            letterSpacing: '-0.3px',
+            lineHeight: 1.2
+          }}>
             {displayTournament.name}
           </h1>
-          <p style={{ color: '#7f776f', fontSize: '13px', margin: '4px 0 0' }}>
-            Gestión de fixture, tabla de posiciones y lista de buena fe
-          </p>
         </div>
+
+        {displayTournament.category_name && (
+          <span style={{ color: '#8c827a', fontSize: '12.5px', fontWeight: '400' }}>
+            Categoría: {displayTournament.category_name}
+          </span>
+        )}
       </div>
 
-      {/* Tabs Navigation Bar */}
+      {/* Underline Tabs Navigation Bar (Minimalist, without background container) */}
       <div className="hide-on-mobile" style={{
         display: 'flex',
-        gap: '8px',
-        background: '#eae4d8',
-        padding: '6px',
-        borderRadius: '14px',
-        border: '1px solid #d8cfc0',
-        marginBottom: '28px',
+        gap: '24px',
+        borderBottom: '1px solid #d8cfc0',
+        marginBottom: '24px',
         overflowX: 'auto',
         WebkitOverflowScrolling: 'touch',
         scrollbarWidth: 'none'
@@ -1322,19 +1324,29 @@ export default function TournamentDetailView({ tournament, onBack }) {
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className="tournament-tab-btn"
+              type="button"
               style={{
-                background: isActive ? '#cc7a5c' : 'transparent',
-                color: isActive ? '#ffffff' : '#383530',
+                background: 'transparent',
+                color: isActive ? '#cc7a5c' : '#7f776f',
                 border: 'none',
-                borderRadius: '10px',
-                padding: '10px 24px',
-                fontWeight: isActive ? 700 : 600,
-                fontSize: '0.88rem',
+                borderBottom: isActive ? '4px solid #cc7a5c' : '4px solid transparent',
+                borderRadius: 0,
+                padding: '10px 4px 12px 4px',
+                fontWeight: isActive ? 700 : 500,
+                fontSize: '14.5px',
                 cursor: 'pointer',
-                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                transition: 'all 0.15s ease',
                 flexShrink: 0,
-                boxShadow: isActive ? '0 4px 12px rgba(204, 122, 92, 0.3)' : 'none'
+                outline: 'none',
+                boxShadow: 'none',
+                height: 'auto',
+                marginBottom: '-1px'
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) e.currentTarget.style.color = '#191919';
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) e.currentTarget.style.color = '#7f776f';
               }}
             >
               {tab.label}
@@ -1363,7 +1375,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                 ) : (
                   detailedTournament.zones.map((zone) => {
                     const sortedZoneTeams = zone.zone_teams?.length
-                      ? [...zone.zone_teams].sort((a, b) => a.team_name.localeCompare(b.team_name))
+                      ? zone.zone_teams
                       : [];
 
                     return (
@@ -1439,6 +1451,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
+                              setOpenDropdownRoundId(null);
+                              setOpenDropdownMatchId(null);
                               setOpenDropdownZoneId(openDropdownZoneId === zone.id ? null : zone.id);
                             }}
                             style={{
@@ -1507,6 +1521,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                             <table className="responsive-table compact-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                               <thead>
                                 <tr>
+                                  <th style={{ width: '40px', textAlign: 'center' }}>#</th>
                                   <th>Equipo</th>
                                   <th style={{ width: '60px', textAlign: 'center' }}>PS</th>
                                   <th style={{ width: '60px', textAlign: 'center' }}>PJ</th>
@@ -1514,24 +1529,20 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                   <th style={{ width: '60px', textAlign: 'center' }}>PE</th>
                                   <th style={{ width: '60px', textAlign: 'center' }}>PP</th>
                                   <th style={{ width: '60px', textAlign: 'center' }}>+/-</th>
-                                  <th style={{ width: '40px', textAlign: 'center' }} title="Tarjetas Rojas">
-                                    <span style={{ display: 'inline-block', width: '10px', height: '14px', background: '#ef4444', borderRadius: '2px' }} />
-                                  </th>
-                                  <th style={{ width: '40px', textAlign: 'center' }} title="Tarjetas Amarillas">
-                                    <span style={{ display: 'inline-block', width: '10px', height: '14px', background: '#facc15', borderRadius: '2px' }} />
-                                  </th>
-                                  <th style={{ width: '50px', textAlign: 'center' }}>IND</th>
                                   <th style={{ width: '50px', textAlign: 'center' }}>FP</th>
                                   <th className="hide-on-mobile" style={{ width: '80px', textAlign: 'right' }}>Acciones</th>
                                 </tr>
                               </thead>
                               <tbody>
-                                {sortedZoneTeams.map((zt) => {
+                                {sortedZoneTeams.map((zt, idx) => {
                                   const diff = zt.goals_for - zt.goals_against;
                                   const diffStr = diff > 0 ? `+${diff}` : `${diff}`;
 
                                   return (
                                     <tr key={zt.id}>
+                                      <td style={{ textAlign: 'center', fontWeight: idx === 0 ? '800' : '600', color: idx === 0 ? '#cc7a5c' : 'inherit' }}>
+                                        {idx + 1}
+                                      </td>
                                       <td>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                           <div style={{
@@ -1582,9 +1593,6 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                       <td style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px' }}>
                                         {diffStr}
                                       </td>
-                                      <td style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{zt.red_cards || 0}</td>
-                                      <td style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{zt.yellow_cards || 0}</td>
-                                      <td style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{zt.indumentaria || 0}</td>
                                       <td style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{zt.fair_play || 0}</td>
                                       <td className="hide-on-mobile" style={{ textAlign: 'right' }}>
                                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
@@ -1639,6 +1647,93 @@ export default function TournamentDetailView({ tournament, onBack }) {
                   })
                 )}
 
+              </div>
+            )}
+
+            {/* FAIR PLAY TAB */}
+            {activeTab === 'fair_play' && (
+              <div className="glass-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '12px' }}>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#191919' }}>
+                    Tabla General de Fair Play
+                  </h3>
+                </div>
+
+                {!fairPlayData?.rows?.length ? (
+                  <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                    No hay datos de Fair Play para este torneo.
+                  </div>
+                ) : (
+                  <div className="table-container" style={{ margin: 0, overflowX: 'auto' }}>
+                    <table className="responsive-table compact-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr>
+                          <th style={{ width: '40px', textAlign: 'center' }}>#</th>
+                          <th>Equipo</th>
+                          <th style={{ width: '60px', textAlign: 'center' }}>PJ</th>
+                          <th style={{ width: '50px', textAlign: 'center' }} title="Tarjetas Amarillas">
+                            <span style={{ display: 'inline-block', width: '10px', height: '14px', background: '#facc15', borderRadius: '2px', verticalAlign: 'middle' }} />
+                          </th>
+                          <th style={{ width: '50px', textAlign: 'center' }} title="Tarjetas Rojas">
+                            <span style={{ display: 'inline-block', width: '10px', height: '14px', background: '#ef4444', borderRadius: '2px', verticalAlign: 'middle' }} />
+                          </th>
+                          {fairPlayData.blue_card_enabled && (
+                            <th style={{ width: '50px', textAlign: 'center' }} title="Tarjetas Azules">
+                              <span style={{ display: 'inline-block', width: '10px', height: '14px', background: '#0284c7', borderRadius: '2px', verticalAlign: 'middle' }} />
+                            </th>
+                          )}
+                          {fairPlayData.wo_enabled && (
+                            <th style={{ width: '50px', textAlign: 'center' }} title="Walkovers (No se presentó)">WO</th>
+                          )}
+                          <th style={{ width: '60px', textAlign: 'center' }}>PTS</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {fairPlayData.rows.map((row, idx) => (
+                          <tr key={row.team}>
+                            <td style={{ textAlign: 'center', fontWeight: idx === 0 ? '800' : '600', color: idx === 0 ? '#cc7a5c' : 'inherit' }}>
+                              {idx + 1}
+                            </td>
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{
+                                  width: '32px',
+                                  height: '32px',
+                                  borderRadius: '6px',
+                                  background: 'var(--brand-beige-subtle)',
+                                  overflow: 'hidden',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  flexShrink: 0
+                                }}>
+                                  {row.team_logo ? (
+                                    <img src={row.team_logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                  ) : (
+                                    <Users size={16} color="var(--brand-beige)" />
+                                  )}
+                                </div>
+                                <span style={{ fontWeight: 'normal', color: '#191919' }}>{row.team_name}</span>
+                              </div>
+                            </td>
+                            <td style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{row.played}</td>
+                            <td style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{row.yellow_cards || 0}</td>
+                            <td style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{row.red_cards || 0}</td>
+                            {fairPlayData.blue_card_enabled && (
+                              <td style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{row.blue_cards || 0}</td>
+                            )}
+                            {fairPlayData.wo_enabled && (
+                              <td style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{row.wo_count || 0}</td>
+                            )}
+                            <td style={{ textAlign: 'center', fontWeight: '800', color: '#cc7a5c', fontSize: '15px' }}>
+                              {row.points}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1802,6 +1897,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  setOpenDropdownMatchId(null);
+                                  setOpenDropdownZoneId(null);
                                   setOpenDropdownRoundId(openDropdownRoundId === r.id ? null : r.id);
                                 }}
                                 style={{
@@ -2009,6 +2106,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                         type="button"
                                         onClick={(e) => {
                                           e.stopPropagation();
+                                          setOpenDropdownRoundId(null);
+                                          setOpenDropdownZoneId(null);
                                           setOpenDropdownMatchId(openDropdownMatchId === m.id ? null : m.id);
                                         }}
                                         style={{
@@ -2892,6 +2991,16 @@ export default function TournamentDetailView({ tournament, onBack }) {
             </button>
             <button 
               onClick={() => {
+                handleTabChange('fair_play');
+                setMobileUserOpen(false);
+              }}
+              className={`mobile-bottom-nav-item ${activeTab === 'fair_play' && !mobileUserOpen ? 'active' : ''}`}
+              title="Fair Play"
+            >
+              <Shield size={22} />
+            </button>
+            <button 
+              onClick={() => {
                 handleTabChange('fixture');
                 setMobileUserOpen(false);
               }}
@@ -3424,162 +3533,198 @@ const TeamDetailEditor = ({
         </div>
       </div>
 
-      {/* JUGADORES/AS LIST */}
-      <div>
-        <div style={{ background: '#ffffff', border: '1px solid #d8cfc0', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
-          <div style={{
-            background: '#f4efe6',
-            borderBottom: '1px solid #d8cfc0',
-            color: '#7f776f',
-            padding: '12px 16px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            fontSize: '11px',
-            fontWeight: '700',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
-          }}>
-            <span>JUGADORES/AS</span>
-            <span>LBF</span>
-          </div>
+      {/* JUGADORES/AS LIST (Contenido fluido integrado en la pantalla) */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{
+          background: '#f4efe6',
+          border: '1px solid #d8cfc0',
+          borderRadius: '8px',
+          color: '#7f776f',
+          padding: '10px 16px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          fontSize: '11px',
+          fontWeight: '700',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em'
+        }}>
+          <span>JUGADORES/AS</span>
+          <span>LBF</span>
+        </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', maxHeight: '350px', overflowY: 'auto' }}>
-            {mobileRoster.length === 0 ? (
-              <div style={{ padding: '24px', textAlign: 'center', color: '#7f776f', fontSize: '13px' }}>
-                No hay jugadores en el catálogo. ¡Agrega uno nuevo!
-              </div>
-            ) : (
-              mobileRoster.map((item, idx) => (
-                <div 
-                  key={item.player.id} 
-                  style={{
+        <div style={{
+          background: '#ffffff',
+          border: '1px solid #d8cfc0',
+          borderRadius: '8px',
+          overflow: 'hidden'
+        }}>
+          {mobileRoster.length === 0 ? (
+            <div style={{ padding: '24px', textAlign: 'center', color: '#7f776f', fontSize: '13px' }}>
+              No hay jugadores en el catálogo. ¡Agrega uno nuevo!
+            </div>
+          ) : (
+            mobileRoster.map((item, idx) => (
+              <div 
+                key={item.player.id} 
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 16px',
+                  borderBottom: idx === mobileRoster.length - 1 ? 'none' : '1px solid #f0eae1',
+                  background: idx % 2 === 0 ? '#fcfbfa' : '#ffffff'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: '#eae4d8',
+                    overflow: 'hidden',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '10px 16px',
-                    borderBottom: idx === mobileRoster.length - 1 ? 'none' : '1px solid #f0eae1',
-                    background: idx % 2 === 0 ? '#fcfbfa' : '#ffffff'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '50%',
-                      background: '#eae4d8',
-                      overflow: 'hidden',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      {item.player.photo ? (
-                        <img src={item.player.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <UserCheck size={14} color="#cc7a5c" />
-                      )}
-                    </div>
-                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#191919' }}>
-                      {item.player.last_name}, {item.player.first_name}
-                    </span>
+                    justifyContent: 'center'
+                  }}>
+                    {item.player.photo ? (
+                      <img src={item.player.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <UserCheck size={14} color="#cc7a5c" />
+                    )}
                   </div>
-                  
-                  <LbfSwitch checked={item.isLbf} onChange={() => handleToggleLbf(idx)} />
+                  <span style={{ fontSize: '13px', fontWeight: '600', color: '#191919' }}>
+                    {item.player.last_name}, {item.player.first_name}
+                  </span>
                 </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div style={{ marginTop: '12px' }}>
-          <button 
-            type="button"
-            onClick={() => setShowAddPlayer(true)}
-            style={{
-              width: '100%',
-              height: '44px',
-              background: '#038c4c',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '22px',
-              fontSize: '14px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              boxShadow: '0 2px 6px rgba(3,140,76,0.3)',
-              transition: 'background 0.15s'
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = '#02733e'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = '#038c4c'; }}
-          >
-            <UserPlus size={18} /> Añadir Jugador
-          </button>
+                
+                <LbfSwitch checked={item.isLbf} onChange={() => handleToggleLbf(idx)} />
+              </div>
+            ))
+          )}
         </div>
       </div>
+    </div>
+  );
 
-      {/* Guardar & Quitar Buttons */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '32px' }}>
-        <button 
-          type="button"
-          onClick={handleSave}
-          disabled={saving}
-          style={{
-            width: '100%',
-            height: '44px',
-            background: '#4cd964',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '22px',
-            fontSize: '14px',
-            fontWeight: '700',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 6px rgba(76,217,100,0.3)',
-            transition: 'background 0.15s'
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = '#3fc456'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = '#4cd964'; }}
-        >
-          {saving ? "GUARDANDO..." : "GUARDAR"}
-        </button>
-        
-        <button 
-          type="button"
-          onClick={handleRemove}
-          style={{
-            width: '100%',
-            height: '44px',
-            background: '#ff3b30',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '22px',
-            fontSize: '14px',
-            fontWeight: '700',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 6px rgba(255,59,48,0.3)',
-            transition: 'background 0.15s'
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = '#e0352b'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = '#ff3b30'; }}
-        >
-          QUITAR DEL TORNEO
-        </button>
-      </div>
+  // Footer con los 3 botones siempre visibles y accesibles
+  const footerActionButtons = (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px'
+    }}>
+      {/* Botón Añadir Jugador en el mismo bloque */}
+      <button 
+        type="button"
+        onClick={() => setShowAddPlayer(true)}
+        style={{
+          width: '100%',
+          height: '42px',
+          background: '#038c4c',
+          color: '#ffffff',
+          border: 'none',
+          borderRadius: '21px',
+          fontSize: '14px',
+          fontWeight: '700',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          boxShadow: '0 2px 6px rgba(3,140,76,0.25)',
+          transition: 'background 0.15s'
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = '#02733e'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = '#038c4c'; }}
+      >
+        <UserPlus size={17} /> Añadir Jugador
+      </button>
+
+      {/* Línea divisoria leve entre Añadir Jugador y Guardar */}
+      <div style={{ height: '1px', background: '#e6dfd3', margin: '2px 0' }} />
+
+      <button 
+        type="button"
+        onClick={handleSave}
+        disabled={saving}
+        style={{
+          width: '100%',
+          height: '44px',
+          background: '#4cd964',
+          color: '#ffffff',
+          border: 'none',
+          borderRadius: '22px',
+          fontSize: '14px',
+          fontWeight: '700',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 2px 6px rgba(76,217,100,0.3)',
+          transition: 'background 0.15s'
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = '#3fc456'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = '#4cd964'; }}
+      >
+        {saving ? "GUARDANDO..." : "GUARDAR"}
+      </button>
+      
+      <button 
+        type="button"
+        onClick={handleRemove}
+        style={{
+          width: '100%',
+          height: '44px',
+          background: '#ff3b30',
+          color: '#ffffff',
+          border: 'none',
+          borderRadius: '22px',
+          fontSize: '14px',
+          fontWeight: '700',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 2px 6px rgba(255,59,48,0.3)',
+          transition: 'background 0.15s'
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = '#e0352b'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = '#ff3b30'; }}
+      >
+        QUITAR DEL TORNEO
+      </button>
     </div>
   );
 
   if (!isMobile) {
     return (
-      <div style={{ maxWidth: '640px', margin: '0 auto', padding: '24px 16px 40px' }} className="anthropic-theme animate-fade-in">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+      <div style={{
+        position: 'fixed',
+        top: '60px',
+        left: '60px',
+        right: 0,
+        bottom: 0,
+        background: '#fcfbfa',
+        zIndex: 1000,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '20px 24px 24px',
+        boxSizing: 'border-box',
+        overflow: 'hidden'
+      }} className="anthropic-theme animate-fade-in">
+        
+        {/* Cabecera Desktop */}
+        <div style={{
+          width: '100%',
+          maxWidth: '640px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '16px',
+          flexShrink: 0
+        }}>
           <button
             type="button"
             onClick={onClose}
@@ -3604,14 +3749,39 @@ const TeamDetailEditor = ({
           <div style={{ width: '130px' }} />
         </div>
 
+        {/* Tarjeta Desktop adaptada a pantalla sin desborde */}
         <div style={{
+          width: '100%',
+          maxWidth: '640px',
+          flex: 1,
+          minHeight: 0,
           background: '#ffffff',
           border: '1px solid #e6dfd3',
           borderRadius: '20px',
-          padding: '28px',
-          boxShadow: '0 4px 24px rgba(25, 20, 15, 0.05)'
+          boxShadow: '0 4px 24px rgba(25, 20, 15, 0.05)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden'
         }}>
-          {formContent}
+          {/* Contenido scrolleable internamente */}
+          <div style={{
+            padding: '24px 28px',
+            overflowY: 'auto',
+            flex: 1
+          }}>
+            {formContent}
+          </div>
+
+          {/* Footer Fijo en la base de la tarjeta */}
+          <div style={{
+            background: '#ffffff',
+            borderTop: '1px solid #e6dfd3',
+            padding: '16px 28px',
+            flexShrink: 0,
+            boxShadow: '0 -4px 12px rgba(25, 20, 15, 0.04)'
+          }}>
+            {footerActionButtons}
+          </div>
         </div>
 
         {showAddPlayer && (
@@ -3636,10 +3806,10 @@ const TeamDetailEditor = ({
       bottom: 0,
       zIndex: 9999,
       background: '#fcfbfa',
-      overflowY: 'auto',
       display: 'flex',
       flexDirection: 'column'
     }}>
+      {/* Header fijo superior */}
       <div style={{
         height: '56px',
         background: '#fdfcfb',
@@ -3649,8 +3819,7 @@ const TeamDetailEditor = ({
         justifyContent: 'space-between',
         padding: '0 16px',
         color: '#383530',
-        position: 'sticky',
-        top: 0,
+        flexShrink: 0,
         zIndex: 100
       }}>
         <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#cc7a5c', padding: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
@@ -3662,8 +3831,29 @@ const TeamDetailEditor = ({
         </button>
       </div>
 
-      <div style={{ padding: '16px 16px 28px', display: 'flex', flexDirection: 'column', gap: '20px', flex: 1, position: 'relative' }}>
+      {/* Contenido scrolleable libre (todo el contenido fluye normalmente) */}
+      <div style={{
+        padding: '16px 16px 20px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px',
+        flex: 1,
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch'
+      }}>
         {formContent}
+      </div>
+
+      {/* Footer fijo inferior con los 3 botones */}
+      <div style={{
+        background: '#fdfcfb',
+        borderTop: '1px solid #eae4d8',
+        padding: '12px 16px calc(12px + env(safe-area-inset-bottom, 0px))',
+        flexShrink: 0,
+        zIndex: 100,
+        boxShadow: '0 -4px 16px rgba(25, 20, 15, 0.05)'
+      }}>
+        {footerActionButtons}
       </div>
 
       {showAddPlayer && (

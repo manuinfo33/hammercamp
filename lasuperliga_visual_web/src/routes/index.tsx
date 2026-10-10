@@ -142,20 +142,23 @@ function Index() {
       <section className="container mx-auto px-6 py-16 grid lg:grid-cols-[1fr_360px] gap-10">
         {/* News column */}
         <div>
-          <div className="flex flex-wrap items-end justify-between gap-4 mb-8 border-l-4 border-primary pl-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-primary font-bold">Sección</p>
-              <h2 className="font-display text-3xl md:text-4xl font-bold uppercase">Noticias</h2>
+          <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
+            <div className="flex items-center gap-3">
+              <span className="w-1.5 h-7 bg-primary rounded-full inline-block shadow-sm" />
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-primary font-bold">Sección</p>
+                <h2 className="font-display text-3xl md:text-4xl font-bold uppercase">Noticias</h2>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1.5 bg-surface-elevated/60 p-1 rounded-full border border-border/40">
               {filters.map((f) => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
-                  className={`text-[11px] uppercase tracking-[0.18em] font-bold px-3 py-2 rounded-sm transition-colors ${
+                  className={`text-[11px] uppercase tracking-[0.16em] font-bold px-4 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${
                     filter === f
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-surface/60"
                   }`}
                 >
                   {f}
@@ -168,7 +171,7 @@ function Index() {
             {filtered.map((n) => (
               <article
                 key={n.id}
-                className="group bg-surface border border-border/60 hover:border-primary/60 transition-colors overflow-hidden flex flex-col"
+                className="group bg-surface rounded-2xl border border-border/70 hover:border-primary/50 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col"
               >
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <img
@@ -179,7 +182,7 @@ function Index() {
                     height={600}
                     className="size-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <span className="absolute top-3 left-3 bg-tag text-tag-foreground text-[10px] font-bold uppercase tracking-[0.2em] px-2.5 py-1 rounded-sm">
+                  <span className="absolute top-3 left-3 bg-tag text-tag-foreground text-[10px] font-bold uppercase tracking-[0.2em] px-3 py-1 rounded-full shadow-md backdrop-blur-xs">
                     {n.category}
                   </span>
                 </div>
@@ -202,47 +205,53 @@ function Index() {
 
         {/* Sidebar */}
         <aside className="space-y-8">
-          <div className="bg-surface border border-border/60">
-            <div className="border-l-4 border-primary px-5 py-4">
-              <p className="text-xs uppercase tracking-[0.3em] text-primary font-bold">Próxima</p>
-              <h3 className="font-display text-2xl font-bold uppercase">Siguiente fecha</h3>
+          <div className="bg-surface rounded-2xl border border-border/70 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-border/60 flex items-center gap-3 bg-surface-elevated/40">
+              <span className="w-1.5 h-6 bg-primary rounded-full inline-block shadow-sm" />
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-primary font-bold">Próxima</p>
+                <h3 className="font-display text-2xl font-bold uppercase">Siguiente fecha</h3>
+              </div>
             </div>
             <ul className="divide-y divide-border/60">
               {fixtures.map((f, i) => (
-                <li key={i} className="px-5 py-4">
+                <li key={i} className="px-5 py-4 hover:bg-surface-elevated/30 transition-colors">
                   <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.2em] text-tag font-bold mb-2">
-                    <span>{f.category}</span>
+                    <span className="bg-primary/10 text-primary px-2.5 py-0.5 rounded-full font-bold">{f.category}</span>
                     <span className="text-muted-foreground">{f.field}</span>
                   </div>
                   <div className="flex items-center justify-between gap-3">
                     <span className="font-display text-lg font-semibold flex-1 text-right truncate">{f.home}</span>
-                    <span className="text-primary font-bold text-sm">VS</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-primary/15 text-primary font-bold text-xs">VS</span>
                     <span className="font-display text-lg font-semibold flex-1 truncate">{f.away}</span>
                   </div>
-                  <div className="mt-2 flex items-center justify-center gap-4 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1"><Calendar className="size-3" />{f.date}</span>
-                    <span className="flex items-center gap-1"><Clock className="size-3" />{f.time}</span>
+                  <div className="mt-2.5 flex items-center justify-center gap-4 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1.5 bg-muted/50 px-2 py-0.5 rounded-md"><Calendar className="size-3 text-primary" />{f.date}</span>
+                    <span className="flex items-center gap-1.5 bg-muted/50 px-2 py-0.5 rounded-md"><Clock className="size-3 text-primary" />{f.time}</span>
                   </div>
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="relative bg-surface border border-border/60 p-6 overflow-hidden">
+          <div className="relative bg-surface rounded-2xl border border-border/70 p-6 overflow-hidden shadow-sm">
             <div className="absolute -top-10 -right-10 size-40 rounded-full bg-primary/10 blur-2xl" />
-            <p className="text-xs uppercase tracking-[0.3em] text-primary font-bold">Complejo</p>
-            <h3 className="mt-2 font-display text-2xl font-bold uppercase">Vení a jugar</h3>
-            <p className="mt-3 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-1.5 h-4 bg-primary rounded-full inline-block" />
+              <p className="text-xs uppercase tracking-[0.3em] text-primary font-bold">Complejo</p>
+            </div>
+            <h3 className="mt-1 font-display text-2xl font-bold uppercase">Vení a jugar</h3>
+            <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
               Reservá tu cancha de fútbol 5, 7 o 11. Césped sintético de última
               generación e iluminación profesional para jugar a cualquier hora.
             </p>
-            <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
-              <MapPin className="size-3.5 text-primary" />
-              Av. del Deporte 3600 — La Plata
+            <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground bg-muted/40 px-3 py-2 rounded-xl">
+              <MapPin className="size-3.5 text-primary shrink-0" />
+              <span>Av. del Deporte 3600 — La Plata</span>
             </div>
             <Link
               to="/contacto"
-              className="mt-5 inline-flex items-center justify-center w-full bg-primary text-primary-foreground font-bold uppercase tracking-[0.2em] text-xs py-3 hover:brightness-110 transition"
+              className="mt-5 inline-flex items-center justify-center w-full bg-primary text-primary-foreground font-bold uppercase tracking-[0.2em] text-xs py-3 rounded-xl hover:brightness-110 shadow-sm transition-all duration-200"
             >
               Reservar cancha
             </Link>
