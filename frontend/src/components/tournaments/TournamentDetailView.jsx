@@ -3,13 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Trophy, Users, Edit, Check, X, Calendar, Clock, Plus, Trash2, Shield, 
   AlertTriangle, MoreVertical, FileSpreadsheet, FileText, MapPin, UserCheck, UserPlus,
-  User, Menu, LogOut, ChevronDown
+  User, Menu, LogOut, ChevronDown, ThumbsUp
 } from 'lucide-react';
 import api from '../../api';
 import { createPortal } from 'react-dom';
 import TeamForm from '../teams/TeamForm';
 import PlayerFormModal from '../players/PlayerFormModal';
 import MatchResultModal from './MatchResultModal';
+import { BlueCardModal, TeamFairPlayHistoryModal, CardIcon } from './FairPlayModals';
 import { useAuth } from '../../context/AuthContext';
 
 const TABS = [
@@ -351,6 +352,23 @@ export default function TournamentDetailView({ tournament, onBack }) {
   const [selectedMatchForScore, setSelectedMatchForScore] = useState(null);
   const [selectedRoundNameForScore, setSelectedRoundNameForScore] = useState('');
   const [fairPlayData, setFairPlayData] = useState(null);
+  const [showBlueCardModal, setShowBlueCardModal] = useState(false);
+  const [fairPlayHistoryTeam, setFairPlayHistoryTeam] = useState(null); // { id, name, logo }
+
+  // Refresca la tabla de Fair Play y las posiciones sin mostrar el loader general
+  const refreshFairPlay = async () => {
+    if (!tournamentId) return;
+    try {
+      const [res, fpRes] = await Promise.all([
+        api.get(`tournaments/${tournamentId}/`),
+        api.get(`tournaments/${tournamentId}/fair-play/`)
+      ]);
+      setDetailedTournament(res.data);
+      setFairPlayData(fpRes.data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const fetchTournamentDetail = async () => {
     if (!tournamentId) return;
@@ -1653,10 +1671,34 @@ export default function TournamentDetailView({ tournament, onBack }) {
             {/* FAIR PLAY TAB */}
             {activeTab === 'fair_play' && (
               <div className="glass-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '12px' }}>
-                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#191919' }}>
-                    Tabla General de Fair Play
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '12px' }}>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#191919', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <ThumbsUp size={18} color="#cc7a5c" /> Tabla General de Fair Play
                   </h3>
+                  <button
+                    type="button"
+                    id="add-blue-card-btn"
+                    onClick={() => setShowBlueCardModal(true)}
+                    className="blue-card-btn"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      height: '36px',
+                      padding: '0 14px',
+                      borderRadius: '8px',
+                      border: '1px solid #bae6fd',
+                      background: '#f0f9ff',
+                      color: '#0369a1',
+                      fontWeight: '700',
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      marginLeft: 'auto',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <Plus size={14} /> Tarjeta Azul <CardIcon color="#0284c7" w={10} h={14} glow />
+                  </button>
                 </div>
 
                 {!fairPlayData?.rows?.length ? (
@@ -1713,7 +1755,26 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                     <Users size={16} color="var(--brand-beige)" />
                                   )}
                                 </div>
-                                <span style={{ fontWeight: 'normal', color: '#191919' }}>{row.team_name}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setFairPlayHistoryTeam({ id: row.team, name: row.team_name, logo: row.team_logo })}
+                                  className="team-link-hover"
+                                  title="Ver historial de Fair Play"
+                                  style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    padding: 0,
+                                    font: 'inherit',
+                                    cursor: 'pointer',
+                                    color: '#191919',
+                                    fontWeight: 'normal',
+                                    textAlign: 'left',
+                                    outline: 'none',
+                                    transition: 'color 0.15s'
+                                  }}
+                                >
+                                  {row.team_name}
+                                </button>
                               </div>
                             </td>
                             <td style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{row.played}</td>
@@ -1733,6 +1794,30 @@ export default function TournamentDetailView({ tournament, onBack }) {
                       </tbody>
                     </table>
                   </div>
+                )}
+
+                {showBlueCardModal && (
+                  <BlueCardModal
+                    tournament={displayTournament}
+                    enabled={!!fairPlayData?.blue_card_enabled}
+                    bluePts={fairPlayData?.blue_pts ?? displayTournament.fp_blue_pts}
+                    onClose={() => setShowBlueCardModal(false)}
+                    onSaved={async (teamName) => {
+                      setShowBlueCardModal(false);
+                      await refreshFairPlay();
+                      setCustomAlert({ message: `Tarjeta azul cargada a ${teamName}.`, type: 'success' });
+                    }}
+                  />
+                )}
+
+                {fairPlayHistoryTeam && (
+                  <TeamFairPlayHistoryModal
+                    tournamentId={tournamentId}
+                    team={fairPlayHistoryTeam}
+                    canEdit={!!user}
+                    onClose={() => setFairPlayHistoryTeam(null)}
+                    onChanged={refreshFairPlay}
+                  />
                 )}
               </div>
             )}
@@ -2997,7 +3082,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
               className={`mobile-bottom-nav-item ${activeTab === 'fair_play' && !mobileUserOpen ? 'active' : ''}`}
               title="Fair Play"
             >
-              <Shield size={22} />
+              <ThumbsUp size={22} />
             </button>
             <button 
               onClick={() => {

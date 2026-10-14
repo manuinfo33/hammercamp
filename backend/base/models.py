@@ -63,7 +63,7 @@ class Delegate(models.Model):
 class Team(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="Nombre del Equipo")
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='teams', verbose_name="Categoría")
-    delegate = models.ForeignKey(Delegate, on_delete=models.SET_NULL, related_name='teams_managed', null=True, verbose_name="Delegado Responsable")
+    delegate = models.ForeignKey(Delegate, on_delete=models.SET_NULL, related_name='teams_managed', null=True, blank=True, verbose_name="Delegado Responsable")
     logo = models.ImageField(upload_to='teams/logos/', blank=True, null=True, verbose_name="Escudo/Logo")
     team_photo = models.ImageField(upload_to='teams/photos/', blank=True, null=True, verbose_name="Foto del Equipo")
     is_active = models.BooleanField(default=True, verbose_name="Equipo Activo")
@@ -321,6 +321,24 @@ class MatchPlayerStat(models.Model):
         verbose_name = "Estadística de Jugador en Partido"
         verbose_name_plural = "Estadísticas de Jugadores en Partidos"
         unique_together = ('match', 'player')
+
+
+class BlueCard(models.Model):
+    """Tarjeta azul cargada manualmente a un equipo (suma puntos en el Fair Play)."""
+    tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE, related_name='blue_cards', verbose_name="Torneo")
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='blue_cards', verbose_name="Equipo")
+    match_round = models.ForeignKey(MatchRound, on_delete=models.SET_NULL, null=True, blank=True, related_name='blue_cards', verbose_name="Fecha")
+    reason = models.TextField(verbose_name="Motivo")
+    created_by = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Cargada por")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Cargada el")
+
+    def __str__(self):
+        return f"Tarjeta Azul - {self.team.name} ({self.tournament.name})"
+
+    class Meta:
+        verbose_name = "Tarjeta Azul"
+        verbose_name_plural = "Tarjetas Azules"
+        ordering = ['-created_at']
 
 
 class Goleador(models.Model):

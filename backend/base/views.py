@@ -13,7 +13,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from pypdf import PdfWriter, PdfReader, Transformation
-from .models import Category, Team, Delegate, Transaccion, SaldoSocio, Tournament, TournamentZone, ZoneTeam, CarouselImage, MatchRound, Match, MatchPlayerStat, Goleador, VallaMenosVencida, Sancionado, Player, GoodFaithList
+from .models import Category, Team, Delegate, Transaccion, SaldoSocio, Tournament, TournamentZone, ZoneTeam, CarouselImage, MatchRound, Match, MatchPlayerStat, Goleador, VallaMenosVencida, Sancionado, Player, GoodFaithList, BlueCard
 from .serializers import (CategorySerializer, TeamSerializer, UserSerializer, DelegateSerializer,
                           TransaccionSerializer, SaldoSocioSerializer,
                           TournamentSerializer, TournamentCreateSerializer,
@@ -38,6 +38,19 @@ class CategoryViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def destroy(self, request, *args, **kwargs):
+        category = self.get_object()
+
+        # Validación: No se puede eliminar una categoría si ya tiene equipos asignados
+        teams_count = category.teams.count()
+        if teams_count > 0:
+            return Response(
+                {
+                    'detail': 'CATEGORY_HAS_TEAMS',
+                    'message': f'No se puede eliminar la categoría "{category.name}" porque tiene {teams_count} equipo{"s" if teams_count > 1 else ""} asignado{"s" if teams_count > 1 else ""}. Primero debes reasignar o eliminar los equipos pertenecientes a esta categoría.'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         password = (
             request.headers.get('X-Password') or
             request.headers.get('x-password') or
@@ -79,6 +92,7 @@ class TeamViewSet(viewsets.ModelViewSet):
         remove_team_photo = self.request.data.get('remove_team_photo') == 'true'
         
         team = serializer.instance
+        old_delegate = team.delegate
         new_category = serializer.validated_data.get('category')
         if new_category and team.category_id != new_category.id:
             if team.zone_teams.exists():
@@ -96,9 +110,16 @@ class TeamViewSet(viewsets.ModelViewSet):
             
         team = serializer.save()
         if team.delegate:
+            if old_delegate and old_delegate.id != team.delegate.id:
+                old_delegate.team = None
+                old_delegate.save()
             team.delegate.team = team
             team.delegate.save()
             print(f"DEBUG: Team {team.name} updated and linked to Delegate {team.delegate}")
+        elif old_delegate:
+            # Si el delegado se removió o se dejó vacío (opcional)
+            old_delegate.team = None
+            old_delegate.save()
 
     def destroy(self, request, *args, **kwargs):
         team = self.get_object()
@@ -268,8 +289,49 @@ class TournamentViewSet(viewsets.ModelViewSet):
         return Response({
             'blue_card_enabled': tournament.fp_blue_card_enabled,
             'wo_enabled': tournament.fp_wo_enabled,
+            'blue_pts': tournament.fp_blue_pts,
             'rows': build_fair_play_table(tournament, request),
         })
+
+    @action(detail=True, methods=['get'], url_path='fair-play-history')
+    def fair_play_history(self, request, pk=None):
+        from .standings import build_team_fair_play_history
+        tournament = self.get_object()
+        team = Team.objects.filter(id=request.query_params.get('team')).first()
+        if not team:
+            return Response({'detail': 'Equipo no encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(build_team_fair_play_history(tournament, team))
+
+    @action(detail=True, methods=['post'], url_path='blue-cards')
+    def add_blue_card(self, request, pk=None):
+        tournament = self.get_object()
+        if not tournament.fp_blue_card_enabled:
+            return Response({'detail': 'La tarjeta azul no está habilitada en este torneo.'}, status=status.HTTP_400_BAD_REQUEST)
+        team_id = request.data.get('team')
+        reason = (request.data.get('reason') or '').strip()
+        round_id = request.data.get('match_round') or None
+        if not ZoneTeam.objects.filter(zone__tournament=tournament, team_id=team_id).exists():
+            return Response({'detail': 'Seleccioná un equipo del torneo.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not reason:
+            return Response({'detail': 'Ingresá el motivo de la tarjeta azul.'}, status=status.HTTP_400_BAD_REQUEST)
+        match_round = None
+        if round_id:
+            match_round = MatchRound.objects.filter(id=round_id, tournament_zone__tournament=tournament).first()
+        BlueCard.objects.create(
+            tournament=tournament, team_id=team_id, match_round=match_round, reason=reason,
+            created_by=request.user if request.user.is_authenticated else None,
+        )
+        recalculate_tournament_standings_and_stats(tournament)
+        return Response({'detail': 'ok'}, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['delete'], url_path=r'blue-cards/(?P<card_id>\d+)')
+    def delete_blue_card(self, request, pk=None, card_id=None):
+        tournament = self.get_object()
+        deleted, _ = BlueCard.objects.filter(id=card_id, tournament=tournament).delete()
+        if not deleted:
+            return Response({'detail': 'Tarjeta no encontrada.'}, status=status.HTTP_404_NOT_FOUND)
+        recalculate_tournament_standings_and_stats(tournament)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def destroy(self, request, *args, **kwargs):
         password = (
@@ -721,7 +783,8 @@ def recalculate_tournament_standings_and_stats(tournament):
             )
             yellow_count = stats.filter(yellow_card=True).count()
             red_count = stats.filter(red_card=True).count()
-            blue_count = 0  # La carga de tarjetas azules todavía no está habilitada en el resultado del partido
+            # Tarjetas azules: se cargan manualmente por equipo a nivel torneo.
+            blue_count = BlueCard.objects.filter(tournament=tournament, team=team).count()
             fp = (yellow_count * tournament.fp_yellow_pts) + (red_count * tournament.fp_red_pts)
             if tournament.fp_blue_card_enabled:
                 fp += blue_count * tournament.fp_blue_pts

@@ -150,7 +150,8 @@ const TournamentConfigView = () => {
       fetchCategories();
     } catch (err) {
       console.error('Error al eliminar categoría:', err);
-      alert('No se pudo eliminar la categoría. Es posible que esté asociada a un equipo o torneo.');
+      const msg = err.response?.data?.message || err.response?.data?.detail || 'No se pudo eliminar la categoría. Es posible que esté asociada a un equipo o torneo.';
+      alert(msg);
     }
   };
 

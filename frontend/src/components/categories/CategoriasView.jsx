@@ -81,12 +81,14 @@ const CategoriasView = () => {
         setShowToast(false);
       }, 3000);
     } catch (err) {
-      console.error('Error al eliminar categoría:', err);
       const detail = err.response?.data?.detail;
-      if (detail === 'INVALID_PASSWORD' || err.response?.status === 401) {
+      const message = err.response?.data?.message;
+      if (detail === 'CATEGORY_HAS_TEAMS' && message) {
+        setDeleteError(message);
+      } else if (detail === 'INVALID_PASSWORD' || err.response?.status === 401) {
         setDeleteError('No se pudo eliminar la categoría. Verificá que la contraseña sea correcta');
       } else {
-        setDeleteError('No se pudo eliminar la categoría. Verificá que no tenga equipos o torneos asociados');
+        setDeleteError(message || 'No se pudo eliminar la categoría. Verificá que no tenga equipos o torneos asociados');
       }
     } finally {
       setDeleting(false);
