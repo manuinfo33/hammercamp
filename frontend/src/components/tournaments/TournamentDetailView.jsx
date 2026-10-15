@@ -282,6 +282,12 @@ export default function TournamentDetailView({ tournament, onBack }) {
   const [searchPlayerQuery, setSearchPlayerQuery] = useState('');
   const [selectedPlayerToAdd, setSelectedPlayerToAdd] = useState('');
   const [shirtNumberToAdd, setShirtNumberToAdd] = useState('');
+  const [showCreatePlayerModal, setShowCreatePlayerModal] = useState(false);
+  
+  // Duplicate players state
+  const [duplicatePlayers, setDuplicatePlayers] = useState([]);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [loadingDuplicates, setLoadingDuplicates] = useState(false);
   
   // Team editing modal state
   const [selectedTeam, setSelectedTeam] = useState(null);
@@ -1142,6 +1148,55 @@ export default function TournamentDetailView({ tournament, onBack }) {
     }
   }, [activeTab, selectedBuenaFeTeamId]);
 
+  const fetchDuplicatePlayers = async () => {
+    if (!detailedTournament?.id) return;
+    try {
+      setLoadingDuplicates(true);
+      const res = await api.get(`tournaments/${detailedTournament.id}/duplicate-players/`);
+      setDuplicatePlayers(res.data);
+    } catch (e) {
+      console.error("Error fetching duplicate players:", e);
+    } finally {
+      setLoadingDuplicates(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'buena_fe' && detailedTournament?.id) {
+      fetchDuplicatePlayers();
+    }
+  }, [activeTab, detailedTournament?.id]);
+
+  const handleToggleActiveDuplicate = async (goodFaithId, currentActive) => {
+    try {
+      await api.patch(`good-faith-lists/${goodFaithId}/`, {
+        is_active: !currentActive
+      });
+      await fetchDuplicatePlayers();
+      fetchBuenaFePlayers();
+    } catch (err) {
+      console.error(err);
+      setCustomAlert({ message: "Error al actualizar estado del jugador.", type: "error" });
+    }
+  };
+
+  const handleRemoveDuplicateFromTeam = (goodFaithId, playerName, teamName) => {
+    setCustomConfirm({
+      message: `¿Estás seguro de que deseas quitar a ${playerName} del equipo ${teamName} en este torneo? (El jugador permanecerá en la base de datos general).`,
+      onConfirm: async () => {
+        try {
+          await api.delete(`good-faith-lists/${goodFaithId}/`);
+          setCustomAlert({ message: "Jugador removido del equipo exitosamente.", type: "success" });
+          await fetchDuplicatePlayers();
+          fetchBuenaFePlayers();
+        } catch (err) {
+          console.error(err);
+          setCustomAlert({ message: "Error al remover al jugador.", type: "error" });
+        }
+      }
+    });
+  };
+
   // Fetch players from global database for search
   useEffect(() => {
     const fetchPlayersCatalog = async () => {
@@ -1345,7 +1400,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
               type="button"
               style={{
                 background: 'transparent',
-                color: isActive ? '#cc7a5c' : '#7f776f',
+                color: isActive ? '#cc7a5c' : '#191919',
                 border: 'none',
                 borderBottom: isActive ? '4px solid #cc7a5c' : '4px solid transparent',
                 borderRadius: 0,
@@ -1361,10 +1416,10 @@ export default function TournamentDetailView({ tournament, onBack }) {
                 marginBottom: '-1px'
               }}
               onMouseEnter={(e) => {
-                if (!isActive) e.currentTarget.style.color = '#191919';
+                if (!isActive) e.currentTarget.style.color = '#cc7a5c';
               }}
               onMouseLeave={(e) => {
-                if (!isActive) e.currentTarget.style.color = '#7f776f';
+                if (!isActive) e.currentTarget.style.color = '#191919';
               }}
             >
               {tab.label}
@@ -2320,7 +2375,47 @@ export default function TournamentDetailView({ tournament, onBack }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 <div className="glass-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div style={{ borderBottom: '1px solid var(--border-subtle)', paddingBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                    <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800' }}>Listas de Buena Fe</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                      <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800' }}>Listas de Buena Fe</h3>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          fetchDuplicatePlayers();
+                          setShowDuplicateModal(true);
+                        }}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          background: '#000000',
+                          color: '#ffffff',
+                          border: '1px solid #333333',
+                          borderRadius: '8px',
+                          padding: '6px 12px',
+                          fontSize: '12px',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
+                        <Users size={14} color="#4cd964" />
+                        <span>Jugadores/as duplicados</span>
+                        {duplicatePlayers.length > 0 && (
+                          <span style={{
+                            background: '#e07070',
+                            color: '#ffffff',
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            padding: '1px 6px',
+                            borderRadius: '10px',
+                            marginLeft: '2px'
+                          }}>
+                            {duplicatePlayers.length}
+                          </span>
+                        )}
+                      </button>
+                    </div>
+
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <label style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>Equipo:</label>
                       <select 
@@ -2360,7 +2455,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
                       {/* Add Player Form (hidden if full) */}
                       {buenaFePlayers.length < detailedTournament.max_players_buena_fe ? (
-                        <form onSubmit={handleAddPlayerToRoster} style={{ display: 'grid', gridTemplateColumns: '2fr 120px', gap: '15px', alignItems: 'end', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-subtle)', padding: '16px', borderRadius: '12px', marginBottom: '20px' }}>
+                        <form onSubmit={handleAddPlayerToRoster} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 110px auto', gap: '12px', alignItems: 'end', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-subtle)', padding: '16px', borderRadius: '12px', marginBottom: '20px' }}>
                           <div className="input-group" style={{ margin: 0 }}>
                             <label style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Buscar y seleccionar Jugador *</label>
                             
@@ -2389,9 +2484,31 @@ export default function TournamentDetailView({ tournament, onBack }) {
                           <button 
                             type="submit" 
                             disabled={loadingBuenaFe}
-                            style={{ height: '36px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '13px' }}
+                            style={{ height: '36px', padding: '0 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '13px' }}
                           >
                             <Plus size={14} /> Inscribir
+                          </button>
+
+                          <button 
+                            type="button" 
+                            onClick={() => setShowCreatePlayerModal(true)}
+                            style={{ 
+                              height: '36px', 
+                              padding: '0 14px', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center', 
+                              gap: '6px', 
+                              fontSize: '13px',
+                              background: '#ffffff',
+                              border: '1px solid #d8cfc0',
+                              color: '#191919',
+                              fontWeight: '600',
+                              borderRadius: '8px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <UserPlus size={14} color="#cc7a5c" /> + Nuevo Jugador
                           </button>
                         </form>
                       ) : (
@@ -3330,6 +3447,289 @@ export default function TournamentDetailView({ tournament, onBack }) {
           </div>
         </div>,
         document.body
+      )}
+
+      {/* MODAL JUGADORES DUPLICADOS */}
+      {showDuplicateModal && createPortal(
+        <div 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            zIndex: 100050,
+            display: 'flex',
+            alignItems: isMobile ? 'flex-end' : 'center',
+            justifyContent: 'center',
+            padding: isMobile ? 0 : '20px'
+          }}
+          onClick={() => setShowDuplicateModal(false)}
+        >
+          <div 
+            style={{
+              background: '#fcfbfa',
+              width: '100%',
+              maxWidth: isMobile ? '100%' : '520px',
+              height: isMobile ? '92vh' : 'auto',
+              maxHeight: isMobile ? '92vh' : '88vh',
+              borderRadius: isMobile ? '20px 20px 0 0' : '16px',
+              boxShadow: '0 24px 50px rgba(0,0,0,0.4)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              animation: 'fadeIn 0.2s ease'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div style={{
+              height: '56px',
+              background: '#000000',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0 16px',
+              flexShrink: 0
+            }}>
+              <button 
+                type="button"
+                onClick={() => setShowDuplicateModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  padding: '8px',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                <ArrowLeft size={20} />
+              </button>
+
+              <span style={{ fontWeight: '800', fontSize: '16px', letterSpacing: '0.3px' }}>
+                Jugadores/as duplicados
+              </span>
+
+              <button 
+                type="button"
+                onClick={() => setShowDuplicateModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  padding: '8px',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Content area */}
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}>
+              {loadingDuplicates ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#7f776f' }}>
+                  Cargando jugadores duplicados...
+                </div>
+              ) : duplicatePlayers.length === 0 ? (
+                <div style={{ 
+                  textAlign: 'center', 
+                  padding: '40px 20px', 
+                  background: '#ffffff', 
+                  borderRadius: '12px',
+                  border: '1px solid #e0d8cc',
+                  color: '#7f776f' 
+                }}>
+                  <Users size={36} color="#7f776f" style={{ margin: '0 auto 12px' }} />
+                  <p style={{ margin: 0, fontWeight: '700', fontSize: '15px', color: '#191919' }}>
+                    No hay jugadores duplicados
+                  </p>
+                  <p style={{ margin: '6px 0 0', fontSize: '13px' }}>
+                    No se encontraron jugadores registrados en más de un equipo en este torneo.
+                  </p>
+                </div>
+              ) : (
+                duplicatePlayers.map((item) => (
+                  <div key={item.player_id} style={{
+                    background: '#ffffff',
+                    borderRadius: '14px',
+                    border: '1px solid #d8cfc0',
+                    overflow: 'hidden',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+                  }}>
+                    {/* Header Box (Black like in screenshot) */}
+                    <div style={{
+                      background: '#000000',
+                      color: '#ffffff',
+                      padding: '12px 16px',
+                      textAlign: 'center',
+                      fontWeight: '800',
+                      fontSize: '13px',
+                      letterSpacing: '0.5px',
+                      textTransform: 'uppercase'
+                    }}>
+                      {item.player_name} ({item.dni})
+                    </div>
+
+                    {/* Subheader Column bar */}
+                    <div style={{
+                      background: '#2c2c2e',
+                      color: '#ffffff',
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 50px 65px 44px',
+                      padding: '8px 14px',
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      letterSpacing: '0.5px'
+                    }}>
+                      <div>EQUIPO</div>
+                      <div style={{ textAlign: 'center' }}>PJ</div>
+                      <div style={{ textAlign: 'center' }}>ACTIVO</div>
+                      <div></div>
+                    </div>
+
+                    {/* Team Rows */}
+                    <div>
+                      {item.teams.map((t, idx) => (
+                        <div key={t.good_faith_id} style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 50px 65px 44px',
+                          alignItems: 'center',
+                          padding: '12px 14px',
+                          borderBottom: idx === item.teams.length - 1 ? 'none' : '1px solid #ebe5dc',
+                          background: idx % 2 === 0 ? '#ffffff' : '#faf8f5'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                            {t.team_logo ? (
+                              <img src={t.team_logo} alt="" style={{ width: '22px', height: '22px', borderRadius: '4px', objectFit: 'contain' }} />
+                            ) : (
+                              <Shield size={16} color="#7f776f" />
+                            )}
+                            <span style={{ fontSize: '13px', fontWeight: '600', color: '#191919', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {t.team_name}
+                            </span>
+                          </div>
+
+                          <div style={{ textAlign: 'center', fontSize: '13px', fontWeight: '700', color: '#191919' }}>
+                            {t.pj}
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleActiveDuplicate(t.good_faith_id, t.is_active)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '2px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                              title={t.is_active ? "Activo (click para desactivar)" : "Inactivo (click para activar)"}
+                            >
+                              {t.is_active ? (
+                                <div style={{
+                                  width: '20px',
+                                  height: '20px',
+                                  borderRadius: '50%',
+                                  border: '1.5px solid #34c759',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  color: '#34c759'
+                                }}>
+                                  <Check size={12} strokeWidth={3} />
+                                </div>
+                              ) : (
+                                <div style={{
+                                  width: '20px',
+                                  height: '20px',
+                                  borderRadius: '50%',
+                                  border: '1.5px solid #8e8e93',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  color: '#8e8e93'
+                                }}>
+                                  <X size={12} strokeWidth={2.5} />
+                                </div>
+                              )}
+                            </button>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveDuplicateFromTeam(t.good_faith_id, item.player_name, t.team_name)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#191919',
+                                cursor: 'pointer',
+                                padding: '4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                              title="Quitar jugador de este equipo"
+                            >
+                              <Trash2 size={16} color="#333333" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* MODAL CREAR JUGADOR DESDE BUENA FE */}
+      {showCreatePlayerModal && (
+        <PlayerFormModal
+          onClose={() => setShowCreatePlayerModal(false)}
+          onSuccess={async (createdPlayer) => {
+            setShowCreatePlayerModal(false);
+            if (createdPlayer && createdPlayer.id) {
+              try {
+                const res = await api.get('players/');
+                setAllPlayersCatalog(res.data);
+                if (selectedBuenaFeTeamId && detailedTournament?.id) {
+                  await api.post('good-faith-lists/', {
+                    tournament: detailedTournament.id,
+                    team: selectedBuenaFeTeamId,
+                    player: createdPlayer.id
+                  });
+                  setCustomAlert({ message: `${createdPlayer.last_name}, ${createdPlayer.first_name} guardado e inscrito en la lista de buena fe.`, type: 'success' });
+                  fetchBuenaFePlayers();
+                  fetchDuplicatePlayers();
+                }
+              } catch (err) {
+                console.error(err);
+                if (err.response?.data?.player) {
+                  setCustomAlert({ message: Array.isArray(err.response.data.player) ? err.response.data.player[0] : err.response.data.player, type: "error" });
+                }
+                fetchBuenaFePlayers();
+              }
+            }
+          }}
+        />
       )}
     </div>
   );

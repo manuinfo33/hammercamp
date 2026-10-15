@@ -409,16 +409,54 @@ class Player(models.Model):
 
 
 class GoodFaithList(models.Model):
-    tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE, related_name='good_faith_records', verbose_name="Torneo")
+    tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE, null=True, blank=True, related_name='good_faith_records', verbose_name="Torneo")
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='good_faith_records', verbose_name="Equipo")
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='good_faith_records', verbose_name="Jugador")
     shirt_number = models.PositiveSmallIntegerField(blank=True, null=True, verbose_name="Número de Camiseta")
+    is_active = models.BooleanField(default=True, verbose_name="Activo en Lista")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Inscrito el")
 
     def __str__(self):
-        return f"{self.team.name} - {self.player} (Torneo: {self.tournament.name})"
+        tourn_name = self.tournament.name if self.tournament else "Plantel Base"
+        return f"{self.team.name} - {self.player} ({tourn_name})"
 
     class Meta:
         verbose_name = "Lista de Buena Fe"
         verbose_name_plural = "Listas de Buena Fe"
         unique_together = ('tournament', 'team', 'player')
+
+
+class Reclamo(models.Model):
+    ESTADO_CHOICES = [
+        ('pendiente', 'Pendiente'),
+        ('en_proceso', 'En Proceso'),
+        ('resuelto', 'Resuelto'),
+        ('rechazado', 'Rechazado'),
+    ]
+    TIPO_CHOICES = [
+        ('partido', 'Partido / Resultado'),
+        ('sancion', 'Sanción o Tarjetas'),
+        ('buena_fe', 'Lista de Buena Fe'),
+        ('pago', 'Pagos o Aranceles'),
+        ('otro', 'Otro motivo'),
+    ]
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='reclamos', verbose_name="Equipo")
+    tournament = models.ForeignKey(Tournament, on_delete=models.SET_NULL, null=True, blank=True, related_name='reclamos', verbose_name="Torneo")
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='otro', verbose_name="Tipo")
+    asunto = models.CharField(max_length=200, verbose_name="Asunto")
+    descripcion = models.TextField(verbose_name="Descripción")
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente', verbose_name="Estado")
+    respuesta = models.TextField(blank=True, null=True, verbose_name="Respuesta de Administración")
+    creado_por = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Creado por")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Actualizado el")
+
+    def __str__(self):
+        return f"Reclamo #{self.id} - {self.team.name}: {self.asunto} ({self.get_estado_display()})"
+
+    class Meta:
+        verbose_name = "Reclamo"
+        verbose_name_plural = "Reclamos"
+        ordering = ['-created_at']
+
+

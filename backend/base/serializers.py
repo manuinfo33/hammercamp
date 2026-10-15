@@ -1,15 +1,20 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Category, Team, Delegate, Transaccion, SaldoSocio, Tournament, TournamentZone, ZoneTeam, CarouselImage, MatchRound, Match, MatchPlayerStat, Goleador, VallaMenosVencida, Sancionado, Player, GoodFaithList
+from .models import Category, Team, Delegate, Transaccion, SaldoSocio, Tournament, TournamentZone, ZoneTeam, CarouselImage, MatchRound, Match, MatchPlayerStat, Goleador, VallaMenosVencida, Sancionado, Player, GoodFaithList, Reclamo
 
 class UserSerializer(serializers.ModelSerializer):
     role = serializers.SerializerMethodField()
     team_id = serializers.SerializerMethodField()
     team_name = serializers.SerializerMethodField()
+    team_logo = serializers.SerializerMethodField()
+    team_photo = serializers.SerializerMethodField()
+    current_tournament_id = serializers.SerializerMethodField()
+    current_tournament_name = serializers.SerializerMethodField()
+    current_tournament_is_active = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'role', 'team_id', 'team_name']
+        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'role', 'team_id', 'team_name', 'team_logo', 'team_photo', 'current_tournament_id', 'current_tournament_name', 'current_tournament_is_active']
 
     def get_role(self, obj):
         if obj.is_superuser:
@@ -27,6 +32,41 @@ class UserSerializer(serializers.ModelSerializer):
         if hasattr(obj, 'delegate_profile') and obj.delegate_profile and obj.delegate_profile.team:
             return obj.delegate_profile.team.name
         return None
+
+    def get_team_logo(self, obj):
+        request = self.context.get('request')
+        if hasattr(obj, 'delegate_profile') and obj.delegate_profile and obj.delegate_profile.team and obj.delegate_profile.team.logo:
+            return request.build_absolute_uri(obj.delegate_profile.team.logo.url) if request else obj.delegate_profile.team.logo.url
+        return None
+
+    def get_team_photo(self, obj):
+        request = self.context.get('request')
+        if hasattr(obj, 'delegate_profile') and obj.delegate_profile and obj.delegate_profile.team and obj.delegate_profile.team.team_photo:
+            return request.build_absolute_uri(obj.delegate_profile.team.team_photo.url) if request else obj.delegate_profile.team.team_photo.url
+        return None
+
+    def _get_current_zone_team(self, obj):
+        if hasattr(obj, 'delegate_profile') and obj.delegate_profile and obj.delegate_profile.team:
+            team = obj.delegate_profile.team
+            active_zt = team.zone_teams.filter(zone__tournament__is_active=True).select_related('zone__tournament').first()
+            if active_zt and active_zt.zone and active_zt.zone.tournament:
+                return active_zt
+            last_zt = team.zone_teams.select_related('zone__tournament').order_by('-zone__tournament__id').first()
+            if last_zt and last_zt.zone and last_zt.zone.tournament:
+                return last_zt
+        return None
+
+    def get_current_tournament_id(self, obj):
+        zt = self._get_current_zone_team(obj)
+        return zt.zone.tournament.id if zt else None
+
+    def get_current_tournament_name(self, obj):
+        zt = self._get_current_zone_team(obj)
+        return zt.zone.tournament.name if zt else None
+
+    def get_current_tournament_is_active(self, obj):
+        zt = self._get_current_zone_team(obj)
+        return zt.zone.tournament.is_active if zt else None
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -348,10 +388,15 @@ class GoodFaithListSerializer(serializers.ModelSerializer):
     player_dni = serializers.ReadOnlyField(source='player.dni')
     player_photo = serializers.SerializerMethodField()
     team_name = serializers.ReadOnlyField(source='team.name')
+    tournament = serializers.PrimaryKeyRelatedField(
+        queryset=Tournament.objects.all(),
+        required=False,
+        allow_null=True
+    )
 
     class Meta:
         model = GoodFaithList
-        fields = ['id', 'tournament', 'team', 'team_name', 'player', 'player_name', 'full_name', 'first_name', 'last_name', 'player_dni', 'player_photo', 'shirt_number', 'created_at']
+        fields = ['id', 'tournament', 'team', 'team_name', 'player', 'player_name', 'full_name', 'first_name', 'last_name', 'player_dni', 'player_photo', 'shirt_number', 'is_active', 'created_at']
 
     def get_player_name(self, obj):
         return f"{obj.player.last_name}, {obj.player.first_name}"
@@ -361,20 +406,83 @@ class GoodFaithListSerializer(serializers.ModelSerializer):
 
     def get_player_photo(self, obj):
         request = self.context.get('request')
-        if obj.player.photo and request:
-            return request.build_absolute_uri(obj.player.photo.url)
+        if obj.player.photo:
+            if request:
+                return request.build_absolute_uri(obj.player.photo.url)
+            return obj.player.photo.url
         return None
 
     def validate(self, attrs):
-        tournament = attrs.get('tournament')
-        team = attrs.get('team')
-        
+        tournament = attrs.get('tournament') if 'tournament' in attrs else (self.instance.tournament if self.instance else None)
+        team = attrs.get('team') if 'team' in attrs else (self.instance.team if self.instance else None)
+        player = attrs.get('player') if 'player' in attrs else (self.instance.player if self.instance else None)
+
         # Check if creating (no self.instance)
-        if not self.instance:
-            current_count = GoodFaithList.objects.filter(tournament=tournament, team=team).count()
-            limit = tournament.max_players_buena_fe
-            if current_count >= limit:
-                raise serializers.ValidationError(
-                    {"player": f"No se pueden agregar más jugadores a la lista de buena fe para {team.name} en este torneo. Límite máximo: {limit} jugadores."}
-                )
+        if not self.instance and team and player:
+            dup_query = GoodFaithList.objects.filter(team=team, player=player)
+            if tournament:
+                dup_query = dup_query.filter(tournament=tournament)
+            else:
+                dup_query = dup_query.filter(tournament__isnull=True)
+            if dup_query.exists():
+                raise serializers.ValidationError({"player": f"El jugador/a {player.last_name}, {player.first_name} ya se encuentra inscripto en este equipo."})
+
+            if tournament:
+                current_count = GoodFaithList.objects.filter(tournament=tournament, team=team).count()
+                limit = tournament.max_players_buena_fe or 25
+                if current_count >= limit:
+                    raise serializers.ValidationError(
+                        {"player": f"No se pueden agregar más jugadores a la lista de buena fe para {team.name} en este torneo. Límite máximo: {limit} jugadores."}
+                    )
+
+        if tournament and team and player:
+            # Obtener las zonas en las que participa este equipo en este torneo
+            team_zone_ids = list(
+                ZoneTeam.objects.filter(
+                    zone__tournament=tournament,
+                    team=team
+                ).values_list('zone_id', flat=True)
+            )
+
+            if team_zone_ids:
+                # Buscar si el jugador ya está inscripto en otro equipo que comparta alguna de estas zonas
+                conflicting_gfl = GoodFaithList.objects.filter(
+                    tournament=tournament,
+                    player=player
+                ).exclude(team=team).select_related('team').first()
+
+                if conflicting_gfl:
+                    other_team = conflicting_gfl.team
+                    other_team_zones = ZoneTeam.objects.filter(
+                        zone_id__in=team_zone_ids,
+                        team=other_team
+                    ).select_related('zone')
+
+                    if other_team_zones.exists():
+                        shared_zone = other_team_zones.first().zone
+                        player_name = f"{player.last_name}, {player.first_name}"
+                        raise serializers.ValidationError(
+                            {"player": f"El jugador/a {player_name} (DNI: {player.dni}) ya se encuentra inscripto en '{other_team.name}' en la misma {shared_zone.name}. Por reglamento, no puede participar en dos equipos dentro de la misma zona."}
+                        )
         return attrs
+
+
+class ReclamoSerializer(serializers.ModelSerializer):
+    team_name = serializers.ReadOnlyField(source='team.name')
+    tournament_name = serializers.ReadOnlyField(source='tournament.name')
+    creado_por_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Reclamo
+        fields = [
+            'id', 'team', 'team_name', 'tournament', 'tournament_name',
+            'tipo', 'asunto', 'descripcion', 'estado', 'respuesta',
+            'creado_por', 'creado_por_name', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['estado', 'respuesta', 'creado_por', 'created_at', 'updated_at']
+
+    def get_creado_por_name(self, obj):
+        if obj.creado_por:
+            return f"{obj.creado_por.first_name} {obj.creado_por.last_name}".strip() or obj.creado_por.username
+        return None
+

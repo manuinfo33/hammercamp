@@ -21,6 +21,7 @@ router.register(r'valla-menos-vencida', views.VallaMenosVencidaViewSet)
 router.register(r'sancionados', views.SancionadoViewSet)
 router.register(r'players', views.PlayerViewSet)
 router.register(r'good-faith-lists', views.GoodFaithListViewSet)
+router.register(r'reclamos', views.ReclamoViewSet)
 
 
 urlpatterns = [

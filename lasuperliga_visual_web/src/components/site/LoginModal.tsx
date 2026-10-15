@@ -85,6 +85,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
         if (onSuccess) {
           onSuccess(userData);
         }
+        window.location.href = "/mi-equipo";
         return;
       }
 

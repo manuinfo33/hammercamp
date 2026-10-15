@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     Category, Team, Delegate, Tournament, TournamentZone, ZoneTeam,
     Transaccion, SaldoSocio, CarouselImage, News, MatchRound, Match, MatchPlayerStat,
-    Goleador, VallaMenosVencida, Sancionado, Player, GoodFaithList
+    Goleador, VallaMenosVencida, Sancionado, Player, GoodFaithList, BlueCard, Reclamo
 )
 
 @admin.register(MatchPlayerStat)
@@ -107,4 +107,11 @@ class GoodFaithListAdmin(admin.ModelAdmin):
     list_display = ('id', 'tournament', 'team', 'player', 'shirt_number')
     list_filter = ('tournament', 'team')
     search_fields = ('player__last_name', 'player__first_name', 'player__dni')
+
+@admin.register(Reclamo)
+class ReclamoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'team', 'tournament', 'tipo', 'asunto', 'estado', 'created_at')
+    list_filter = ('estado', 'tipo', 'tournament')
+    search_fields = ('asunto', 'descripcion', 'team__name')
+
 

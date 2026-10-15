@@ -335,7 +335,7 @@ function EventCard({ icon, title, report, date, suspension, pts, onDelete }) {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center' }}>{icon}</div>
-          <span style={{ fontSize: '14.5px', fontWeight: '700', color: '#111827' }}>{title}</span>
+          <span style={{ fontSize: '14.5px', fontWeight: 'normal', color: '#111827' }}>{title}</span>
           {hasInfo && (
             <button
               type="button"
@@ -439,6 +439,8 @@ export function TeamFairPlayHistoryModal({ tournamentId, team, canEdit, onClose,
   const [error, setError] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [activeCategory, setActiveCategory] = useState('all'); // 'all', 'yellow', 'red', 'blue', 'wo'
+  const [expandedRoundId, setExpandedRoundId] = useState(null);
+  const toggleRound = (key) => setExpandedRoundId(prev => (prev === key ? null : key));
 
   const teamId = team?.id;
 
@@ -710,6 +712,9 @@ export function TeamFairPlayHistoryModal({ tournamentId, team, canEdit, onClose,
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {filteredRounds.map(r => {
+                    const roundKey = r.round_id ?? 'none';
+                    const isOpen = expandedRoundId === roundKey;
+                    const hasDetail = Boolean(r.date) || r.matches.length > 0;
                     return (
                       <div
                         key={r.round_id ?? 'none'}
@@ -722,15 +727,18 @@ export function TeamFairPlayHistoryModal({ tournamentId, team, canEdit, onClose,
                         }}
                       >
                         {/* Cabecera de la fecha */}
-                        <div style={{
+                        <div
+                          onClick={hasDetail ? () => toggleRound(roundKey) : undefined}
+                          style={{
                           background: '#f1f5f9',
                           padding: '12px 16px',
-                          borderBottom: '1px solid #e2e8f0',
+                          borderBottom: isOpen || !hasDetail ? '1px solid #e2e8f0' : 'none',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
                           gap: '10px',
-                          flexWrap: 'wrap'
+                          flexWrap: 'wrap',
+                          cursor: hasDetail ? 'pointer' : 'default'
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                             <span style={{
@@ -744,9 +752,12 @@ export function TeamFairPlayHistoryModal({ tournamentId, team, canEdit, onClose,
                             }}>
                               {r.round_name}
                             </span>
-                            {r.date && (
-                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '13px', color: '#475569', fontWeight: '600' }}>
-                                <Calendar size={14} color="#64748b" /> {formatDate(r.date)}
+                            {hasDetail && (
+                              <span
+                                title={isOpen ? 'Ocultar detalle' : 'Ver detalle'}
+                                style={{ display: 'inline-flex', alignItems: 'center', color: '#475569' }}
+                              >
+                                <ChevronDown size={18} style={{ transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
                               </span>
                             )}
                           </div>
@@ -764,8 +775,15 @@ export function TeamFairPlayHistoryModal({ tournamentId, team, canEdit, onClose,
                           )}
                         </div>
 
-                        {/* Partido/Rival de la fecha */}
-                        {r.matches.length > 0 && (
+                        {/* Fecha de calendario (desplegable) */}
+                        {isOpen && r.date && (
+                          <div style={{ padding: '8px 16px', background: '#ffffff', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#475569' }}>
+                            <Calendar size={14} color="#64748b" /> {formatDate(r.date)}
+                          </div>
+                        )}
+
+                        {/* Partido/Rival de la fecha (desplegable) */}
+                        {isOpen && r.matches.length > 0 && (
                           <div style={{
                             padding: '8px 16px',
                             background: '#ffffff',

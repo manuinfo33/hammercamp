@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as PublicitarRouteImport } from './routes/publicitar'
 import { Route as NosotrosRouteImport } from './routes/nosotros'
 import { Route as MiEquipoRouteImport } from './routes/mi-equipo'
+import { Route as MiCuentaRouteImport } from './routes/mi-cuenta'
 import { Route as GaleriasRouteImport } from './routes/galerias'
 import { Route as ContactoRouteImport } from './routes/contacto'
 import { Route as CategoriasRouteImport } from './routes/categorias'
@@ -32,6 +33,11 @@ const NosotrosRoute = NosotrosRouteImport.update({
 const MiEquipoRoute = MiEquipoRouteImport.update({
   id: '/mi-equipo',
   path: '/mi-equipo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MiCuentaRoute = MiCuentaRouteImport.update({
+  id: '/mi-cuenta',
+  path: '/mi-cuenta',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GaleriasRoute = GaleriasRouteImport.update({
@@ -70,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/categorias': typeof CategoriasRouteWithChildren
   '/contacto': typeof ContactoRoute
   '/galerias': typeof GaleriasRoute
+  '/mi-cuenta': typeof MiCuentaRoute
   '/mi-equipo': typeof MiEquipoRoute
   '/nosotros': typeof NosotrosRoute
   '/publicitar': typeof PublicitarRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/contacto': typeof ContactoRoute
   '/galerias': typeof GaleriasRoute
+  '/mi-cuenta': typeof MiCuentaRoute
   '/mi-equipo': typeof MiEquipoRoute
   '/nosotros': typeof NosotrosRoute
   '/publicitar': typeof PublicitarRoute
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   '/categorias': typeof CategoriasRouteWithChildren
   '/contacto': typeof ContactoRoute
   '/galerias': typeof GaleriasRoute
+  '/mi-cuenta': typeof MiCuentaRoute
   '/mi-equipo': typeof MiEquipoRoute
   '/nosotros': typeof NosotrosRoute
   '/publicitar': typeof PublicitarRoute
@@ -105,6 +114,7 @@ export interface FileRouteTypes {
     | '/categorias'
     | '/contacto'
     | '/galerias'
+    | '/mi-cuenta'
     | '/mi-equipo'
     | '/nosotros'
     | '/publicitar'
@@ -115,6 +125,7 @@ export interface FileRouteTypes {
     | '/'
     | '/contacto'
     | '/galerias'
+    | '/mi-cuenta'
     | '/mi-equipo'
     | '/nosotros'
     | '/publicitar'
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '/categorias'
     | '/contacto'
     | '/galerias'
+    | '/mi-cuenta'
     | '/mi-equipo'
     | '/nosotros'
     | '/publicitar'
@@ -138,6 +150,7 @@ export interface RootRouteChildren {
   CategoriasRoute: typeof CategoriasRouteWithChildren
   ContactoRoute: typeof ContactoRoute
   GaleriasRoute: typeof GaleriasRoute
+  MiCuentaRoute: typeof MiCuentaRoute
   MiEquipoRoute: typeof MiEquipoRoute
   NosotrosRoute: typeof NosotrosRoute
   PublicitarRoute: typeof PublicitarRoute
@@ -164,6 +177,13 @@ declare module '@tanstack/react-router' {
       path: '/mi-equipo'
       fullPath: '/mi-equipo'
       preLoaderRoute: typeof MiEquipoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mi-cuenta': {
+      id: '/mi-cuenta'
+      path: '/mi-cuenta'
+      fullPath: '/mi-cuenta'
+      preLoaderRoute: typeof MiCuentaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/galerias': {
@@ -230,6 +250,7 @@ const rootRouteChildren: RootRouteChildren = {
   CategoriasRoute: CategoriasRouteWithChildren,
   ContactoRoute: ContactoRoute,
   GaleriasRoute: GaleriasRoute,
+  MiCuentaRoute: MiCuentaRoute,
   MiEquipoRoute: MiEquipoRoute,
   NosotrosRoute: NosotrosRoute,
   PublicitarRoute: PublicitarRoute,

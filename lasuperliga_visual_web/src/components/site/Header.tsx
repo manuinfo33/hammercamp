@@ -136,15 +136,16 @@ export function Header() {
                   <div className="px-4 py-3 border-b border-border/40 text-xs font-bold text-primary uppercase tracking-[0.15em] lowercase first-letter:uppercase">
                     Hola {displayName}
                   </div>
-                  <button
-                    onClick={() => {
-                      setMobileUserMenuOpen(false);
-                      alert(`Cuenta de Delegado:\nNombre: ${user.first_name} ${user.last_name}\nUsuario: ${user.username}`);
-                    }}
+                  <Link
+                    to="/mi-cuenta"
+                    onClick={() => setMobileUserMenuOpen(false)}
                     className="w-full text-left px-4 py-3 hover:bg-primary/10 hover:text-primary transition-colors block text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground"
+                    activeProps={{
+                      className: "w-full text-left px-4 py-3 bg-primary/10 text-primary transition-colors block text-xs font-bold uppercase tracking-[0.15em]"
+                    }}
                   >
                     Mi Cuenta
-                  </button>
+                  </Link>
                   {user.role === "Delegado" && (
                     <Link
                       to="/mi-equipo"
@@ -194,14 +195,24 @@ export function Header() {
         <div className="container mx-auto px-6 flex items-center">
           <ul className={`${open ? "flex" : "hidden"} md:flex flex-col md:flex-row w-full md:w-auto items-stretch md:items-center gap-0 md:gap-1`}>
             {(() => {
-              const menuItems = [...nav];
-              return menuItems.map((item, i) => (
+              const isDelegate = user && user.role === "Delegado";
+              const menuItems = isDelegate
+                ? [
+                    { label: "Inicio", to: "/" },
+                    { label: "Categorías", to: "/categorias" },
+                    { label: "Mi Equipo", to: "/mi-equipo", hasDot: true },
+                    { label: "Mi Cuenta", to: "/mi-cuenta" },
+                  ]
+                : [...nav];
+
+              return menuItems.map((item: any, i) => (
                 <li key={item.to} className="relative group">
                   {item.label === "Categorías" ? (
                     <>
                       <div className="flex items-center cursor-pointer px-6 py-5 hover:text-primary transition-colors">
                         <Link
                           to={item.to}
+                          onClick={() => setOpen(false)}
                           activeOptions={{ exact: item.to === "/" }}
                           className="text-xs font-bold uppercase tracking-[0.18em]"
                           activeProps={{
@@ -216,10 +227,11 @@ export function Header() {
                       {/* Dropdown Menu */}
                       <div className="absolute top-full left-0 min-w-[220px] bg-surface-elevated border border-border/60 shadow-xl rounded-xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 translate-y-2 group-hover:translate-y-0 z-50">
                         <ul className="flex flex-col py-2">
-                          {categories.map((c) => (
+                          {categories.map((c: any) => (
                             <li key={c.id}>
                               <Link
                                 to={`/categorias/${c.id}`}
+                                onClick={() => setOpen(false)}
                                 className="block px-6 py-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
                               >
                                 {c.name}
@@ -232,14 +244,21 @@ export function Header() {
                   ) : (
                     <Link
                       to={item.to}
+                      onClick={() => setOpen(false)}
                       activeOptions={{ exact: item.to === "/" }}
-                      className="block px-6 py-5 text-xs font-bold uppercase tracking-[0.18em] hover:text-primary transition-colors"
+                      className="flex items-center gap-2 px-6 py-5 text-xs font-bold uppercase tracking-[0.18em] hover:text-primary transition-colors"
                       activeProps={{
                         className:
-                          "block px-6 py-5 text-xs font-bold uppercase tracking-[0.18em] bg-primary text-primary-foreground clip-tab hover:text-primary-foreground",
+                          "flex items-center gap-2 px-6 py-5 text-xs font-bold uppercase tracking-[0.18em] bg-primary text-primary-foreground clip-tab hover:text-primary-foreground",
                       }}
                     >
-                      {item.label}
+                      <span>{item.label}</span>
+                      {item.hasDot && (
+                        <span 
+                          className="inline-block size-2.5 rounded-full bg-yellow-400 shadow-[0_0_8px_#facc15] animate-pulse shrink-0" 
+                          title="Acceso directo a Mi Equipo"
+                        />
+                      )}
                     </Link>
                   )}
                   {i < menuItems.length - 1 && (
@@ -260,23 +279,25 @@ export function Header() {
                   <ChevronDown className="size-3 opacity-50 transition-transform group-hover:rotate-180 duration-200" />
                 </button>
                 <div className="absolute right-0 top-full mt-3 w-48 bg-surface-elevated border border-border/60 shadow-xl z-50 text-foreground py-2 text-xs font-bold uppercase tracking-[0.15em] rounded-xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 translate-y-2 group-hover:translate-y-0">
-                  <button
-                    onClick={() => {
-                      alert(`Cuenta de Delegado:\nNombre: ${user.first_name} ${user.last_name}\nUsuario: ${user.username}`);
-                    }}
+                  <Link
+                    to="/mi-cuenta"
                     className="w-full text-left px-4 py-3 hover:bg-primary/10 hover:text-primary transition-colors block text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground"
+                    activeProps={{
+                      className: "w-full text-left px-4 py-3 bg-primary/10 text-primary transition-colors block text-xs font-bold uppercase tracking-[0.15em]"
+                    }}
                   >
                     Mi Cuenta
-                  </button>
+                  </Link>
                   {user.role === "Delegado" && (
                     <Link
                       to="/mi-equipo"
-                      className="w-full text-left px-4 py-3 hover:bg-primary/10 hover:text-primary transition-colors block text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground"
+                      className="flex items-center justify-between w-full text-left px-4 py-3 hover:bg-primary/10 hover:text-primary transition-colors block text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground"
                       activeProps={{
-                        className: "w-full text-left px-4 py-3 bg-primary/10 text-primary transition-colors block text-xs font-bold uppercase tracking-[0.15em]"
+                        className: "flex items-center justify-between w-full text-left px-4 py-3 bg-primary/10 text-primary transition-colors block text-xs font-bold uppercase tracking-[0.15em]"
                       }}
                     >
-                      Mi Equipo
+                      <span>Mi Equipo</span>
+                      <span className="size-2 rounded-full bg-yellow-400 shadow-[0_0_6px_#facc15] animate-pulse" />
                     </Link>
                   )}
                   <button

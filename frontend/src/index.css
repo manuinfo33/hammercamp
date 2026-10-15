@@ -1645,24 +1645,24 @@ tr:hover td { background: rgba(212, 184, 150, 0.03); }
   box-shadow: none;
 }
 
-.anthropic-theme button.secondary {
+.anthropic-theme button.secondary:not(.fp-stat-pill):not(.fp-close-btn) {
   background: transparent;
   color: #191919;
   border: 1px solid #d8cfc0;
 }
 
-.anthropic-theme button.secondary:hover {
+.anthropic-theme button.secondary:not(.fp-stat-pill):not(.fp-close-btn):hover {
   background: #f4efe6;
   border-color: #191919;
 }
 
-.anthropic-theme button.danger {
+.anthropic-theme button.danger:not(.fp-stat-pill):not(.fp-close-btn) {
   background: transparent;
   color: #cc7a5c;
   border: 1px solid #e5c5bb;
 }
 
-.anthropic-theme button.danger:hover {
+.anthropic-theme button.danger:not(.fp-stat-pill):not(.fp-close-btn):hover {
   background: #f4e6e0;
   color: #994c33;
   border-color: #cc7a5c;
@@ -2396,7 +2396,7 @@ body:has(.anthropic-theme),
   border-top: 3px solid transparent !important;
   padding: 0 !important;
   margin: 0 !important;
-  color: #7f776f !important;
+  color: #191919 !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
   flex: 1 !important;
@@ -2598,7 +2598,7 @@ body:has(.anthropic-theme),
   border-top: 3px solid transparent !important;
   padding: 0 !important;
   margin: 0 !important;
-  color: #7f776f !important;
+  color: #191919 !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
   flex: 1 !important;

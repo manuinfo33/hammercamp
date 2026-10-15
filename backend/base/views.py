@@ -13,14 +13,14 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from pypdf import PdfWriter, PdfReader, Transformation
-from .models import Category, Team, Delegate, Transaccion, SaldoSocio, Tournament, TournamentZone, ZoneTeam, CarouselImage, MatchRound, Match, MatchPlayerStat, Goleador, VallaMenosVencida, Sancionado, Player, GoodFaithList, BlueCard
+from .models import Category, Team, Delegate, Transaccion, SaldoSocio, Tournament, TournamentZone, ZoneTeam, CarouselImage, MatchRound, Match, MatchPlayerStat, Goleador, VallaMenosVencida, Sancionado, Player, GoodFaithList, BlueCard, Reclamo
 from .serializers import (CategorySerializer, TeamSerializer, UserSerializer, DelegateSerializer,
                           TransaccionSerializer, SaldoSocioSerializer,
                           TournamentSerializer, TournamentCreateSerializer,
                           TournamentZoneSerializer, ZoneTeamSerializer, CarouselImageSerializer,
                           MatchRoundSerializer, MatchSerializer,
                           GoleadorSerializer, VallaMenosVencidaSerializer, SancionadoSerializer,
-                          PlayerSerializer, GoodFaithListSerializer)
+                          PlayerSerializer, GoodFaithListSerializer, ReclamoSerializer)
 from docx2pdf import convert as convert_docx_to_pdf
 
 @api_view(['GET'])
@@ -103,6 +103,15 @@ class TeamViewSet(viewsets.ModelViewSet):
                     "category": f"El equipo \"{team.name}\" se encuentra actualmente activo en el torneo \"{tournament_name}\". No se puede cambiar de categoría mientras esté participando en el torneo."
                 })
 
+        user = self.request.user
+        # Si no es admin/staff, impedir que se modifique el nombre del equipo
+        if not (user.is_superuser or user.is_staff):
+            if 'name' in serializer.validated_data and serializer.validated_data['name'] != team.name:
+                from rest_framework import serializers
+                raise serializers.ValidationError({
+                    "name": "Solo los administradores pueden modificar el nombre del equipo."
+                })
+
         if remove_logo:
             team.logo = None
         if remove_team_photo:
@@ -134,6 +143,246 @@ class TeamViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         return super().destroy(request, *args, **kwargs)
+
+    @action(detail=True, methods=['get'], url_path='delegate-dashboard')
+    def delegate_dashboard(self, request, pk=None):
+        team = self.get_object()
+        
+        # 1. Determine current tournament & zone
+        zt = team.zone_teams.filter(zone__tournament__is_active=True).select_related('zone__tournament', 'zone').first()
+        if not zt:
+            zt = team.zone_teams.select_related('zone__tournament', 'zone').order_by('-zone__tournament__id').first()
+            
+        tournament = zt.zone.tournament if zt else None
+        zone = zt.zone if zt else None
+        
+        # 2. Standings & position in zone
+        position = None
+        total_teams = 0
+        zone_team_data = None
+        if tournament and zone:
+            from .standings import sort_zone_teams
+            all_zts = zone.zone_teams.select_related('team').all()
+            sorted_zts = sort_zone_teams(tournament, zone, all_zts)
+            total_teams = len(sorted_zts)
+            for idx, item in enumerate(sorted_zts, start=1):
+                if item.team_id == team.id:
+                    position = idx
+                    zone_team_data = {
+                        'played': item.played,
+                        'won': item.won,
+                        'drawn': item.drawn,
+                        'lost': item.lost,
+                        'goals_for': item.goals_for,
+                        'goals_against': item.goals_against,
+                        'goal_difference': item.goals_for - item.goals_against,
+                        'points': item.points,
+                        'fair_play': item.fair_play,
+                    }
+                    break
+
+        # 3. Next match & Last match
+        next_match_data = None
+        last_match_data = None
+        if tournament:
+            from django.db.models import Q
+            from .models import Match
+            next_m = (
+                Match.objects.filter(
+                    Q(local_team=team) | Q(visitor_team=team),
+                    played=False,
+                    match_round__tournament_zone__tournament=tournament
+                )
+                .select_related('local_team', 'visitor_team', 'match_round')
+                .order_by('match_round__order', 'date', 'time')
+                .first()
+            )
+            if next_m:
+                is_local = next_m.local_team_id == team.id
+                rival = next_m.visitor_team if is_local else next_m.local_team
+                rival_logo_url = None
+                if rival and rival.logo:
+                    rival_logo_url = request.build_absolute_uri(rival.logo.url) if request else rival.logo.url
+
+                next_match_data = {
+                    'id': next_m.id,
+                    'rival_name': rival.name if rival else 'A definir',
+                    'rival_logo': rival_logo_url,
+                    'is_local': is_local,
+                    'round_order': next_m.match_round.order if next_m.match_round else None,
+                    'round_name': next_m.match_round.name if next_m.match_round else "Próxima Fecha",
+                    'date': next_m.date.strftime("%d/%m/%Y") if next_m.date else None,
+                    'time': next_m.time.strftime("%H:%M") if next_m.time else None,
+                    'cancha': next_m.cancha or 'Cancha a confirmar',
+                }
+
+            last_m = (
+                Match.objects.filter(
+                    Q(local_team=team) | Q(visitor_team=team),
+                    played=True,
+                    match_round__tournament_zone__tournament=tournament
+                )
+                .select_related('local_team', 'visitor_team', 'match_round')
+                .order_by('-match_round__order', '-date')
+                .first()
+            )
+            if last_m:
+                is_local = last_m.local_team_id == team.id
+                rival = last_m.visitor_team if is_local else last_m.local_team
+                my_score = last_m.local_score if is_local else last_m.visitor_score
+                rival_score = last_m.visitor_score if is_local else last_m.local_score
+                rival_logo_url = None
+                if rival and rival.logo:
+                    rival_logo_url = request.build_absolute_uri(rival.logo.url) if request else rival.logo.url
+
+                last_match_data = {
+                    'id': last_m.id,
+                    'rival_name': rival.name if rival else 'Rival',
+                    'rival_logo': rival_logo_url,
+                    'my_score': my_score,
+                    'rival_score': rival_score,
+                    'is_local': is_local,
+                    'round_name': last_m.match_round.name if last_m.match_round else None,
+                    'date': last_m.date.strftime("%d/%m/%Y") if last_m.date else None,
+                }
+
+        # 4. Financial Status (SaldoSocio & Transacciones)
+        saldo_socio = None
+        if hasattr(team, 'delegate') and team.delegate and hasattr(team.delegate, 'saldo'):
+            saldo_socio = {
+                'saldo': float(team.delegate.saldo.saldo),
+                'estado': team.delegate.saldo.estado,
+                'observaciones': team.delegate.saldo.observaciones or '',
+            }
+        
+        from .models import Transaccion
+        transactions_qs = Transaccion.objects.filter(equipo=team).order_by('-fecha', '-created_at')[:25]
+        transactions_list = [
+            {
+                'id': tx.id,
+                'tipo': tx.tipo,
+                'concepto': tx.concepto,
+                'monto': float(tx.monto),
+                'fecha': tx.fecha.strftime("%d/%m/%Y") if tx.fecha else None,
+                'metodo_pago': tx.get_metodo_pago_display(),
+                'descripcion': tx.descripcion or '',
+            }
+            for tx in transactions_qs
+        ]
+
+        # 5. Sanciones del equipo
+        from .models import MatchPlayerStat, BlueCard, Sancionado
+        sanciones_list = []
+        
+        # Red cards with suspension
+        red_stats = MatchPlayerStat.objects.filter(
+            team=team,
+            red_card=True
+        ).select_related('player', 'match', 'match__match_round', 'match__local_team', 'match__visitor_team').order_by('-match__date')
+        
+        for rs in red_stats:
+            rival = rs.match.visitor_team if rs.match.local_team_id == team.id else rs.match.local_team
+            p_photo = None
+            if rs.player.photo:
+                p_photo = request.build_absolute_uri(rs.player.photo.url) if request else rs.player.photo.url
+
+            sanciones_list.append({
+                'tipo': 'roja',
+                'player_id': rs.player.id,
+                'player_name': f"{rs.player.last_name}, {rs.player.first_name}",
+                'player_dni': rs.player.dni,
+                'player_photo': p_photo,
+                'fechas_suspension': rs.red_card_suspension_dates or '1 fecha',
+                'motivo': rs.red_card_reason or 'Tarjeta roja directa / doble amarilla',
+                'partido': f"vs {rival.name}" if rival else 'Partido oficial',
+                'fecha_partido': rs.match.date.strftime("%d/%m/%Y") if rs.match.date else None,
+            })
+            
+        # Blue cards for the team
+        if tournament:
+            blue_cards = BlueCard.objects.filter(team=team, tournament=tournament).select_related('match_round')
+            for bc in blue_cards:
+                sanciones_list.append({
+                    'tipo': 'azul',
+                    'motivo': bc.reason,
+                    'fecha_torneo': bc.match_round.name if bc.match_round else 'Fecha del torneo',
+                    'created_at': bc.created_at.strftime("%d/%m/%Y") if bc.created_at else None,
+                })
+
+        # Manual Sancionados
+        if tournament:
+            manual_sanc = Sancionado.objects.filter(team=team, tournament=tournament)
+            for ms in manual_sanc:
+                sanciones_list.append({
+                    'tipo': 'tribunal',
+                    'player_name': ms.player_name,
+                    'motivo': ms.reason,
+                })
+
+        # 6. Buena Fe summary
+        from .models import GoodFaithList
+        gfl_count = GoodFaithList.objects.filter(team=team)
+        if tournament:
+            gfl_count = gfl_count.filter(tournament=tournament)
+        total_players = gfl_count.count()
+        limit_players = tournament.max_players_buena_fe if tournament else 25
+
+        # 7. Reclamos list
+        reclamos_qs = Reclamo.objects.filter(team=team).order_by('-created_at')[:25]
+        reclamos_list = [
+            {
+                'id': rec.id,
+                'tipo': rec.get_tipo_display(),
+                'tipo_raw': rec.tipo,
+                'asunto': rec.asunto,
+                'descripcion': rec.descripcion,
+                'estado': rec.estado,
+                'estado_display': rec.get_estado_display(),
+                'respuesta': rec.respuesta or '',
+                'created_at': rec.created_at.strftime("%d/%m/%Y %H:%M"),
+            }
+            for rec in reclamos_qs
+        ]
+
+        return Response({
+            'team': {
+                'id': team.id,
+                'name': team.name,
+                'logo': request.build_absolute_uri(team.logo.url) if team.logo else None,
+                'team_photo': request.build_absolute_uri(team.team_photo.url) if team.team_photo else None,
+            },
+            'tournament': {
+                'id': tournament.id if tournament else None,
+                'name': tournament.name if tournament else None,
+                'is_active': tournament.is_active if tournament else False,
+                'zone_id': zone.id if zone else None,
+                'zone_name': zone.name if zone else None,
+            } if tournament else None,
+            'standings': {
+                'position': position,
+                'total_teams': total_teams,
+                **(zone_team_data or {
+                    'played': 0, 'won': 0, 'drawn': 0, 'lost': 0,
+                    'goals_for': 0, 'goals_against': 0, 'goal_difference': 0,
+                    'points': 0, 'fair_play': 0
+                })
+            } if zone_team_data else None,
+            'next_match': next_match_data,
+            'last_match': last_match_data,
+            'financial': {
+                'saldo': saldo_socio['saldo'] if saldo_socio else 0.0,
+                'estado': saldo_socio['estado'] if saldo_socio else 'al_dia',
+                'observaciones': saldo_socio['observaciones'] if saldo_socio else '',
+                'transactions': transactions_list,
+            },
+            'sanciones': sanciones_list,
+            'buena_fe': {
+                'total_players': total_players,
+                'limit_players': limit_players,
+            },
+            'reclamos': reclamos_list,
+        })
+
 
 class DelegateViewSet(viewsets.ModelViewSet):
     queryset = Delegate.objects.all()
@@ -332,6 +581,54 @@ class TournamentViewSet(viewsets.ModelViewSet):
             return Response({'detail': 'Tarjeta no encontrada.'}, status=status.HTTP_404_NOT_FOUND)
         recalculate_tournament_standings_and_stats(tournament)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=['get'], url_path='duplicate-players')
+    def duplicate_players(self, request, pk=None):
+        tournament = self.get_object()
+        from django.db.models import Count
+        duplicate_player_ids = list(
+            GoodFaithList.objects.filter(tournament=tournament)
+            .values('player_id')
+            .annotate(cnt=Count('id'))
+            .filter(cnt__gt=1)
+            .values_list('player_id', flat=True)
+        )
+
+        gfl_records = (
+            GoodFaithList.objects.filter(tournament=tournament, player_id__in=duplicate_player_ids)
+            .select_related('player', 'team')
+            .order_by('player__last_name', 'player__first_name', 'team__name')
+        )
+
+        stats = MatchPlayerStat.objects.filter(
+            match__tournament_zone__tournament=tournament,
+            player_id__in=duplicate_player_ids,
+            played=True
+        ).values('player_id', 'team_id').annotate(pj=Count('id'))
+
+        pj_map = {(s['player_id'], s['team_id']): s['pj'] for s in stats}
+
+        results = {}
+        for r in gfl_records:
+            pid = r.player_id
+            if pid not in results:
+                results[pid] = {
+                    'player_id': r.player.id,
+                    'player_name': f"{r.player.last_name} {r.player.first_name}".strip().upper(),
+                    'dni': r.player.dni,
+                    'teams': []
+                }
+            results[pid]['teams'].append({
+                'good_faith_id': r.id,
+                'team_id': r.team.id,
+                'team_name': r.team.name,
+                'team_logo': request.build_absolute_uri(r.team.logo.url) if r.team.logo else None,
+                'pj': pj_map.get((r.player_id, r.team_id), 0),
+                'is_active': r.is_active,
+            })
+
+        return Response(list(results.values()))
+
 
     def destroy(self, request, *args, **kwargs):
         password = (
@@ -1015,6 +1312,14 @@ class PlayerViewSet(viewsets.ModelViewSet):
             
         serializer.save()
 
+    def destroy(self, request, *args, **kwargs):
+        if not (request.user.is_superuser or request.user.is_staff):
+            return Response(
+                {"detail": "Solo un usuario administrador puede eliminar jugadores definitivamente de la base de datos."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().destroy(request, *args, **kwargs)
+
 
 class GoodFaithListViewSet(viewsets.ModelViewSet):
     queryset = GoodFaithList.objects.select_related('player', 'team', 'tournament').all()
@@ -1030,3 +1335,44 @@ class GoodFaithListViewSet(viewsets.ModelViewSet):
         if team_id:
             qs = qs.filter(team_id=team_id)
         return qs
+
+    def perform_destroy(self, instance):
+        user = self.request.user
+        # Si es superusuario o admin, puede eliminar libremente
+        if user.is_superuser or user.is_staff:
+            instance.delete()
+            return
+        
+        # Si es delegado, solo puede remover registros de su propio equipo
+        if hasattr(user, 'delegate_profile') and user.delegate_profile and user.delegate_profile.team:
+            if instance.team_id == user.delegate_profile.team.id:
+                instance.delete()
+                return
+            else:
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied("No tienes permiso para modificar la lista de otro equipo.")
+        instance.delete()
+
+
+class ReclamoViewSet(viewsets.ModelViewSet):
+    queryset = Reclamo.objects.select_related('team', 'tournament', 'creado_por').all()
+    serializer_class = ReclamoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        user = self.request.user
+        team_id = self.request.query_params.get('team')
+        if team_id:
+            qs = qs.filter(team_id=team_id)
+        if not (user.is_superuser or user.is_staff):
+            if hasattr(user, 'delegate_profile') and user.delegate_profile and user.delegate_profile.team:
+                qs = qs.filter(team=user.delegate_profile.team)
+            else:
+                qs = qs.none()
+        return qs
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        serializer.save(creado_por=user if user.is_authenticated else None)
+

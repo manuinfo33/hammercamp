@@ -390,6 +390,41 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
+  const [existingPlayerFound, setExistingPlayerFound] = useState(null);
+  const [showDniConfirmModal, setShowDniConfirmModal] = useState(false);
+
+  const checkExistingDni = async (dniVal) => {
+    if (player?.id || !dniVal || dniVal.trim().length < 6) return;
+    try {
+      const res = await api.get(`players/?search=${dniVal.trim()}`);
+      const exactMatch = res.data.find(p => String(p.dni).trim() === dniVal.trim());
+      if (exactMatch) {
+        setExistingPlayerFound(exactMatch);
+        setShowDniConfirmModal(true);
+      }
+    } catch (e) {
+      console.error("Error checking DNI:", e);
+    }
+  };
+
+  const handleUseExistingPlayerData = () => {
+    if (!existingPlayerFound) return;
+    setFormData(prev => ({
+      ...prev,
+      first_name: existingPlayerFound.first_name || '',
+      last_name: existingPlayerFound.last_name || '',
+      dni: existingPlayerFound.dni || '',
+      birth_date: existingPlayerFound.birth_date || '',
+      email: existingPlayerFound.email || '',
+      phone: existingPlayerFound.phone || '',
+    }));
+    setPreviews({
+      photo: existingPlayerFound.photo || null,
+      dni_front: existingPlayerFound.dni_front || null,
+      dni_back: existingPlayerFound.dni_back || null
+    });
+    setShowDniConfirmModal(false);
+  };
 
   const triggerCloseConfirm = (confirmed) => {
     setConfirmExiting(true);
@@ -499,6 +534,8 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
       let response;
       if (player) {
         response = await api.patch(`players/${player.id}/`, data);
+      } else if (existingPlayerFound && existingPlayerFound.dni === formData.dni.trim()) {
+        response = await api.patch(`players/${existingPlayerFound.id}/`, data);
       } else {
         response = await api.post('players/', data);
       }
@@ -508,6 +545,7 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
       if (error.response?.data?.dni) {
         const msg = Array.isArray(error.response.data.dni) ? error.response.data.dni[0] : error.response.data.dni;
         setError(msg);
+        checkExistingDni(formData.dni.trim());
       } else {
         setError('Hubo un error al guardar el jugador. Por favor, verifica los datos e intenta de nuevo.');
       }
@@ -998,6 +1036,7 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
                   setFormData({ ...formData, dni: numericOnly }); 
                   setError(''); 
                 }} 
+                onBlur={() => checkExistingDni(formData.dni)}
                 style={{ 
                   paddingLeft: '38px', 
                   height: '46px',
@@ -1465,6 +1504,104 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
         document.body
       )}
       {confirmModalJSX}
+      {showDniConfirmModal && existingPlayerFound && createPortal(
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            zIndex: 100060,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
+          }}
+          onClick={() => setShowDniConfirmModal(false)}
+        >
+          <div 
+            style={{
+              background: '#ffffff',
+              borderRadius: '16px',
+              maxWidth: '430px',
+              width: '100%',
+              padding: '24px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              textAlign: 'center'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{
+              width: '52px',
+              height: '52px',
+              borderRadius: '50%',
+              background: 'rgba(255, 179, 0, 0.15)',
+              color: '#d97706',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto'
+            }}>
+              <AlertTriangle size={28} />
+            </div>
+
+            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#191919' }}>
+              Atención: Jugador/a ya existente
+            </h3>
+
+            <p style={{ margin: 0, fontSize: '14px', color: '#444444', lineHeight: '1.5' }}>
+              Ya existe un jugador con el DNI ingresado (<strong>{existingPlayerFound.last_name}, {existingPlayerFound.first_name}</strong>).
+              <br /><br />
+              ¿Desea usar los datos de este jugador/a? De lo contrario modificar el DNI.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '6px' }}>
+              <button
+                type="button"
+                onClick={handleUseExistingPlayerData}
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: '10px',
+                  background: '#038c4c',
+                  color: '#ffffff',
+                  fontWeight: '700',
+                  fontSize: '14px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s'
+                }}
+              >
+                Usar datos de este jugador/a
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDniConfirmModal(false);
+                  setFormData(f => ({ ...f, dni: '' }));
+                }}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: '10px',
+                  background: '#f2f0eb',
+                  color: '#333333',
+                  fontWeight: '600',
+                  fontSize: '13px',
+                  border: '1px solid #d8cfc0',
+                  cursor: 'pointer'
+                }}
+              >
+                Modificar DNI
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </>
   );
 };
