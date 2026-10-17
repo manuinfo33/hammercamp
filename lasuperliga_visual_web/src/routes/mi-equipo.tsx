@@ -1,12 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Footer } from "@/components/site/Footer";
 import { useState, useEffect, useRef } from "react";
 import { 
   Trophy, Users, UserCheck, ShieldAlert, CreditCard, MessageSquare, 
   Shield, Camera, UserPlus, Trash2, Check, X, Search, FileSpreadsheet, 
   Plus, RefreshCw, Upload, AlertCircle, Calendar, Clock, MapPin, 
   DollarSign, CheckCircle2, Clock3, Send, MessageCircle, FileText, 
-  Lock, AlertTriangle, ArrowRight, ArrowLeft, LogOut, User
+  Lock, AlertTriangle, ArrowRight, ArrowLeft, LogOut, User, Bell
 } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo-superliga.png";
@@ -91,6 +90,27 @@ function Page() {
   const [claimDescripcion, setClaimDescripcion] = useState("");
   const [submittingClaim, setSubmittingClaim] = useState(false);
 
+  // Notifications Popover State
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+
+  // User Profile Popover State
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(e.target as Node)) {
+        setNotificationsOpen(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   // Logout handler
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -103,10 +123,34 @@ function Page() {
   // Fetch Team & Dashboard Data
   const fetchAllData = async (authToken: string, teamId: number, currentTournId?: number | null) => {
     try {
+      let activeToken = authToken;
+
       // 1. Fetch Delegate Dashboard Data
-      const dashRes = await fetch(`http://127.0.0.1:8000/api/teams/${teamId}/delegate-dashboard/`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+      let dashRes = await fetch(`http://127.0.0.1:8000/api/teams/${teamId}/delegate-dashboard/`, {
+        headers: { Authorization: `Bearer ${activeToken}` },
       });
+
+      if (dashRes.status === 401) {
+        // Try refreshing token
+        const storedRefresh = localStorage.getItem("refresh");
+        if (storedRefresh) {
+          const rRes = await fetch("http://127.0.0.1:8000/api/token/refresh/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refresh: storedRefresh }),
+          });
+          if (rRes.ok) {
+            const rData = await rRes.json();
+            localStorage.setItem("token", rData.access);
+            setToken(rData.access);
+            activeToken = rData.access;
+            dashRes = await fetch(`http://127.0.0.1:8000/api/teams/${teamId}/delegate-dashboard/`, {
+              headers: { Authorization: `Bearer ${activeToken}` },
+            });
+          }
+        }
+      }
+
       if (dashRes.ok) {
         const dData = await dashRes.json();
         setDashboardData(dData);
@@ -122,7 +166,7 @@ function Page() {
         ? `http://127.0.0.1:8000/api/good-faith-lists/?team=${teamId}&tournament=${currentTournId}`
         : `http://127.0.0.1:8000/api/good-faith-lists/?team=${teamId}`;
       const lbfRes = await fetch(url, {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: { Authorization: `Bearer ${activeToken}` },
       });
       if (lbfRes.ok) {
         const lbfData = await lbfRes.json();
@@ -161,21 +205,67 @@ function Page() {
       setToken(storedToken);
 
       // Refresh user info from backend
-      fetch("http://127.0.0.1:8000/api/user-info/", {
-        headers: { Authorization: `Bearer ${storedToken}` },
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data && data.team_id) {
-            setUser(data);
-            localStorage.setItem("user", JSON.stringify(data));
-            fetchAllData(storedToken, data.team_id, data.current_tournament_id);
+      const refreshAccessToken = async () => {
+        const storedRefresh = localStorage.getItem("refresh");
+        if (!storedRefresh) return null;
+        try {
+          const rRes = await fetch("http://127.0.0.1:8000/api/token/refresh/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refresh: storedRefresh }),
+          });
+          if (rRes.ok) {
+            const rData = await rRes.json();
+            localStorage.setItem("token", rData.access);
+            setToken(rData.access);
+            return rData.access;
           }
-        })
-        .catch(() => {
-          fetchAllData(storedToken, parsedUser.team_id, parsedUser.current_tournament_id);
-        })
-        .finally(() => setLoading(false));
+        } catch (err) {
+          console.error("Token refresh failed:", err);
+        }
+        return null;
+      };
+
+      const loadData = async () => {
+        let currentToken = storedToken;
+        try {
+          let userRes = await fetch("http://127.0.0.1:8000/api/user-info/", {
+            headers: { Authorization: `Bearer ${currentToken}` },
+          });
+
+          if (userRes.status === 401) {
+            // Token expired, try refreshing
+            const newToken = await refreshAccessToken();
+            if (newToken) {
+              currentToken = newToken;
+              userRes = await fetch("http://127.0.0.1:8000/api/user-info/", {
+                headers: { Authorization: `Bearer ${newToken}` },
+              });
+            } else {
+              toast.error("Tu sesión ha expirado. Por favor, iniciá sesión nuevamente.");
+              handleLogout();
+              return;
+            }
+          }
+
+          if (userRes.ok) {
+            const data = await userRes.json();
+            if (data && data.team_id) {
+              setUser(data);
+              localStorage.setItem("user", JSON.stringify(data));
+              await fetchAllData(currentToken, data.team_id, data.current_tournament_id);
+              return;
+            }
+          }
+        } catch (e) {
+          console.error("Error fetching user-info:", e);
+        }
+
+        // Fallback to parsedUser in localStorage
+        await fetchAllData(currentToken, parsedUser.team_id, parsedUser.current_tournament_id);
+      };
+
+      loadData().finally(() => setLoading(false));
     } catch (e) {
       console.error(e);
       setError("Error de autenticación.");
@@ -513,7 +603,7 @@ function Page() {
   const reclamos = dashboardData?.reclamos || [];
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col pb-20 md:pb-0">
+    <div className="min-h-screen bg-background text-foreground flex flex-col pb-[64px] md:pb-0">
       
       {/* Hidden file inputs for Logo & Team photo */}
       <input
@@ -531,45 +621,172 @@ function Page() {
         className="hidden"
       />
 
-      {/* HEADER DEDICADO DE LA NUEVA PANTALLA DE MI EQUIPO */}
-      <header className="bg-surface border-b border-border/60 shadow-xs relative z-40">
-        <div className="container mx-auto px-4 md:px-6 py-3.5 flex items-center justify-between gap-4">
+      {/* HEADER DEDICADO DE LA NUEVA PANTALLA DE MI EQUIPO (Sticky Fijo) */}
+      <header className="sticky top-0 z-40 bg-[#18181b] text-white border-b border-neutral-800 shadow-md">
+        <div className="container mx-auto px-4 md:px-6 py-2.5 md:py-3.5 flex items-center justify-between gap-3">
           
-          {/* Botón de retroceso: "Volver a la web" */}
-          <div className="flex items-center gap-3">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground bg-surface-elevated hover:bg-muted border border-border/80 px-3.5 py-2 rounded-xl transition-all shadow-xs cursor-pointer group"
-            >
-              <ArrowLeft className="size-4 text-primary group-hover:-translate-x-0.5 transition-transform" />
-              <span>Volver a la web</span>
-            </Link>
-          </div>
-
-          {/* Logo del torneo (un poco más grande, sin texto ni redes sociales) */}
-          <div className="flex items-center justify-center">
-            <Link to="/" className="cursor-pointer" title="La Superliga">
+          {/* Izquierda: Logo de la Superliga + Hola, <Nombre del delegado> */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Link to="/" className="cursor-pointer inline-flex items-center justify-center shrink-0" title="La Superliga">
               <img
                 src={logo}
                 alt="La Superliga"
-                className="h-14 md:h-16 w-auto object-contain hover:scale-105 transition-transform"
+                className="h-10 md:h-12 w-auto object-contain hover:scale-105 transition-transform"
               />
             </Link>
+            <span className="text-sm md:text-base font-normal text-white truncate">
+              Hola, <span className="font-bold text-white uppercase">{user?.first_name || "DELEGADO"}</span>
+            </span>
           </div>
 
-          {/* Auspiciantes mini carousel reacomodado a la derecha */}
-          <div className="flex items-center gap-2.5">
-            <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-semibold hidden md:inline">
-              Auspicia:
-            </span>
-            <div className="w-[85px] h-[54px] relative overflow-hidden border border-border/40 rounded-xl bg-surface/30 flex items-center justify-center p-0 shadow-xs">
-              <img
-                src={ads[currentAdIndex].image}
-                alt={ads[currentAdIndex].name}
-                className="w-full h-full object-cover animate-in fade-in duration-500 rounded-xl"
-                key={ads[currentAdIndex].id}
-              />
+          {/* Derecha: Auspiciantes + Notificaciones + Perfil de Usuario */}
+          <div className="flex items-center justify-end gap-2.5 md:gap-3 shrink-0">
+            {/* Auspiciantes: visible solo en pantallas medianas y grandes */}
+            <div className="hidden lg:flex items-center gap-2">
+              <span className="text-[9px] uppercase tracking-widest text-neutral-400 font-semibold">
+                Auspicia:
+              </span>
+              <div className="w-[85px] h-[50px] relative overflow-hidden border border-neutral-700/80 rounded-xl bg-neutral-900/60 flex items-center justify-center p-0 shadow-xs">
+                <img
+                  src={ads[currentAdIndex].image}
+                  alt={ads[currentAdIndex].name}
+                  className="w-full h-full object-cover animate-in fade-in duration-500 rounded-xl"
+                  key={ads[currentAdIndex].id}
+                />
+              </div>
             </div>
+
+            {/* Campanita de Notificaciones con popover */}
+            <div className="relative" ref={notificationsRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setNotificationsOpen((prev) => !prev);
+                  setUserMenuOpen(false);
+                }}
+                className={`relative p-2 md:p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-center ${
+                  notificationsOpen 
+                    ? "bg-white/10 border-white/40 text-white shadow-xs" 
+                    : "bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30"
+                }`}
+                aria-label="Notificaciones"
+                title="Notificaciones de delegado"
+              >
+                <Bell className="size-4 md:size-5 text-white" />
+                <span className="absolute top-1.5 right-1.5 size-2 bg-primary rounded-full animate-pulse shadow-[0_0_6px_#facc15]" />
+              </button>
+
+              {/* Popover desplegable de notificaciones */}
+              {notificationsOpen && (
+                <div className="absolute right-0 top-full mt-2 w-72 md:w-80 bg-surface-elevated border border-border/80 shadow-2xl rounded-2xl p-4 z-50 text-foreground animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="flex items-center justify-between pb-3 border-b border-border/60">
+                    <div className="flex items-center gap-2">
+                      <Bell className="size-4 text-primary" />
+                      <span className="text-xs font-bold uppercase tracking-wider">Notificaciones</span>
+                    </div>
+                    <span className="text-[10px] bg-primary/20 text-primary font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                      Nuevo
+                    </span>
+                  </div>
+
+                  <div className="py-2 divide-y divide-border/40">
+                    <div className="py-2.5 flex items-start gap-3">
+                      <div className="size-2 rounded-full bg-primary mt-1.5 shrink-0" />
+                      <div>
+                        <p className="text-xs font-semibold text-foreground">
+                          Plantel habilitado para la fecha
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          Tu lista de buena fe se encuentra activa y validada.
+                        </p>
+                        <span className="text-[10px] text-muted-foreground/60 mt-1 block">Hace 15 min</span>
+                      </div>
+                    </div>
+
+                    <div className="py-2.5 flex items-start gap-3">
+                      <div className="size-2 rounded-full bg-muted-foreground/40 mt-1.5 shrink-0" />
+                      <div>
+                        <p className="text-xs font-semibold text-foreground">
+                          Recordatorio de fixture
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          Próximo partido publicado en la sección principal.
+                        </p>
+                        <span className="text-[10px] text-muted-foreground/60 mt-1 block">Ayer</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-border/60 text-center">
+                    <button
+                      type="button"
+                      onClick={() => setNotificationsOpen(false)}
+                      className="text-[11px] text-primary hover:underline font-bold uppercase tracking-wider cursor-pointer"
+                    >
+                      Cerrar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Ícono de Usuario con Popover (Mi Cuenta / Cerrar Sesión) a la derecha */}
+            <div className="relative" ref={userMenuRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setUserMenuOpen((prev) => !prev);
+                  setNotificationsOpen(false);
+                }}
+                className={`relative p-2 md:p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-center ${
+                  userMenuOpen 
+                    ? "bg-white/10 border-white/40 text-white shadow-xs" 
+                    : "bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30"
+                }`}
+                aria-label="Perfil de usuario"
+                title="Menú de delegado"
+              >
+                <User className="size-4 md:size-5 text-white" />
+              </button>
+
+              {/* Popover desplegable de Usuario */}
+              {userMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-56 bg-neutral-900 border border-neutral-800 shadow-2xl rounded-2xl p-2 z-50 text-white animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="px-3 py-2.5 border-b border-neutral-800 mb-1">
+                    <p className="text-xs font-bold uppercase text-white truncate">
+                      {user?.first_name} {user?.last_name}
+                    </p>
+                    <p className="text-[11px] text-neutral-400 truncate">
+                      {user?.team_name || "Delegado"}
+                    </p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Link
+                      to="/mi-cuenta"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl text-neutral-200 hover:text-white hover:bg-white/10 transition-colors"
+                    >
+                      <User className="size-4 text-primary" />
+                      <span>Mi Cuenta</span>
+                    </Link>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors text-left cursor-pointer"
+                    >
+                      <LogOut className="size-4 text-red-400" />
+                      <span>Cerrar Sesión</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
           </div>
 
         </div>
@@ -647,40 +864,31 @@ function Page() {
 
       {/* SECCIÓN SUPERIOR SUTIL PARA CELULAR (En lugar del rectángulo grande) */}
       <div className="md:hidden container mx-auto px-4 pt-4">
-        <div className="flex items-center justify-between gap-3 p-3.5 bg-surface rounded-2xl border border-border/70 shadow-xs">
-          <div className="flex items-center gap-3 min-w-0">
-            <div 
-              onClick={() => logoInputRef.current?.click()}
-              className="size-12 rounded-xl bg-surface-elevated border border-border/80 flex items-center justify-center p-1.5 overflow-hidden shrink-0 cursor-pointer relative shadow-xs"
-              title="Toca para cambiar escudo"
-            >
-              {logoPreview ? (
-                <img src={getMediaUrl(logoPreview)} alt="Escudo" className="w-full h-full object-contain" />
-              ) : (
-                <Shield className="size-6 text-muted-foreground/40" />
-              )}
-            </div>
-            <div className="min-w-0">
-              <h2 className="font-display text-lg font-bold uppercase tracking-tight text-foreground truncate leading-tight">
-                {team?.name || user?.team_name || "Mi Equipo"}
-              </h2>
-              <p className="text-xs text-muted-foreground truncate">
-                Delegado: <strong className="text-foreground">{user?.first_name} {user?.last_name}</strong>
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="p-2 text-red-500 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer shrink-0"
-            title="Cerrar Sesión"
+        <div className="flex items-center gap-3.5 p-3.5 bg-neutral-900 text-white rounded-2xl border border-neutral-800 shadow-md">
+          {/* Escudo del equipo (no editable aquí) */}
+          <div 
+            className="size-13 rounded-xl bg-neutral-800 border border-neutral-700/80 flex items-center justify-center p-1.5 overflow-hidden shrink-0 shadow-inner"
           >
-            <LogOut className="size-4" />
-          </button>
+            {logoPreview ? (
+              <img src={getMediaUrl(logoPreview)} alt="Escudo" className="w-full h-full object-contain" />
+            ) : (
+              <Shield className="size-6 text-neutral-400" />
+            )}
+          </div>
+
+          <div className="min-w-0 flex flex-col">
+            <span className="text-xs text-neutral-400 font-normal leading-tight">
+              Delegado del equipo
+            </span>
+            <h2 className="font-display text-lg font-bold uppercase tracking-tight text-white truncate leading-snug">
+              {(team?.name || user?.team_name || "Mi Equipo").toUpperCase()}
+            </h2>
+          </div>
         </div>
       </div>
 
       {/* SUB MENU HORIZONTAL (Desktop): Con Cerrar Sesión a la derecha */}
-      <div className="bg-surface border-b border-[#d8cfc0] shadow-xs">
+      <div className="hidden md:block bg-surface border-b border-[#d8cfc0] shadow-xs">
         <div className="container mx-auto px-6">
           <div className="hidden md:flex items-center justify-between">
             {/* Tabs */}
@@ -734,7 +942,7 @@ function Page() {
       </div>
 
       {/* CONTENIDO PRINCIPAL DE CADA PESTAÑA */}
-      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8 flex-1">
+      <main className="container mx-auto px-4 md:px-6 pt-4 pb-2 md:py-8 flex-1">
         
         {/* ============================================================ */}
         {/* 1. TAB: PRINCIPAL (Dashboard General) */}
@@ -742,141 +950,139 @@ function Page() {
         {activeTab === 'principal' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             
-            {/* Top Grid: Torneo & Posición (Col 2) + Saldo Actual del Equipo (Col 1) */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              
-              {/* Card 1: Posición & Tabla */}
-              <div className="lg:col-span-2 bg-surface rounded-2xl border border-border/70 p-6 shadow-xs flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between pb-4 border-b border-border/50">
-                    <div className="flex items-center gap-2.5">
-                      <div className="p-2 rounded-xl bg-primary/10 text-primary">
-                        <Trophy className="size-5" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-display text-lg font-bold uppercase tracking-tight">
-                            {dashboardData?.tournament?.name || user?.current_tournament_name || "Torneo Oficial"}
-                          </h3>
-                          <span className={`size-2 rounded-full ${
-                            dashboardData?.tournament?.is_active ?? user?.current_tournament_is_active 
-                              ? 'bg-emerald-500 animate-pulse' 
-                              : 'bg-amber-500'
-                          }`} />
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {dashboardData?.tournament?.zone_name || "Zona Principal"}
-                        </p>
-                      </div>
-                    </div>
+            {/* 1. Card: Saldo Actual del Equipo (Primero) - Fondo Negro */}
+            <div className="bg-neutral-900 text-white rounded-2xl border border-neutral-800 p-6 shadow-md flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between pb-3 border-b border-neutral-800 mb-4">
+                  <span className="text-xs font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-2">
+                    <CreditCard className="size-4 text-primary" /> Saldo Actual del equipo
+                  </span>
+                  <span className={`text-[10px] font-bold uppercase px-2.5 py-0.5 rounded border ${
+                    financial?.saldo < 0 ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  }`}>
+                    {financial?.saldo < 0 ? 'Saldo Deudor' : 'Al Día'}
+                  </span>
+                </div>
 
-                    {standings?.position && (
-                      <div className="flex flex-col items-end">
-                        <span className="text-2xl font-display font-black text-primary">
-                          {standings.position}°
-                        </span>
-                        <span className="text-[10px] uppercase font-bold text-muted-foreground">
-                          de {standings.total_teams} equipos
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Tabla de Estadísticas Resumidas */}
-                  {standings ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-6">
-                      <div className="bg-surface-elevated/70 border border-border/60 rounded-xl p-3 text-center">
-                        <span className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground">Puntos</span>
-                        <p className="text-2xl font-black text-primary mt-0.5">{standings.points}</p>
-                      </div>
-                      <div className="bg-surface-elevated/70 border border-border/60 rounded-xl p-3 text-center">
-                        <span className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground">Jugados</span>
-                        <p className="text-2xl font-black text-foreground mt-0.5">{standings.played}</p>
-                      </div>
-                      <div className="bg-surface-elevated/70 border border-border/60 rounded-xl p-3 text-center">
-                        <span className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground">G / E / P</span>
-                        <p className="text-lg font-bold text-foreground mt-1">
-                          <span className="text-emerald-500">{standings.won}</span> / {standings.drawn} / <span className="text-red-500">{standings.lost}</span>
-                        </p>
-                      </div>
-                      <div className="bg-surface-elevated/70 border border-border/60 rounded-xl p-3 text-center">
-                        <span className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground">Dif. Gol</span>
-                        <p className={`text-2xl font-black mt-0.5 ${standings.goal_difference > 0 ? 'text-emerald-500' : standings.goal_difference < 0 ? 'text-red-500' : 'text-foreground'}`}>
-                          {standings.goal_difference > 0 ? `+${standings.goal_difference}` : standings.goal_difference}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="py-8 text-center text-muted-foreground text-sm">
-                      Aún no hay estadísticas disponibles para la zona del equipo.
-                    </div>
+                <div className="my-4">
+                  <span className="text-xs text-neutral-400">Balance consolidado</span>
+                  <p className={`font-display text-4xl font-black mt-1 ${
+                    financial?.saldo < 0 ? 'text-red-400' : 'text-emerald-400'
+                  }`}>
+                    ${Number(financial?.saldo || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                  </p>
+                  {financial?.observaciones && (
+                    <p className="text-xs text-neutral-300 mt-3 italic bg-neutral-800/80 p-2.5 rounded-xl border border-neutral-700/60">
+                      "{financial.observaciones}"
+                    </p>
                   )}
                 </div>
-
-                <div className="pt-4 border-t border-border/50 flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Fair Play acumulado: <strong className="text-foreground">{standings?.fair_play ?? 0} pts</strong></span>
-                  <Link 
-                    to="/categorias"
-                    className="text-primary hover:underline font-bold inline-flex items-center gap-1"
-                  >
-                    Ver tabla completa <ArrowRight className="size-3.5" />
-                  </Link>
-                </div>
               </div>
 
-              {/* Card 2: Saldo Actual del equipo (Ubicado en el lugar anterior de Próximo Partido) */}
-              <div className="bg-surface rounded-2xl border border-border/70 p-6 shadow-xs flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between pb-3 border-b border-border/50 mb-4">
-                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                      <CreditCard className="size-4 text-primary" /> Saldo Actual del equipo
-                    </span>
-                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
-                      financial?.saldo < 0 ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500'
-                    }`}>
-                      {financial?.saldo < 0 ? 'Saldo Deudor' : 'Al Día'}
-                    </span>
-                  </div>
-
-                  <div className="my-4">
-                    <span className="text-xs text-muted-foreground">Balance consolidado</span>
-                    <p className={`font-display text-4xl font-black mt-1 ${
-                      financial?.saldo < 0 ? 'text-red-500' : 'text-emerald-500'
-                    }`}>
-                      ${Number(financial?.saldo || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                    </p>
-                    {financial?.observaciones && (
-                      <p className="text-xs text-muted-foreground mt-3 italic bg-surface-elevated/70 p-2.5 rounded-xl border border-border/50">
-                        "{financial.observaciones}"
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('pagos')}
-                  className="mt-4 w-full py-2.5 px-4 rounded-xl border border-border text-xs font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  Ver Historial de Pagos <ArrowRight className="size-3.5" />
-                </button>
-              </div>
-
+              <button
+                type="button"
+                onClick={() => setActiveTab('pagos')}
+                className="mt-4 w-full py-2.5 px-4 rounded-xl border border-neutral-800 bg-neutral-800/60 text-neutral-200 hover:bg-neutral-800 hover:text-white text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+              >
+                Ver Historial de Pagos <ArrowRight className="size-3.5" />
+              </button>
             </div>
 
-            {/* Bottom Grid: Próximo Partido + Plantel Inscripto + Sanciones Activas */}
+            {/* 2. Card: Estadísticas del Torneo Actual (Segundo) */}
+            <div className="bg-white rounded-2xl border border-neutral-200/80 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
+                  <div className="flex items-center gap-3">
+                    <Trophy className="size-6 text-primary shrink-0" />
+                    <div>
+                      <h3 className="font-display text-lg font-bold uppercase tracking-tight text-neutral-900">
+                        {dashboardData?.tournament?.name || user?.current_tournament_name || "Torneo Oficial"}
+                      </h3>
+                      <p className="text-xs font-medium text-neutral-500">
+                        {dashboardData?.tournament?.zone_name || "Zona Principal"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tabla de Estadísticas Resumidas: Posición, Puntos, Jugados, Fair Play */}
+                {standings ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-5">
+                    {/* Posición */}
+                    <div className="bg-neutral-50/80 border border-neutral-200/70 rounded-xl p-3.5 text-center transition-all hover:bg-neutral-100/80 hover:border-neutral-300">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-500 block">Posición</span>
+                      <p className="text-2xl font-black text-neutral-900 mt-1 tracking-tight">{standings.position ? `${standings.position}°` : "-"}</p>
+                    </div>
+                    {/* Puntos */}
+                    <div className="bg-neutral-50/80 border border-neutral-200/70 rounded-xl p-3.5 text-center transition-all hover:bg-neutral-100/80 hover:border-neutral-300">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-500 block">Puntos</span>
+                      <p className="text-2xl font-black text-neutral-900 mt-1 tracking-tight">{standings.points}</p>
+                    </div>
+                    {/* Jugados */}
+                    <div className="bg-neutral-50/80 border border-neutral-200/70 rounded-xl p-3.5 text-center transition-all hover:bg-neutral-100/80 hover:border-neutral-300">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-500 block">Jugados</span>
+                      <p className="text-2xl font-black text-neutral-900 mt-1 tracking-tight">{standings.played}</p>
+                    </div>
+                    {/* Fair Play */}
+                    <div className="bg-neutral-50/80 border border-neutral-200/70 rounded-xl p-3.5 text-center transition-all hover:bg-neutral-100/80 hover:border-neutral-300">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-neutral-500 block">Fair Play</span>
+                      <p className="text-2xl font-black text-neutral-900 mt-1 tracking-tight">{standings.fair_play ?? 0}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-8 text-center text-neutral-400 text-sm">
+                    Aún no hay estadísticas disponibles para la zona del equipo.
+                  </div>
+                )}
+
+                {/* Barra de Progreso del Torneo (Fechas jugadas / Fechas totales) */}
+                {(() => {
+                  const played = dashboardData?.tournament?.played_rounds ?? (standings?.played || 0);
+                  const total = dashboardData?.tournament?.total_rounds || Math.max(played, (standings?.total_teams ? (standings.total_teams - 1) : 0), 10);
+                  const pct = total > 0 ? Math.min(100, Math.round((played / total) * 100)) : 0;
+                  return (
+                    <div className="mt-5 mb-2 bg-neutral-50/80 border border-neutral-200/70 rounded-xl p-3.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-neutral-700">Progreso del Torneo</span>
+                        <span className="font-bold text-neutral-900">
+                          {played} de {total} fechas <span className="text-neutral-500 font-normal">({pct}%)</span>
+                        </span>
+                      </div>
+                      <div className="w-full bg-neutral-200/70 rounded-full h-2 mt-2.5 overflow-hidden">
+                        <div 
+                          className="h-full transition-all duration-500 rounded-full shadow-xs" 
+                          style={{ width: `${pct}%`, backgroundColor: '#00d592' }} 
+                        />
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              <div className="pt-3 border-t border-neutral-100 flex items-center justify-end text-xs">
+                <Link 
+                  to="/categorias"
+                  className="text-neutral-900 font-bold hover:text-primary inline-flex items-center gap-1.5 transition-colors group"
+                >
+                  <span>Ver tabla completa</span>
+                  <ArrowRight className="size-3.5 text-neutral-900 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                </Link>
+              </div>
+            </div>
+
+            {/* 3. Grid: Próximo Partido (Tercero) + Plantel Inscripto + Sanciones Activas */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               
               {/* Card 3: Próximo Partido */}
-              <div className="bg-surface rounded-2xl border border-border/70 p-6 shadow-xs flex flex-col justify-between">
+              <div className="bg-white rounded-2xl border border-neutral-200/80 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center justify-between pb-3 border-b border-border/50 mb-3">
-                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <div className="flex items-center justify-between pb-3 border-b border-neutral-100 mb-3">
+                    <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 flex items-center gap-2">
                       <Calendar className="size-4 text-primary" /> Próximo Partido
                     </span>
                     {nextMatch && (
-                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-primary/10 text-primary">
-                        {nextMatch.round_name}
+                      <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-md bg-neutral-100 text-neutral-800 border border-neutral-300 shadow-2xs">
+                        {nextMatch.round_name || "Próxima Fecha"}
                       </span>
                     )}
                   </div>
@@ -884,77 +1090,77 @@ function Page() {
                   {nextMatch ? (
                     <div className="flex flex-col items-center text-center my-2">
                       {/* Rival Logo */}
-                      <div className="size-14 rounded-2xl bg-surface-elevated border border-border flex items-center justify-center p-2 mb-2 shadow-xs">
+                      <div className="size-16 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-center justify-center p-2 mb-2 shadow-xs group-hover:scale-105 transition-transform">
                         {nextMatch.rival_logo ? (
                           <img src={getMediaUrl(nextMatch.rival_logo)} alt={nextMatch.rival_name} className="w-full h-full object-contain" />
                         ) : (
-                          <Shield className="size-7 text-muted-foreground/40" />
+                          <Shield className="size-8 text-neutral-400" />
                         )}
                       </div>
 
-                      <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
-                        {nextMatch.is_local ? "Local vs" : "Visitante vs"}
-                      </span>
-                      <h4 className="font-display text-lg font-bold uppercase text-foreground mt-0.5">
+                      <h4 className="font-display text-xl font-bold uppercase text-neutral-900 mt-1 tracking-tight">
                         {nextMatch.rival_name}
                       </h4>
 
-                      {/* Info Date, Time, Cancha */}
-                      <div className="w-full bg-surface-elevated/70 border border-border/50 rounded-xl p-2.5 mt-3 space-y-1.5 text-xs text-left">
-                        <div className="flex items-center gap-2 text-foreground font-medium">
-                          <Calendar className="size-3.5 text-primary shrink-0" />
-                          <span>{nextMatch.date || "Fecha a confirmar"}</span>
+                      {/* Info Date, Time, Cancha en una sola línea bien distribuida */}
+                      <div className="w-full bg-neutral-50/90 border border-neutral-200/80 rounded-xl px-3 py-2.5 mt-3.5 flex items-center justify-around gap-2 text-xs">
+                        {/* Fecha */}
+                        <div className="flex items-center gap-1.5 text-neutral-800 font-semibold">
+                          <Calendar className="size-3.5 text-neutral-900 shrink-0" />
+                          <span className="whitespace-nowrap">{nextMatch.date || "A confirmar"}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-foreground font-medium">
-                          <Clock className="size-3.5 text-primary shrink-0" />
-                          <span>{nextMatch.time ? `${nextMatch.time} hs` : "Horario a confirmar"}</span>
+                        <span className="text-neutral-300">|</span>
+                        {/* Hora */}
+                        <div className="flex items-center gap-1.5 text-neutral-800 font-semibold">
+                          <Clock className="size-3.5 text-neutral-900 shrink-0" />
+                          <span className="whitespace-nowrap">{nextMatch.time ? `${nextMatch.time} hs` : "A confirmar"}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-foreground font-medium">
-                          <MapPin className="size-3.5 text-primary shrink-0" />
-                          <span className="truncate">{nextMatch.cancha}</span>
+                        <span className="text-neutral-300">|</span>
+                        {/* Cancha: texto directo Cancha: <numero> */}
+                        <div className="flex items-center gap-1 text-neutral-800 font-semibold truncate">
+                          <span className="truncate">Cancha: {nextMatch.cancha || "A confirmar"}</span>
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="py-8 text-center text-muted-foreground text-xs flex flex-col items-center">
-                      <Calendar className="size-6 text-muted-foreground/40 mb-2" />
+                    <div className="py-8 text-center text-neutral-400 text-xs flex flex-col items-center">
+                      <Calendar className="size-6 text-neutral-300 mb-2" />
                       No hay partidos programados para la próxima fecha.
                     </div>
                   )}
                 </div>
 
-                {lastMatch && (
-                  <div className="pt-3 border-t border-border/50 text-[11px] text-muted-foreground flex items-center justify-between">
-                    <span>Último:</span>
-                    <span className="font-bold text-foreground">
-                      {lastMatch.my_score} - {lastMatch.rival_score} vs {lastMatch.rival_name}
-                    </span>
-                  </div>
-                )}
+                <div className="pt-3 border-t border-neutral-100 flex items-center justify-end text-xs">
+                  <Link 
+                    to="/categorias"
+                    className="text-neutral-900 font-bold hover:text-primary inline-flex items-center gap-1.5 transition-colors group"
+                  >
+                    <span>Ver Fixture Completo</span>
+                    <ArrowRight className="size-3.5 text-neutral-900 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                  </Link>
+                </div>
               </div>
 
               {/* Card 4: Plantel Inscripto (Buena Fe Status) */}
-              <div className="bg-surface rounded-2xl border border-border/70 p-6 shadow-xs flex flex-col justify-between">
+              <div className="bg-white rounded-2xl border border-neutral-200/80 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <div className="flex items-center justify-between pb-3 border-b border-neutral-100 mb-4">
+                    <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 flex items-center gap-2">
                       <Users className="size-4 text-primary" /> Plantel Inscripto
-                    </span>
-                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-primary/10 text-primary">
-                      {players.length} Jugadores
                     </span>
                   </div>
 
                   <div className="my-3">
-                    <span className="text-xs text-muted-foreground">Cupo de Lista de Buena Fe</span>
+                    <span className="text-xs font-medium text-neutral-500">Cupo de Lista de Buena Fe</span>
                     <div className="flex items-baseline gap-2 mt-1">
-                      <span className="font-display text-3xl font-black text-foreground">{players.length}</span>
-                      <span className="text-muted-foreground font-semibold">/ {dashboardData?.buena_fe?.limit_players || 25} permitidos</span>
+                      <span className="font-display text-4xl font-black text-neutral-900">{players.length}</span>
+                      <span className="text-neutral-500 font-semibold text-xs">/ {dashboardData?.buena_fe?.limit_players || 25} permitidos</span>
                     </div>
-                    <div className="w-full bg-border/40 rounded-full h-2 mt-3 overflow-hidden">
+                    {/* Barra de progreso */}
+                    <div className="w-full bg-neutral-100 rounded-full h-2 mt-3.5 overflow-hidden border border-neutral-200/60">
                       <div 
-                        className="bg-primary h-full transition-all" 
-                        style={{ width: `${Math.min(100, (players.length / (dashboardData?.buena_fe?.limit_players || 25)) * 100)}%` }} 
+                        className="h-full transition-all duration-500 rounded-full shadow-xs" 
+                        style={{ width: `${Math.min(100, (players.length / (dashboardData?.buena_fe?.limit_players || 25)) * 100)}%`, backgroundColor: '#00d592' }} 
                       />
                     </div>
                   </div>
@@ -963,38 +1169,46 @@ function Page() {
                 <button
                   type="button"
                   onClick={() => setActiveTab('buena_fe')}
-                  className="mt-4 w-full py-2.5 px-4 rounded-xl border border-border text-xs font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  className="mt-4 w-full py-2.5 px-4 rounded-xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-900 hover:text-white hover:border-neutral-900 text-neutral-800 text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs group"
                 >
-                  Gestionar Jugadores <ArrowRight className="size-3.5" />
+                  <span>Gestionar Jugadores</span>
+                  <ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
                 </button>
               </div>
 
               {/* Card 5: Sanciones Status */}
-              <div className="bg-surface rounded-2xl border border-border/70 p-6 shadow-xs flex flex-col justify-between">
+              <div className="bg-white rounded-2xl border border-neutral-200/80 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <div className="flex items-center justify-between pb-3 border-b border-neutral-100 mb-4">
+                    <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 flex items-center gap-2">
                       <ShieldAlert className="size-4 text-primary" /> Sanciones Activas
-                    </span>
-                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
-                      sanciones.length > 0 ? 'bg-amber-500/10 text-amber-500 font-bold' : 'bg-emerald-500/10 text-emerald-500'
-                    }`}>
-                      {sanciones.length > 0 ? `${sanciones.length} Sancionados` : 'Sin Sanciones'}
                     </span>
                   </div>
 
                   <div className="my-3">
+                    <span className="text-xs font-medium text-neutral-500 block mb-2">Jugadores Sancionados</span>
+
                     {sanciones.length > 0 ? (
                       <div className="space-y-2">
-                        {sanciones.slice(0, 2).map((s: any, idx: number) => (
-                          <div key={idx} className="p-2.5 rounded-lg bg-surface-elevated/70 border border-border/50 text-xs flex items-center justify-between">
-                            <span className="font-bold text-foreground truncate">{s.player_name || "Sanción colectiva"}</span>
-                            <span className="text-[11px] font-bold text-red-500 shrink-0 ml-2">{s.fechas_suspension || "1 fecha"}</span>
-                          </div>
-                        ))}
+                        {sanciones.slice(0, 2).map((s: any, idx: number) => {
+                          const rawFechas = s.fechas_suspension || s.fechas || "1";
+                          const numFechas = typeof rawFechas === "string" ? rawFechas.replace(/[^0-9]/g, "") || rawFechas : rawFechas;
+                          return (
+                            <div key={idx} className="p-2.5 rounded-xl bg-neutral-50 border border-neutral-200/80 text-xs flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="w-2.5 h-3.5 bg-red-600 rounded-[2px] shadow-2xs inline-block shrink-0 border border-red-700" title="Tarjeta roja / Suspensión" />
+                                <span className="font-bold text-neutral-900 truncate">{s.player_name || "Sanción colectiva"}</span>
+                              </div>
+                              <span className="shrink-0 text-neutral-900 text-xs">
+                                <strong className="font-bold text-neutral-900">{numFechas}</strong>{" "}
+                                <span className="font-normal text-neutral-600">{Number(numFechas) === 1 ? "fecha" : "fechas"}</span>
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     ) : (
-                      <div className="py-4 text-center text-xs text-muted-foreground">
+                      <div className="py-4 text-center text-xs text-neutral-400">
                         No hay jugadores sancionados en el equipo actualmente.
                       </div>
                     )}
@@ -1004,9 +1218,10 @@ function Page() {
                 <button
                   type="button"
                   onClick={() => setActiveTab('sanciones')}
-                  className="mt-4 w-full py-2.5 px-4 rounded-xl border border-border text-xs font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  className="mt-4 w-full py-2.5 px-4 rounded-xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-900 hover:text-white hover:border-neutral-900 text-neutral-800 text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs group"
                 >
-                  Ver Detalle Sanciones <ArrowRight className="size-3.5" />
+                  <span>Ver Detalle Sanciones</span>
+                  <ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
                 </button>
               </div>
 
@@ -1464,12 +1679,12 @@ function Page() {
 
       </main>
 
-      {/* SUB MENU INFERIOR FIJO PARA CELULAR (< 768px): Mismo diseño que app de gestión */}
+      {/* SUB MENU INFERIOR FIJO PARA CELULAR (< 768px): Diseño oscuro refinado y acorde */}
       <div 
-        className="md:hidden fixed bottom-0 left-0 right-0 h-[60px] bg-[#eae4d8] border-t border-[#d8cfc0] z-50 flex items-center justify-around shadow-[0_-4px_15px_rgba(25,20,15,0.08)]"
+        className="md:hidden fixed bottom-0 left-0 right-0 h-[62px] bg-[#18181b] border-t border-neutral-800 z-50 flex items-center justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.4)] backdrop-blur-md"
         style={{
-          background: '#eae4d8',
-          borderTop: '1px solid #d8cfc0',
+          background: '#18181b',
+          borderTop: '1px solid #27272a',
         }}
       >
         {TABS.map((tab) => {
@@ -1482,8 +1697,8 @@ function Page() {
               style={{
                 background: 'transparent',
                 border: 'none',
-                borderTop: isActive ? '3px solid #cc7a5c' : '3px solid transparent',
-                color: isActive ? '#cc7a5c' : '#191919',
+                borderTop: isActive ? '3px solid var(--primary)' : '3px solid transparent',
+                color: isActive ? '#ffffff' : '#a1a1aa',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -1497,8 +1712,19 @@ function Page() {
               }}
               title={tab.label}
             >
-              <span>{tab.icon}</span>
-              <span style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' }}>
+              <span className={isActive ? 'text-white scale-110 transition-transform' : 'text-neutral-400'}>
+                {tab.icon}
+              </span>
+              <span 
+                style={{ 
+                  fontSize: '9.5px', 
+                  fontWeight: isActive ? 700 : 500, 
+                  textTransform: 'uppercase', 
+                  letterSpacing: '0.05em', 
+                  marginTop: '3px',
+                  color: isActive ? '#ffffff' : '#a1a1aa'
+                }}
+              >
                 {tab.shortLabel}
               </span>
             </button>
@@ -1902,7 +2128,22 @@ function Page() {
         </div>
       )}
 
-      <Footer />
+      {/* FOOTER COMPACTO Y SENCILLO PARA MI EQUIPO (Solo visible en Desktop) */}
+      <footer className="hidden md:block border-t border-border/50 bg-surface/80 py-4 px-6 mt-12">
+        <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <img src={logo} alt="La Superliga" className="h-6 w-auto object-contain opacity-80" />
+            <span className="font-semibold text-foreground/80">La Superliga Torneos</span>
+            <span className="text-muted-foreground/50">·</span>
+            <span>Panel de Delegados</span>
+          </div>
+          <div className="flex items-center gap-4 text-[11px]">
+            <Link to="/" className="hover:text-primary transition-colors">Volver a la web</Link>
+            <span className="text-muted-foreground/30">|</span>
+            <span>© {new Date().getFullYear()} Todos los derechos reservados</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

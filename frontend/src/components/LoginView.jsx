@@ -38,7 +38,7 @@ const LoginView = () => {
 
         {/* Logo + Brand */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{ width: '140px', height: '140px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '130px', height: '130px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0e0d0b', borderRadius: '24px', padding: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}>
             <img src="/logo-superliga.png" alt="La Superliga Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
         </div>

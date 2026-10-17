@@ -194,79 +194,61 @@ export function Header() {
       <nav className="bg-surface border-t border-border/60 relative z-40">
         <div className="container mx-auto px-6 flex items-center">
           <ul className={`${open ? "flex" : "hidden"} md:flex flex-col md:flex-row w-full md:w-auto items-stretch md:items-center gap-0 md:gap-1`}>
-            {(() => {
-              const isDelegate = user && user.role === "Delegado";
-              const menuItems = isDelegate
-                ? [
-                    { label: "Inicio", to: "/" },
-                    { label: "Categorías", to: "/categorias" },
-                    { label: "Mi Equipo", to: "/mi-equipo", hasDot: true },
-                    { label: "Mi Cuenta", to: "/mi-cuenta" },
-                  ]
-                : [...nav];
-
-              return menuItems.map((item: any, i) => (
-                <li key={item.to} className="relative group">
-                  {item.label === "Categorías" ? (
-                    <>
-                      <div className="flex items-center cursor-pointer px-6 py-5 hover:text-primary transition-colors">
-                        <Link
-                          to={item.to}
-                          onClick={() => setOpen(false)}
-                          activeOptions={{ exact: item.to === "/" }}
-                          className="text-xs font-bold uppercase tracking-[0.18em]"
-                          activeProps={{
-                            className:
-                              "text-xs font-bold uppercase tracking-[0.18em] text-primary",
-                          }}
-                        >
-                          {item.label}
-                        </Link>
-                        <ChevronDown className="size-4 ml-1 opacity-50 group-hover:rotate-180 transition-transform" />
-                      </div>
-                      {/* Dropdown Menu */}
-                      <div className="absolute top-full left-0 min-w-[220px] bg-surface-elevated border border-border/60 shadow-xl rounded-xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 translate-y-2 group-hover:translate-y-0 z-50">
-                        <ul className="flex flex-col py-2">
-                          {categories.map((c: any) => (
-                            <li key={c.id}>
-                              <Link
-                                to={`/categorias/${c.id}`}
-                                onClick={() => setOpen(false)}
-                                className="block px-6 py-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-                              >
-                                {c.name}
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </>
-                  ) : (
-                    <Link
-                      to={item.to}
-                      onClick={() => setOpen(false)}
-                      activeOptions={{ exact: item.to === "/" }}
-                      className="flex items-center gap-2 px-6 py-5 text-xs font-bold uppercase tracking-[0.18em] hover:text-primary transition-colors"
-                      activeProps={{
-                        className:
-                          "flex items-center gap-2 px-6 py-5 text-xs font-bold uppercase tracking-[0.18em] bg-primary text-primary-foreground clip-tab hover:text-primary-foreground",
-                      }}
-                    >
-                      <span>{item.label}</span>
-                      {item.hasDot && (
-                        <span 
-                          className="inline-block size-2.5 rounded-full bg-yellow-400 shadow-[0_0_8px_#facc15] animate-pulse shrink-0" 
-                          title="Acceso directo a Mi Equipo"
-                        />
-                      )}
-                    </Link>
-                  )}
-                  {i < menuItems.length - 1 && (
-                    <span className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 h-4 w-px bg-border" />
-                  )}
-                </li>
-              ));
-            })()}
+            {nav.map((item: any, i) => (
+              <li key={item.to} className="relative group">
+                {item.label === "Categorías" ? (
+                  <>
+                    <div className="flex items-center cursor-pointer px-6 py-5 hover:text-primary transition-colors">
+                      <Link
+                        to={item.to}
+                        onClick={() => setOpen(false)}
+                        activeOptions={{ exact: item.to === "/" }}
+                        className="text-xs font-bold uppercase tracking-[0.18em]"
+                        activeProps={{
+                          className:
+                            "text-xs font-bold uppercase tracking-[0.18em] text-primary",
+                        }}
+                      >
+                        {item.label}
+                      </Link>
+                      <ChevronDown className="size-4 ml-1 opacity-50 group-hover:rotate-180 transition-transform" />
+                    </div>
+                    {/* Dropdown Menu */}
+                    <div className="absolute top-full left-0 min-w-[220px] bg-surface-elevated border border-border/60 shadow-xl rounded-xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 translate-y-2 group-hover:translate-y-0 z-50">
+                      <ul className="flex flex-col py-2">
+                        {categories.map((c: any) => (
+                          <li key={c.id}>
+                            <Link
+                              to={`/categorias/${c.id}`}
+                              onClick={() => setOpen(false)}
+                              className="block px-6 py-3 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                            >
+                              {c.name}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </>
+                ) : (
+                  <Link
+                    to={item.to}
+                    onClick={() => setOpen(false)}
+                    activeOptions={{ exact: item.to === "/" }}
+                    className="flex items-center gap-2 px-6 py-5 text-xs font-bold uppercase tracking-[0.18em] hover:text-primary transition-colors"
+                    activeProps={{
+                      className:
+                        "flex items-center gap-2 px-6 py-5 text-xs font-bold uppercase tracking-[0.18em] bg-primary text-primary-foreground clip-tab hover:text-primary-foreground",
+                    }}
+                  >
+                    <span>{item.label}</span>
+                  </Link>
+                )}
+                {i < nav.length - 1 && (
+                  <span className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 h-4 w-px bg-border" />
+                )}
+              </li>
+            ))}
           </ul>
           <div className="ml-auto hidden md:flex items-center gap-3 pl-6">
             {user ? (

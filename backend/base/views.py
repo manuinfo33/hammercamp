@@ -160,6 +160,8 @@ class TeamViewSet(viewsets.ModelViewSet):
         position = None
         total_teams = 0
         zone_team_data = None
+        total_rounds = 0
+        played_rounds = 0
         if tournament and zone:
             from .standings import sort_zone_teams
             all_zts = zone.zone_teams.select_related('team').all()
@@ -180,6 +182,10 @@ class TeamViewSet(viewsets.ModelViewSet):
                         'fair_play': item.fair_play,
                     }
                     break
+
+            # Calculate total & played match rounds for the tournament zone
+            total_rounds = zone.match_rounds.count()
+            played_rounds = zone.match_rounds.filter(matches__played=True).distinct().count()
 
         # 3. Next match & Last match
         next_match_data = None
@@ -357,6 +363,8 @@ class TeamViewSet(viewsets.ModelViewSet):
                 'is_active': tournament.is_active if tournament else False,
                 'zone_id': zone.id if zone else None,
                 'zone_name': zone.name if zone else None,
+                'total_rounds': total_rounds,
+                'played_rounds': played_rounds,
             } if tournament else None,
             'standings': {
                 'position': position,
