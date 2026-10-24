@@ -12,6 +12,8 @@ import PlayerFormModal from '../players/PlayerFormModal';
 import MatchResultModal from './MatchResultModal';
 import { BlueCardModal, TeamFairPlayHistoryModal, CardIcon } from './FairPlayModals';
 import { useAuth } from '../../context/AuthContext';
+import { useHeaderContext } from '../../context/HeaderContext';
+import '../../styles/tournaments.css';
 
 const TABS = [
   { id: 'principal', label: 'Principal' },
@@ -95,7 +97,7 @@ function TimeSelectInput({ value, onChange }) {
     maxHeight: '160px',
     overflowY: 'auto',
     background: '#ffffff',
-    border: '1px solid #d8cfc0',
+    border: '1px solid #d4d4d8',
     borderRadius: '8px',
     boxShadow: '0 8px 24px rgba(0,0,0,0.14)',
     zIndex: 10005,
@@ -106,7 +108,7 @@ function TimeSelectInput({ value, onChange }) {
     padding: '7px 10px',
     fontSize: '12px',
     fontWeight: isActive ? '700' : '500',
-    color: isActive ? '#191919' : '#5c554e',
+    color: isActive ? '#1c1d21' : '#5c554e',
     background: isActive ? '#f0ece4' : 'transparent',
     cursor: 'pointer',
     textAlign: 'center',
@@ -117,7 +119,7 @@ function TimeSelectInput({ value, onChange }) {
     width: '100%',
     height: '38px',
     background: '#ffffff',
-    border: isOpen ? '1px solid #cc7a5c' : '1px solid #d8cfc0',
+    border: isOpen ? '1px solid #cc7a5c' : '1px solid #d4d4d8',
     borderRadius: '6px',
     display: 'flex',
     alignItems: 'center',
@@ -125,7 +127,7 @@ function TimeSelectInput({ value, onChange }) {
     padding: '0 10px',
     fontSize: '13px',
     fontWeight: '600',
-    color: hasVal ? '#191919' : '#7f776f',
+    color: hasVal ? '#1c1d21' : '#6f737b',
     cursor: 'pointer',
     outline: 'none',
     boxShadow: isOpen ? '0 0 0 3px rgba(204, 122, 92, 0.12)' : 'none',
@@ -145,7 +147,7 @@ function TimeSelectInput({ value, onChange }) {
           style={buttonStyle(openHour, !!hour)}
         >
           <span>{hour ? `${hour} hs` : 'Hora'}</span>
-          <ChevronDown size={13} color="#7f776f" style={{ transform: openHour ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} />
+          <ChevronDown size={13} color="#6f737b" style={{ transform: openHour ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} />
         </button>
 
         {openHour && (
@@ -179,7 +181,7 @@ function TimeSelectInput({ value, onChange }) {
           style={buttonStyle(openMin, !!minute)}
         >
           <span>{minute ? `${minute} min` : 'Min'}</span>
-          <ChevronDown size={13} color="#7f776f" style={{ transform: openMin ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} />
+          <ChevronDown size={13} color="#6f737b" style={{ transform: openMin ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} />
         </button>
 
         {openMin && (
@@ -218,6 +220,10 @@ export default function TournamentDetailView({ tournament, onBack }) {
   const [detailedTournament, setDetailedTournament] = useState(null);
 
   const displayTournament = detailedTournament || tournament || {};
+  useHeaderContext({
+    title: displayTournament.name,
+    subtitle: displayTournament.category_name ? `Categoría: ${displayTournament.category_name}` : ''
+  });
 
   useEffect(() => {
     if (paramTab && ['principal', 'fixture', 'buena_fe'].includes(paramTab)) {
@@ -1267,20 +1273,49 @@ export default function TournamentDetailView({ tournament, onBack }) {
     });
   };
 
-  const dropdownStyles = {
+  // Dropdown auto-flip positioning ('down' | 'up')
+  const [dropdownPosition, setDropdownPosition] = useState('down');
+
+  const toggleDropdown = (e, type, id) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    // Un dropdown típico mide entre 120px y 170px. Si el espacio inferior es menor a 200px (o sobre barra móvil), abre hacia arriba.
+    const shouldOpenUp = spaceBelow < 200;
+    setDropdownPosition(shouldOpenUp ? 'up' : 'down');
+
+    if (type === 'round') {
+      setOpenDropdownMatchId(null);
+      setOpenDropdownZoneId(null);
+      setOpenDropdownRoundId(openDropdownRoundId === id ? null : id);
+    } else if (type === 'match') {
+      setOpenDropdownRoundId(null);
+      setOpenDropdownZoneId(null);
+      setOpenDropdownMatchId(openDropdownMatchId === id ? null : id);
+    } else if (type === 'zone') {
+      setOpenDropdownRoundId(null);
+      setOpenDropdownMatchId(null);
+      setOpenDropdownZoneId(openDropdownZoneId === id ? null : id);
+    }
+  };
+
+  const getDropdownStyles = (isUp, customTop = '42px', customBottom = '42px') => ({
     position: 'absolute',
-    top: '42px',
+    top: isUp ? 'auto' : customTop,
+    bottom: isUp ? customBottom : 'auto',
     right: '12px',
     zIndex: 100,
     background: '#ffffff',
-    border: '1px solid #d8cfc0',
+    border: '1px solid #d4d4d8',
     borderRadius: '12px',
-    boxShadow: '0 10px 25px rgba(25, 20, 15, 0.08)',
+    boxShadow: isUp ? '0 -10px 25px rgba(25, 20, 15, 0.12)' : '0 10px 25px rgba(25, 20, 15, 0.08)',
     minWidth: '220px',
     display: 'flex',
     flexDirection: 'column',
     padding: '6px 0',
-  };
+  });
+
+  const dropdownStyles = getDropdownStyles(dropdownPosition === 'up');
 
   const dropdownItemStyles = {
     background: 'none',
@@ -1289,7 +1324,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
     padding: '10px 16px',
     fontSize: '0.82rem',
     fontWeight: '600',
-    color: '#383530',
+    color: '#3f4249',
     textAlign: 'left',
     cursor: 'pointer',
     display: 'flex',
@@ -1327,70 +1362,30 @@ export default function TournamentDetailView({ tournament, onBack }) {
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto' }} className="anthropic-theme tournaments-container animate-fade-in">
       
-      {/* Refined Header: Back icon button and tournament title side by side */}
-      <div className="hide-on-mobile" style={{
-        marginBottom: '22px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '12px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      {/* Header: botón volver + título del torneo (tarjeta estilo Mi Equipo) */}
+      <div className="hide-on-mobile gx-page-header">
+        <div className="gx-page-header-main">
           <button
             onClick={handleBack}
             type="button"
             className="secondary icon-only"
-            style={{
-              width: '34px',
-              height: '34px',
-              minWidth: '34px',
-              padding: 0,
-              borderRadius: '8px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              border: '1px solid #d8cfc0',
-              background: '#ffffff',
-              color: '#191919',
-              transition: 'all 0.15s ease'
-            }}
+            style={{ flexShrink: 0 }}
             title="Volver a Torneos"
           >
             <ArrowLeft size={16} />
           </button>
-
-          <h1 style={{
-            margin: 0,
-            fontFamily: "'Outfit', system-ui, sans-serif",
-            fontSize: '24px',
-            fontWeight: '700',
-            color: '#191919',
-            letterSpacing: '-0.3px',
-            lineHeight: 1.2
-          }}>
-            {displayTournament.name}
-          </h1>
+          <div className="gx-icon-box"><Trophy size={24} /></div>
+          <div style={{ minWidth: 0 }}>
+            <h1 className="gx-page-title">{displayTournament.name}</h1>
+            {displayTournament.category_name && (
+              <p className="gx-page-sub">Categoría: {displayTournament.category_name}</p>
+            )}
+          </div>
         </div>
-
-        {displayTournament.category_name && (
-          <span style={{ color: '#8c827a', fontSize: '12.5px', fontWeight: '400' }}>
-            Categoría: {displayTournament.category_name}
-          </span>
-        )}
       </div>
 
       {/* Underline Tabs Navigation Bar (Minimalist, without background container) */}
-      <div className="hide-on-mobile" style={{
-        display: 'flex',
-        gap: '24px',
-        borderBottom: '1px solid #d8cfc0',
-        marginBottom: '24px',
-        overflowX: 'auto',
-        WebkitOverflowScrolling: 'touch',
-        scrollbarWidth: 'none'
-      }}>
+      <div className="hide-on-mobile tn-tabs">
         {TABS.map(tab => {
           const isActive = activeTab === tab.id;
           return (
@@ -1400,11 +1395,11 @@ export default function TournamentDetailView({ tournament, onBack }) {
               type="button"
               style={{
                 background: 'transparent',
-                color: isActive ? '#cc7a5c' : '#191919',
+                color: isActive ? '#cc7a5c' : '#1c1d21',
                 border: 'none',
                 borderBottom: isActive ? '4px solid #cc7a5c' : '4px solid transparent',
                 borderRadius: 0,
-                padding: '10px 4px 12px 4px',
+                padding: '14px 4px',
                 fontWeight: isActive ? 700 : 500,
                 fontSize: '14.5px',
                 cursor: 'pointer',
@@ -1413,13 +1408,15 @@ export default function TournamentDetailView({ tournament, onBack }) {
                 outline: 'none',
                 boxShadow: 'none',
                 height: 'auto',
-                marginBottom: '-1px'
+                marginBottom: '-1px',
+                textTransform: 'none',
+                letterSpacing: 0
               }}
               onMouseEnter={(e) => {
                 if (!isActive) e.currentTarget.style.color = '#cc7a5c';
               }}
               onMouseLeave={(e) => {
-                if (!isActive) e.currentTarget.style.color = '#191919';
+                if (!isActive) e.currentTarget.style.color = '#1c1d21';
               }}
             >
               {tab.label}
@@ -1429,7 +1426,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
       </div>
 
       {/* Tab Content */}
-      <div style={{ paddingBottom: isMobile ? '80px' : (activeTab === 'fixture' && unifiedFixtures.length > 0 ? '80px' : '0px') }}>
+      <div style={{ paddingBottom: isMobile ? '8px' : (activeTab === 'fixture' && unifiedFixtures.length > 0 ? '80px' : '0px') }}>
         {loading ? (
           <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>Cargando detalles...</div>
         ) : !detailedTournament ? (
@@ -1482,8 +1479,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                 style={{
                                   padding: '6px 12px',
                                   height: '36px',
-                                  background: '#cc7a5c',
-                                  color: '#ffffff',
+                                  background: 'var(--gx-primary)',
+                                  color: '#151515',
                                   border: 'none',
                                   borderRadius: '8px',
                                   cursor: 'pointer',
@@ -1522,19 +1519,14 @@ export default function TournamentDetailView({ tournament, onBack }) {
                           )}
                           <button
                             type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenDropdownRoundId(null);
-                              setOpenDropdownMatchId(null);
-                              setOpenDropdownZoneId(openDropdownZoneId === zone.id ? null : zone.id);
-                            }}
+                            onClick={(e) => toggleDropdown(e, 'zone', zone.id)}
                             style={{
                               position: 'absolute',
                               right: '16px',
                               background: 'none',
                               border: 'none',
                               padding: '4px',
-                              color: '#7f776f',
+                              color: '#6f737b',
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
@@ -1547,7 +1539,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
                           {/* Dropdown for Zone Actions */}
                           {openDropdownZoneId === zone.id && (
-                            <div style={{ ...dropdownStyles, top: '35px', right: '16px', zIndex: 100 }} onClick={(e) => e.stopPropagation()}>
+                            <div style={{ ...getDropdownStyles(dropdownPosition === 'up', '35px', '35px'), right: '16px', zIndex: 100 }} onClick={(e) => e.stopPropagation()}>
                               <button 
                                 style={dropdownItemStyles} 
                                 onClick={() => {
@@ -1644,7 +1636,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                               padding: 0,
                                               font: 'inherit',
                                               cursor: 'pointer',
-                                              color: '#191919',
+                                              color: '#1c1d21',
                                               fontWeight: 'normal',
                                               textAlign: 'left',
                                               outline: 'none',
@@ -1681,11 +1673,14 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                               borderRadius: '8px',
                                               display: 'flex',
                                               alignItems: 'center',
-                                              justifyContent: 'center'
+                                              justifyContent: 'center',
+                                              background: '#f4f4f5',
+                                              border: '1px solid #e4e4e7',
+                                              color: '#3f3f46'
                                             }}
                                             title="Editar equipo"
                                           >
-                                            <Edit size={14} />
+                                            <Edit size={16} />
                                           </button>
                                           <button
                                             type="button"
@@ -1700,11 +1695,13 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                               display: 'flex',
                                               alignItems: 'center',
                                               justifyContent: 'center',
-                                              color: '#e57373'
+                                              background: '#fef2f2',
+                                              border: '1px solid #fee2e2',
+                                              color: '#dc2626'
                                             }}
                                             title="Eliminar equipo del torneo"
                                           >
-                                            <Trash2 size={14} />
+                                            <Trash2 size={16} />
                                           </button>
                                         </div>
                                       </td>
@@ -1727,7 +1724,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
             {activeTab === 'fair_play' && (
               <div className="glass-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '12px' }}>
-                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#191919', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#1c1d21', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <ThumbsUp size={18} color="#cc7a5c" /> Tabla General de Fair Play
                   </h3>
                   <button
@@ -1821,7 +1818,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                     padding: 0,
                                     font: 'inherit',
                                     cursor: 'pointer',
-                                    color: '#191919',
+                                    color: '#1c1d21',
                                     fontWeight: 'normal',
                                     textAlign: 'left',
                                     outline: 'none',
@@ -1882,51 +1879,33 @@ export default function TournamentDetailView({ tournament, onBack }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 
                 {/* Fixture Control Bar - ALWAYS VISIBLE */}
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center', 
-                  gap: '16px', 
-                  background: '#ffffff', 
-                  padding: '18px 24px', 
-                  borderRadius: '16px', 
-                  border: '1px solid #e6dfd3', 
-                  boxShadow: '0 2px 10px rgba(25, 20, 15, 0.03)'
-                }}>
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#191919' }}>
-                      Fixture
-                    </h3>
-                    <span style={{ fontSize: '12px', color: '#7f776f', marginTop: '2px', display: 'block' }}>
-                      {unifiedFixtures.length === 0 ? 'Sin fechas creadas' : `${unifiedFixtures.length} ${unifiedFixtures.length === 1 ? 'Fecha programada' : 'Fechas programadas'}`}
-                    </span>
+                <div className="tn-fx-bar">
+                  <div className="tn-fx-info">
+                    <div className="gx-icon-box"><Calendar size={22} /></div>
+                    <div style={{ minWidth: 0, display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
+                      <h3 className="tn-fx-title">Fixture</h3>
+                      <span style={{ color: '#d4d4d8', fontSize: '13px', fontWeight: 300 }}>|</span>
+                      <span style={{ fontSize: '13px', color: '#71717a', fontWeight: 400 }}>
+                        {unifiedFixtures.length === 0 ? 'Sin fechas creadas' : `${unifiedFixtures.length} ${unifiedFixtures.length === 1 ? 'fecha programada' : 'fechas programadas'}`}
+                      </span>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <div className="tn-fx-actions">
                     <button
                       onClick={handleCreateNewRound}
                       disabled={tournamentTeams.length < 2}
                       title={tournamentTeams.length < 2 ? "Se necesitan al menos 2 equipos para agregar fechas" : "Agregar Nueva Fecha"}
-                      style={{ 
-                        height: '36px', 
-                        fontSize: '0.8rem', 
-                        padding: '0 16px', 
-                        borderRadius: '10px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        opacity: tournamentTeams.length < 2 ? 0.5 : 1,
-                        cursor: tournamentTeams.length < 2 ? 'not-allowed' : 'pointer'
-                      }}
+                      className="tn-fx-btn"
                     >
-                      <Plus size={14} /> Nueva Fecha
+                      <Plus size={16} /> Nueva Fecha
                     </button>
                     {unifiedFixtures.length > 0 && (
                       <button
                         onClick={handleDeleteAllFixtures}
-                        className="danger"
-                        style={{ height: '36px', fontSize: '0.8rem', padding: '0 16px', borderRadius: '10px' }}
+                        className="danger tn-fx-btn"
+                        title="Eliminar Fixture Completo"
                       >
-                        <Trash2 size={14} /> Eliminar Fixture Completo
+                        <Trash2 size={16} /> <span>Eliminar Fixture</span>
                       </button>
                     )}
                   </div>
@@ -2008,17 +1987,17 @@ export default function TournamentDetailView({ tournament, onBack }) {
                             style={{ 
                               padding: 0, 
                               overflow: 'visible',
-                              border: '1px solid #e6dfd3',
+                              border: '1px solid #e4e4e7',
                               borderRadius: '16px',
                               boxShadow: '0 4px 20px rgba(25, 20, 15, 0.04)',
                               background: '#ffffff'
                             }}
                           >
                             
-                            {/* Card Header (Warm thematic header) */}
+                            {/* Card Header (Encabezado negro con texto blanco) */}
                             <div style={{
-                              background: '#eae4d8',
-                              borderBottom: '1px solid #d8cfc0',
+                              background: '#18181b',
+                              borderBottom: '1px solid #27272a',
                               padding: '12px 16px',
                               display: 'flex',
                               alignItems: 'center',
@@ -2027,7 +2006,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                               borderRadius: '16px 16px 0 0'
                             }}>
                               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-                                <span style={{ fontWeight: '800', letterSpacing: '1.5px', fontSize: '14px', textTransform: 'uppercase', color: '#191919' }}>
+                                <span style={{ fontWeight: '800', letterSpacing: '1.5px', fontSize: '14px', textTransform: 'uppercase', color: '#ffffff' }}>
                                   {r.name}
                                 </span>
                               </div>
@@ -2035,19 +2014,14 @@ export default function TournamentDetailView({ tournament, onBack }) {
                               {/* Kebab/More Options Button */}
                               <button
                                 type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setOpenDropdownMatchId(null);
-                                  setOpenDropdownZoneId(null);
-                                  setOpenDropdownRoundId(openDropdownRoundId === r.id ? null : r.id);
-                                }}
+                                onClick={(e) => toggleDropdown(e, 'round', r.id)}
                                 style={{
                                   position: 'absolute',
                                   right: '16px',
                                   background: 'none',
                                   border: 'none',
                                   padding: '6px',
-                                  color: '#7f776f',
+                                  color: '#d4d4d8',
                                   cursor: 'pointer',
                                   minWidth: 'auto',
                                   height: 'auto',
@@ -2063,7 +2037,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
                               {/* Dropdown Menu for Round */}
                               {openDropdownRoundId === r.id && (
-                                <div style={dropdownStyles} onClick={(e) => e.stopPropagation()}>
+                                <div style={getDropdownStyles(dropdownPosition === 'up', '42px', '42px')} onClick={(e) => e.stopPropagation()}>
                                   <button 
                                     style={dropdownItemStyles} 
                                     onClick={() => {
@@ -2097,7 +2071,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                     <Trash2 size={14} color="#d9534f" />
                                     Eliminar fecha
                                   </button>
-                                  <div style={{ height: '1px', background: '#e6dfd3', margin: '4px 0' }} />
+                                  <div style={{ height: '1px', background: '#e4e4e7', margin: '4px 0' }} />
                                   <button 
                                     style={dropdownItemStyles} 
                                     onClick={() => {
@@ -2106,7 +2080,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                     }}
                                     className="premium-dropdown-item"
                                   >
-                                    <FileSpreadsheet size={14} color="#7f776f" />
+                                    <FileSpreadsheet size={14} color="#6f737b" />
                                     Generar planillas en excel
                                   </button>
                                   <button 
@@ -2117,7 +2091,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                     }}
                                     className="premium-dropdown-item"
                                   >
-                                    <FileText size={14} color="#7f776f" />
+                                    <FileText size={14} color="#6f737b" />
                                     Generar planillas en pdf
                                   </button>
                                 </div>
@@ -2127,7 +2101,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                             {/* Card Body (Stacked matches) */}
                             <div style={{ display: 'flex', flexDirection: 'column', background: '#ffffff', borderRadius: '0 0 16px 16px', overflow: 'visible' }}>
                               {r.matches?.length === 0 ? (
-                                <div style={{ padding: '24px', textAlign: 'center', color: '#7f776f', fontSize: '13px' }}>
+                                <div style={{ padding: '24px', textAlign: 'center', color: '#6f737b', fontSize: '13px' }}>
                                   No hay partidos programados en esta fecha.
                                 </div>
                               ) : (
@@ -2142,9 +2116,9 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                         justifyContent: 'space-between',
                                         padding: '8px 16px',
                                         borderBottom: isLast ? 'none' : '1px solid #f0eae1',
-                                        background: index % 2 === 0 ? '#fcfbfa' : '#ffffff',
+                                        background: index % 2 === 0 ? '#fafafb' : '#ffffff',
                                         position: 'relative',
-                                        minHeight: '42px',
+                                        minHeight: '60px',
                                         borderRadius: isLast ? '0 0 16px 16px' : '0'
                                       }}
                                     >
@@ -2154,7 +2128,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                         textAlign: 'right', 
                                         fontWeight: '500', 
                                         fontSize: '0.85rem', 
-                                        color: '#191919', 
+                                        color: '#1c1d21', 
                                         paddingRight: '10px',
                                         wordBreak: 'break-word',
                                         lineHeight: '1.25'
@@ -2179,7 +2153,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                             <span style={{ 
                                               fontSize: '8px', 
                                               fontWeight: '800', 
-                                              color: '#191919', 
+                                              color: '#1c1d21', 
                                               letterSpacing: '0.8px', 
                                               textTransform: 'uppercase' 
                                             }}>
@@ -2192,7 +2166,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                               gap: '18px',
                                               fontSize: '15px', 
                                               fontWeight: '800', 
-                                              color: '#191919', 
+                                              color: '#1c1d21', 
                                               marginTop: '1px'
                                             }}>
                                               <span>{m.local_score ?? 0}</span>
@@ -2202,10 +2176,10 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                         ) : (m.date || m.time) ? (
                                           /* IMAGEN 2: Partido Programado con Fecha y Horario (sin cancha) */
                                           <>
-                                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#191919' }}>
+                                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#1c1d21' }}>
                                               {m.date ? m.date.split('-').reverse().slice(0, 2).join('/') : ''}
                                             </span>
-                                            <span style={{ fontSize: '10px', fontWeight: '600', color: '#7f776f' }}>
+                                            <span style={{ fontSize: '10px', fontWeight: '600', color: '#6f737b' }}>
                                               {m.time ? `${m.time.slice(0, 5)} Hs` : ''}
                                             </span>
                                           </>
@@ -2218,7 +2192,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                             gap: '20px',
                                             fontSize: '15px', 
                                             fontWeight: '700', 
-                                            color: '#8c827a' 
+                                            color: '#6f737b' 
                                           }}>
                                             <span>-</span>
                                             <span>-</span>
@@ -2232,7 +2206,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                         textAlign: 'left', 
                                         fontWeight: '500', 
                                         fontSize: '0.85rem', 
-                                        color: '#191919', 
+                                        color: '#1c1d21', 
                                         paddingLeft: '10px', 
                                         paddingRight: '32px', 
                                         wordBreak: 'break-word',
@@ -2244,12 +2218,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                       {/* Kebab button and Dropdown for Match */}
                                       <button
                                         type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setOpenDropdownRoundId(null);
-                                          setOpenDropdownZoneId(null);
-                                          setOpenDropdownMatchId(openDropdownMatchId === m.id ? null : m.id);
-                                        }}
+                                        onClick={(e) => toggleDropdown(e, 'match', m.id)}
                                         style={{
                                           position: 'absolute',
                                           right: '16px',
@@ -2258,7 +2227,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                           background: 'none',
                                           border: 'none',
                                           padding: '4px',
-                                          color: '#7f776f',
+                                          color: '#6f737b',
                                           cursor: 'pointer',
                                           minWidth: 'auto',
                                           height: 'auto',
@@ -2274,7 +2243,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
                                       {openDropdownMatchId === m.id && (
                                          <div 
-                                           style={dropdownStyles}
+                                           style={getDropdownStyles(dropdownPosition === 'up', '38px', '38px')}
                                            onClick={(e) => e.stopPropagation()}
                                          >
                                            <button 
@@ -2322,7 +2291,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                              <FileText size={14} color="#cc7a5c" />
                                              Generar Planilla
                                            </button>
-                                           <div style={{ height: '1px', background: '#e6dfd3', margin: '4px 0' }} />
+                                           <div style={{ height: '1px', background: '#e4e4e7', margin: '4px 0' }} />
                                            <button 
                                              style={{ ...dropdownItemStyles, color: '#d9534f' }} 
                                              onClick={() => {
@@ -2345,7 +2314,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                               {libreTeam && (
                                 <div style={{
                                   background: '#fbf5f2',
-                                  borderTop: '1px solid #e6dfd3',
+                                  borderTop: '1px solid #e4e4e7',
                                   padding: '10px 16px',
                                   fontSize: '0.82rem',
                                   color: '#cc7a5c',
@@ -2387,9 +2356,9 @@ export default function TournamentDetailView({ tournament, onBack }) {
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '6px',
-                          background: '#000000',
+                          background: '#18181b',
                           color: '#ffffff',
-                          border: '1px solid #333333',
+                          border: '1px solid #3f3f46',
                           borderRadius: '8px',
                           padding: '6px 12px',
                           fontSize: '12px',
@@ -2501,8 +2470,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
                               gap: '6px', 
                               fontSize: '13px',
                               background: '#ffffff',
-                              border: '1px solid #d8cfc0',
-                              color: '#191919',
+                              border: '1px solid #d4d4d8',
+                              color: '#1c1d21',
                               fontWeight: '600',
                               borderRadius: '8px',
                               cursor: 'pointer'
@@ -2594,8 +2563,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
                   <Calendar size={17} color="#cc7a5c" />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '800', color: '#191919' }}>Editar Información de la Fecha</h3>
-                  <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#7f776f' }}>Modificá el nombre, fecha y horario general</p>
+                  <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '800', color: '#1c1d21' }}>Editar Información de la Fecha</h3>
+                  <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#6f737b' }}>Modificá el nombre, fecha y horario general</p>
                 </div>
               </div>
               <button className="modal-close-btn" onClick={() => setShowEditRoundModal(false)}>
@@ -2639,7 +2608,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
               <div style={{
                 background: 'rgba(204, 122, 92, 0.06)', border: '1px solid rgba(204, 122, 92, 0.15)',
                 borderRadius: '10px', padding: '10px 14px',
-                fontSize: '11px', color: '#7f776f', lineHeight: '1.5'
+                fontSize: '11px', color: '#6f737b', lineHeight: '1.5'
               }}>
                 💡 Si configurás una hora general, todos los partidos de esta fecha usarán ese horario por defecto.
               </div>
@@ -2677,8 +2646,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
                   <Plus size={17} color="#cc7a5c" />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '800', color: '#191919' }}>Nuevo Partido</h3>
-                  <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#7f776f' }}>Agregá un partido a esta fecha del fixture</p>
+                  <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '800', color: '#1c1d21' }}>Nuevo Partido</h3>
+                  <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#6f737b' }}>Agregá un partido a esta fecha del fixture</p>
                 </div>
               </div>
               <button className="modal-close-btn" onClick={() => setShowNewMatchModal(false)}>
@@ -2807,8 +2776,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
                   <Edit size={17} color="#cc7a5c" />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '800', color: '#191919' }}>Editar Partido</h3>
-                  <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#7f776f' }}>Modificá los datos del partido programado</p>
+                  <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '800', color: '#1c1d21' }}>Editar Partido</h3>
+                  <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#6f737b' }}>Modificá los datos del partido programado</p>
                 </div>
               </div>
               <button className="modal-close-btn" onClick={() => setShowEditMatchModal(false)}>
@@ -2944,7 +2913,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
       {loadingTeam && (
         <div style={{
           position: 'fixed', inset: 0,
-          background: 'rgba(0,0,0,0.55)', display: 'flex',
+          background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(3px)', display: 'flex',
           alignItems: 'center', justifyContent: 'center',
           zIndex: 3001
         }}>
@@ -2992,7 +2961,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
           <span style={{
             fontSize: '13px',
             fontWeight: '600',
-            color: '#f5ede4',
+            color: '#f4f4f5',
             whiteSpace: 'nowrap'
           }}>
             {customAlert.message}
@@ -3004,7 +2973,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              color: '#a8957e',
+              color: '#a1a1aa',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -3024,7 +2993,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0, 0, 0, 0.38)',
+            background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(3px)',
             zIndex: 99999,
             display: 'flex',
             alignItems: 'center',
@@ -3037,7 +3006,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
           <div 
             style={{
               background: '#ffffff',
-              border: '1px solid #e6dfd3',
+              border: '1px solid #e4e4e7',
               borderRadius: '16px',
               maxWidth: '460px',
               width: '100%',
@@ -3065,7 +3034,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                 }}>
                   <AlertTriangle size={18} color="#856404" />
                 </div>
-                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '700', color: '#191919' }}>
+                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '700', color: '#1c1d21' }}>
                   {customConfirm.title || 'Confirmación'}
                 </h3>
               </div>
@@ -3078,7 +3047,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
               </button>
             </div>
 
-            <p style={{ fontSize: '14px', color: '#383530', margin: 0, lineHeight: '1.5', fontWeight: '500' }}>
+            <p style={{ fontSize: '14px', color: '#3f4249', margin: 0, lineHeight: '1.5', fontWeight: '500' }}>
               {customConfirm.message}
             </p>
 
@@ -3091,9 +3060,9 @@ export default function TournamentDetailView({ tournament, onBack }) {
                     height: '38px',
                     padding: '0 16px',
                     background: '#ffffff',
-                    border: '1px solid #d8cfc0',
+                    border: '1px solid #d4d4d8',
                     borderRadius: '8px',
-                    color: '#191919',
+                    color: '#1c1d21',
                     fontWeight: '600',
                     fontSize: '13px',
                     cursor: 'pointer',
@@ -3109,10 +3078,10 @@ export default function TournamentDetailView({ tournament, onBack }) {
                 style={{
                   height: '38px',
                   padding: '0 18px',
-                  background: '#191919',
+                  background: 'var(--gx-primary)',
                   border: 'none',
                   borderRadius: '8px',
-                  color: '#ffffff',
+                  color: '#151515',
                   fontWeight: '600',
                   fontSize: '13px',
                   cursor: 'pointer',
@@ -3121,8 +3090,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
                   gap: '6px',
                   transition: 'background 0.15s'
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = '#333333'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = '#191919'; }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--gx-primary-hover)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--gx-primary)'; }}
               >
                 {customConfirm.confirmText || 'Aceptar'}
               </button>
@@ -3138,19 +3107,19 @@ export default function TournamentDetailView({ tournament, onBack }) {
           {mobileUserOpen && (
             <div className="mobile-dropdown-menu animate-fade-in" style={{
               position: 'fixed',
-              bottom: '80px',
-              right: '16px',
+              bottom: '74px',
+              right: '12px',
               zIndex: 10001,
               minWidth: '220px',
-              background: '#fdfcfb',
-              border: '1px solid #d8cfc0',
-              borderRadius: '12px',
-              boxShadow: '0 -10px 30px rgba(25, 20, 15, 0.08)',
+              background: '#171717',
+              border: '1px solid #27272a',
+              borderRadius: '16px',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)',
               overflow: 'hidden'
             }}>
-              <div style={{ padding: '16px', borderBottom: '1px solid #eae4d8' }}>
-                <p style={{ margin: 0, fontWeight: '700', fontSize: '13px', color: '#383530' }}>Hola {user?.first_name} {user?.last_name}</p>
-                <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#7f776f', fontWeight: '500' }}>{user?.role}</p>
+              <div style={{ padding: '16px', borderBottom: '1px solid #27272a' }}>
+                <p style={{ margin: 0, fontWeight: '700', fontSize: '13px', color: '#ffffff', textTransform: 'uppercase' }}>Hola {user?.first_name} {user?.last_name}</p>
+                <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#a1a1aa', fontWeight: '500' }}>{user?.role}</p>
               </div>
               <button 
                 onClick={() => {
@@ -3161,10 +3130,10 @@ export default function TournamentDetailView({ tournament, onBack }) {
                 className="mobile-logout-btn"
                 style={{
                   width: '100%',
-                  background: '#fdfcfb',
-                  color: '#cc7a5c',
+                  background: 'transparent',
+                  color: '#f87171',
                   border: 'none',
-                  borderTop: '1px solid #e5c5bb',
+                  borderTop: '1px solid #27272a',
                   padding: '12px',
                   fontSize: '13px',
                   fontWeight: '700',
@@ -3189,7 +3158,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
               }}
               className={`mobile-bottom-nav-item ${activeTab === 'principal' && !mobileUserOpen ? 'active' : ''}`}
             >
-              <Trophy size={22} />
+              <Trophy size={20} />
+              <span className="mbn-label">Principal</span>
             </button>
             <button 
               onClick={() => {
@@ -3199,7 +3169,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
               className={`mobile-bottom-nav-item ${activeTab === 'fair_play' && !mobileUserOpen ? 'active' : ''}`}
               title="Fair Play"
             >
-              <ThumbsUp size={22} />
+              <ThumbsUp size={20} />
+              <span className="mbn-label">Fair Play</span>
             </button>
             <button 
               onClick={() => {
@@ -3208,7 +3179,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
               }}
               className={`mobile-bottom-nav-item ${activeTab === 'fixture' && !mobileUserOpen ? 'active' : ''}`}
             >
-              <Calendar size={22} />
+              <Calendar size={20} />
+              <span className="mbn-label">Fixture</span>
             </button>
             <button 
               onClick={() => {
@@ -3217,7 +3189,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
               }}
               className={`mobile-bottom-nav-item ${activeTab === 'buena_fe' && !mobileUserOpen ? 'active' : ''}`}
             >
-              <UserCheck size={22} />
+              <UserCheck size={20} />
+              <span className="mbn-label">Buena Fe</span>
             </button>
             <button 
               onClick={() => {
@@ -3225,7 +3198,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
               }}
               className={`mobile-bottom-nav-item ${mobileUserOpen ? 'active' : ''}`}
             >
-              <User size={22} />
+              <User size={20} />
+              <span className="mbn-label">Cuenta</span>
             </button>
           </div>
         </>,
@@ -3238,7 +3212,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0, 0, 0, 0.38)',
+            background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(3px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -3251,7 +3225,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
           <div 
             style={{
               background: '#ffffff',
-              border: '1px solid #d8cfc0',
+              border: '1px solid #d4d4d8',
               borderRadius: '16px',
               width: '100%',
               maxWidth: '480px',
@@ -3265,22 +3239,22 @@ export default function TournamentDetailView({ tournament, onBack }) {
             {/* Header */}
             <div style={{
               padding: '16px',
-              borderBottom: '1px solid #eae4d8',
+              borderBottom: '1px solid #e4e4e7',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center'
             }}>
-              <span style={{ fontWeight: '850', fontSize: '1.05rem', color: '#383530' }}>Importar Equipo</span>
+              <span style={{ fontWeight: '850', fontSize: '1.05rem', color: '#3f4249' }}>Importar Equipo</span>
               <button 
                 onClick={() => setImportTeamZoneId(null)}
-                style={{ background: 'none', border: 'none', color: '#7f776f', padding: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                style={{ background: 'none', border: 'none', color: '#6f737b', padding: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
               >
                 <X size={18} />
               </button>
             </div>
             
             {/* Search Box */}
-            <div style={{ padding: '12px 16px', borderBottom: '1px solid #eae4d8' }}>
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid #e4e4e7' }}>
               <input 
                 type="text" 
                 placeholder="Buscar equipo por nombre..."
@@ -3290,11 +3264,11 @@ export default function TournamentDetailView({ tournament, onBack }) {
                   width: '100%',
                   height: '38px',
                   borderRadius: '8px',
-                  border: '1px solid #d8cfc0',
+                  border: '1px solid #d4d4d8',
                   padding: '0 12px',
                   fontSize: '13px',
                   background: '#ffffff',
-                  color: '#191919',
+                  color: '#1c1d21',
                   outline: 'none'
                 }}
               />
@@ -3313,7 +3287,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                 
                 if (filtered.length === 0) {
                   return (
-                    <div style={{ padding: '24px', textAlign: 'center', color: '#7f776f', fontSize: '13px' }}>
+                    <div style={{ padding: '24px', textAlign: 'center', color: '#6f737b', fontSize: '13px' }}>
                       No se encontraron equipos disponibles para importar.
                     </div>
                   );
@@ -3329,7 +3303,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                       justifyContent: 'space-between',
                       padding: '12px 16px',
                       borderBottom: idx === filtered.length - 1 ? 'none' : '1px solid #f0eae1',
-                      background: idx % 2 === 0 ? '#fcfbfa' : '#ffffff',
+                      background: idx % 2 === 0 ? '#fafafb' : '#ffffff',
                       cursor: 'pointer'
                     }}
                     className="table-row-hover"
@@ -3339,7 +3313,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                         width: '32px',
                         height: '32px',
                         borderRadius: '6px',
-                        background: '#eae4d8',
+                        background: '#e4e4e7',
                         overflow: 'hidden',
                         display: 'flex',
                         alignItems: 'center',
@@ -3351,7 +3325,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                           <Users size={16} color="#cc7a5c" />
                         )}
                       </div>
-                      <span style={{ fontSize: '14px', fontWeight: '700', color: '#383530' }}>{t.name}</span>
+                      <span style={{ fontSize: '14px', fontWeight: '700', color: '#3f4249' }}>{t.name}</span>
                     </div>
                     <Plus size={16} color="#cc7a5c" style={{ flexShrink: 0 }} />
                   </div>
@@ -3369,7 +3343,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0, 0, 0, 0.38)',
+            background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(3px)',
             zIndex: 99999,
             display: 'flex',
             alignItems: 'center',
@@ -3413,7 +3387,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                   background: 'none', 
                   border: 'none', 
                   cursor: 'pointer', 
-                  color: '#7f776f',
+                  color: '#6f737b',
                   display: 'flex',
                   alignItems: 'center',
                   padding: '6px',
@@ -3466,7 +3440,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
         >
           <div 
             style={{
-              background: '#fcfbfa',
+              background: '#fafafb',
               width: '100%',
               maxWidth: isMobile ? '100%' : '520px',
               height: isMobile ? '92vh' : 'auto',
@@ -3483,7 +3457,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
             {/* Header */}
             <div style={{
               height: '56px',
-              background: '#000000',
+              background: '#18181b',
               color: '#ffffff',
               display: 'flex',
               alignItems: 'center',
@@ -3538,7 +3512,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
               gap: '16px'
             }}>
               {loadingDuplicates ? (
-                <div style={{ textAlign: 'center', padding: '40px', color: '#7f776f' }}>
+                <div style={{ textAlign: 'center', padding: '40px', color: '#6f737b' }}>
                   Cargando jugadores duplicados...
                 </div>
               ) : duplicatePlayers.length === 0 ? (
@@ -3548,10 +3522,10 @@ export default function TournamentDetailView({ tournament, onBack }) {
                   background: '#ffffff', 
                   borderRadius: '12px',
                   border: '1px solid #e0d8cc',
-                  color: '#7f776f' 
+                  color: '#6f737b' 
                 }}>
-                  <Users size={36} color="#7f776f" style={{ margin: '0 auto 12px' }} />
-                  <p style={{ margin: 0, fontWeight: '700', fontSize: '15px', color: '#191919' }}>
+                  <Users size={36} color="#6f737b" style={{ margin: '0 auto 12px' }} />
+                  <p style={{ margin: 0, fontWeight: '700', fontSize: '15px', color: '#1c1d21' }}>
                     No hay jugadores duplicados
                   </p>
                   <p style={{ margin: '6px 0 0', fontSize: '13px' }}>
@@ -3563,13 +3537,13 @@ export default function TournamentDetailView({ tournament, onBack }) {
                   <div key={item.player_id} style={{
                     background: '#ffffff',
                     borderRadius: '14px',
-                    border: '1px solid #d8cfc0',
+                    border: '1px solid #d4d4d8',
                     overflow: 'hidden',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
                   }}>
                     {/* Header Box (Black like in screenshot) */}
                     <div style={{
-                      background: '#000000',
+                      background: '#18181b',
                       color: '#ffffff',
                       padding: '12px 16px',
                       textAlign: 'center',
@@ -3607,20 +3581,20 @@ export default function TournamentDetailView({ tournament, onBack }) {
                           alignItems: 'center',
                           padding: '12px 14px',
                           borderBottom: idx === item.teams.length - 1 ? 'none' : '1px solid #ebe5dc',
-                          background: idx % 2 === 0 ? '#ffffff' : '#faf8f5'
+                          background: idx % 2 === 0 ? '#ffffff' : '#fafafb'
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
                             {t.team_logo ? (
                               <img src={t.team_logo} alt="" style={{ width: '22px', height: '22px', borderRadius: '4px', objectFit: 'contain' }} />
                             ) : (
-                              <Shield size={16} color="#7f776f" />
+                              <Shield size={16} color="#6f737b" />
                             )}
-                            <span style={{ fontSize: '13px', fontWeight: '600', color: '#191919', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <span style={{ fontSize: '13px', fontWeight: '600', color: '#1c1d21', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {t.team_name}
                             </span>
                           </div>
 
-                          <div style={{ textAlign: 'center', fontSize: '13px', fontWeight: '700', color: '#191919' }}>
+                          <div style={{ textAlign: 'center', fontSize: '13px', fontWeight: '700', color: '#1c1d21' }}>
                             {t.pj}
                           </div>
 
@@ -3676,7 +3650,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                               style={{
                                 background: 'none',
                                 border: 'none',
-                                color: '#191919',
+                                color: '#1c1d21',
                                 cursor: 'pointer',
                                 padding: '4px',
                                 display: 'flex',
@@ -3780,7 +3754,7 @@ const EditIconOverlay = ({ onClick }) => {
         width: '30px',
         height: '30px',
         borderRadius: '50%',
-        background: '#000000',
+        background: '#18181b',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -3912,7 +3886,7 @@ const TeamDetailEditor = ({
       {/* Escudo & Foto del equipo */}
       <div style={{ display: 'flex', gap: isMobile ? '16px' : '24px', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: isMobile ? '105px' : '120px' }}>
-          <span style={{ fontSize: '13px', color: '#7f776f', fontWeight: '600' }}>Escudo</span>
+          <span style={{ fontSize: '13px', color: '#6f737b', fontWeight: '600' }}>Escudo</span>
           <div 
             onClick={() => logoInputRef.current?.click()}
             style={{ 
@@ -3920,7 +3894,7 @@ const TeamDetailEditor = ({
               height: isMobile ? '100px' : '115px', 
               borderRadius: '8px', 
               background: '#ffffff', 
-              border: '1px solid #d8cfc0', 
+              border: '1px solid #d4d4d8', 
               position: 'relative', 
               display: 'flex', 
               alignItems: 'center', 
@@ -3932,21 +3906,21 @@ const TeamDetailEditor = ({
             {logoPreview ? (
               <img src={logoPreview} alt="Escudo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             ) : (
-              <Users size={32} color="#7f776f" />
+              <Users size={32} color="#6f737b" />
             )}
             <EditIconOverlay onClick={(e) => { e.stopPropagation(); logoInputRef.current?.click(); }} />
           </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
-          <span style={{ fontSize: '13px', color: '#7f776f', fontWeight: '600' }}>Foto del equipo</span>
+          <span style={{ fontSize: '13px', color: '#6f737b', fontWeight: '600' }}>Foto del equipo</span>
           <div 
             onClick={() => photoInputRef.current?.click()}
             style={{ 
               height: isMobile ? '100px' : '115px', 
               borderRadius: '8px', 
               background: '#ffffff', 
-              border: '1px solid #d8cfc0', 
+              border: '1px solid #d4d4d8', 
               position: 'relative', 
               display: 'flex', 
               alignItems: 'center', 
@@ -3958,7 +3932,7 @@ const TeamDetailEditor = ({
             {photoPreview ? (
               <img src={photoPreview} alt="Foto del equipo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              <FileSpreadsheet size={32} color="#7f776f" />
+              <FileSpreadsheet size={32} color="#6f737b" />
             )}
             <EditIconOverlay onClick={(e) => { e.stopPropagation(); photoInputRef.current?.click(); }} />
           </div>
@@ -3967,7 +3941,7 @@ const TeamDetailEditor = ({
 
       {/* Nombre */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <span style={{ fontSize: '12px', color: '#7f776f', fontWeight: '600' }}>Nombre</span>
+        <span style={{ fontSize: '12px', color: '#6f737b', fontWeight: '600' }}>Nombre</span>
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
           <input 
             type="text" 
@@ -3976,11 +3950,11 @@ const TeamDetailEditor = ({
             style={{
               width: '100%',
               background: '#ffffff',
-              border: '1px solid #d8cfc0',
+              border: '1px solid #d4d4d8',
               borderRadius: '8px',
               padding: '10px 40px 10px 12px',
               fontSize: '0.92rem',
-              color: '#191919',
+              color: '#1c1d21',
               fontWeight: '600',
               outline: 'none',
               height: '42px',
@@ -4021,10 +3995,10 @@ const TeamDetailEditor = ({
       {/* JUGADORES/AS LIST (Contenido fluido integrado en la pantalla) */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <div style={{
-          background: '#f4efe6',
-          border: '1px solid #d8cfc0',
+          background: '#f4f4f6',
+          border: '1px solid #d4d4d8',
           borderRadius: '8px',
-          color: '#7f776f',
+          color: '#6f737b',
           padding: '10px 16px',
           display: 'flex',
           justifyContent: 'space-between',
@@ -4040,12 +4014,12 @@ const TeamDetailEditor = ({
 
         <div style={{
           background: '#ffffff',
-          border: '1px solid #d8cfc0',
+          border: '1px solid #d4d4d8',
           borderRadius: '8px',
           overflow: 'hidden'
         }}>
           {mobileRoster.length === 0 ? (
-            <div style={{ padding: '24px', textAlign: 'center', color: '#7f776f', fontSize: '13px' }}>
+            <div style={{ padding: '24px', textAlign: 'center', color: '#6f737b', fontSize: '13px' }}>
               No hay jugadores en el catálogo. ¡Agrega uno nuevo!
             </div>
           ) : (
@@ -4058,7 +4032,7 @@ const TeamDetailEditor = ({
                   justifyContent: 'space-between',
                   padding: '10px 16px',
                   borderBottom: idx === mobileRoster.length - 1 ? 'none' : '1px solid #f0eae1',
-                  background: idx % 2 === 0 ? '#fcfbfa' : '#ffffff'
+                  background: idx % 2 === 0 ? '#fafafb' : '#ffffff'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -4066,7 +4040,7 @@ const TeamDetailEditor = ({
                     width: '32px',
                     height: '32px',
                     borderRadius: '50%',
-                    background: '#eae4d8',
+                    background: '#e4e4e7',
                     overflow: 'hidden',
                     display: 'flex',
                     alignItems: 'center',
@@ -4078,7 +4052,7 @@ const TeamDetailEditor = ({
                       <UserCheck size={14} color="#cc7a5c" />
                     )}
                   </div>
-                  <span style={{ fontSize: '13px', fontWeight: '600', color: '#191919' }}>
+                  <span style={{ fontSize: '13px', fontWeight: '600', color: '#1c1d21' }}>
                     {item.player.last_name}, {item.player.first_name}
                   </span>
                 </div>
@@ -4127,7 +4101,7 @@ const TeamDetailEditor = ({
       </button>
 
       {/* Línea divisoria leve entre Añadir Jugador y Guardar */}
-      <div style={{ height: '1px', background: '#e6dfd3', margin: '2px 0' }} />
+      <div style={{ height: '1px', background: '#e4e4e7', margin: '2px 0' }} />
 
       <button 
         type="button"
@@ -4190,7 +4164,7 @@ const TeamDetailEditor = ({
         left: '60px',
         right: 0,
         bottom: 0,
-        background: '#fcfbfa',
+        background: '#fafafb',
         zIndex: 1000,
         display: 'flex',
         flexDirection: 'column',
@@ -4228,7 +4202,7 @@ const TeamDetailEditor = ({
           >
             <ArrowLeft size={16} /> Volver al Torneo
           </button>
-          <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '800', color: '#191919' }}>
+          <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '800', color: '#1c1d21' }}>
             {teamName}
           </h2>
           <div style={{ width: '130px' }} />
@@ -4241,7 +4215,7 @@ const TeamDetailEditor = ({
           flex: 1,
           minHeight: 0,
           background: '#ffffff',
-          border: '1px solid #e6dfd3',
+          border: '1px solid #e4e4e7',
           borderRadius: '20px',
           boxShadow: '0 4px 24px rgba(25, 20, 15, 0.05)',
           display: 'flex',
@@ -4260,7 +4234,7 @@ const TeamDetailEditor = ({
           {/* Footer Fijo en la base de la tarjeta */}
           <div style={{
             background: '#ffffff',
-            borderTop: '1px solid #e6dfd3',
+            borderTop: '1px solid #e4e4e7',
             padding: '16px 28px',
             flexShrink: 0,
             boxShadow: '0 -4px 12px rgba(25, 20, 15, 0.04)'
@@ -4290,27 +4264,27 @@ const TeamDetailEditor = ({
       right: 0,
       bottom: 0,
       zIndex: 9999,
-      background: '#fcfbfa',
+      background: '#fafafb',
       display: 'flex',
       flexDirection: 'column'
     }}>
       {/* Header fijo superior */}
       <div style={{
         height: '56px',
-        background: '#fdfcfb',
-        borderBottom: '1px solid #eae4d8',
+        background: '#fafafb',
+        borderBottom: '1px solid #e4e4e7',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '0 16px',
-        color: '#383530',
+        color: '#3f4249',
         flexShrink: 0,
         zIndex: 100
       }}>
         <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#cc7a5c', padding: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
           <ArrowLeft size={20} />
         </button>
-        <span style={{ fontWeight: '800', fontSize: '1.05rem', color: '#383530' }}>{teamName}</span>
+        <span style={{ fontWeight: '800', fontSize: '1.05rem', color: '#3f4249' }}>{teamName}</span>
         <button onClick={handleRemove} style={{ background: 'none', border: 'none', color: '#cc7a5c', padding: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
           <MoreVertical size={20} />
         </button>
@@ -4331,8 +4305,8 @@ const TeamDetailEditor = ({
 
       {/* Footer fijo inferior con los 3 botones */}
       <div style={{
-        background: '#fdfcfb',
-        borderTop: '1px solid #eae4d8',
+        background: '#fafafb',
+        borderTop: '1px solid #e4e4e7',
         padding: '12px 16px calc(12px + env(safe-area-inset-bottom, 0px))',
         flexShrink: 0,
         zIndex: 100,

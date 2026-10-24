@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api';
 import { X, Check, Image as ImageIcon, Eye, EyeOff, Pencil, Trash2, User, Lock, MapPin, Calendar, Users, FileText, Upload } from 'lucide-react';
+import '../../styles/data.css';
 
 const DelegateForm = ({ delegate, onClose, onSuccess }) => {
   const [teams, setTeams] = useState([]);
@@ -105,27 +106,27 @@ const DelegateForm = ({ delegate, onClose, onSuccess }) => {
   };
 
   return (
-    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '20px', padding: '32px', marginBottom: '24px' }} className="anthropic-theme animate-fade-in">
+    <div className="form-container anthropic-theme animate-fade-in">
 
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Sección 1: Acceso */}
         <div>
-          <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Lock size={14} /> Acceso
           </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '20px' }}>
             <div className="input-group">
               <label>Usuario *</label>
               <div style={{ position: 'relative' }}>
-                <User size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
-                <input type="text" required autoComplete="off" value={formData.username} onChange={(e) => { setFormData({ ...formData, username: e.target.value }); setError(''); }} style={{ paddingLeft: '40px', height: '42px', borderColor: error && error.includes('usuario') ? '#e07070' : 'var(--border-subtle)' }} />
+                <User size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#9a9aa3' }} />
+                <input type="text" required autoComplete="off" value={formData.username} onChange={(e) => { setFormData({ ...formData, username: e.target.value }); setError(''); }} style={{ paddingLeft: '40px', height: '42px', borderColor: error && error.includes('usuario') ? '#dc2626' : 'var(--border-subtle)' }} />
               </div>
             </div>
             <div className="input-group">
               <label>Contraseña {delegate ? '(opcional)' : '*'}</label>
               <div style={{ position: 'relative' }}>
-                <Lock size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
+                <Lock size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#9a9aa3' }} />
                 <input 
                   type={showPassword ? "text" : "password"} 
                   required={!delegate} 
@@ -162,57 +163,57 @@ const DelegateForm = ({ delegate, onClose, onSuccess }) => {
         </div>
 
         {/* Sección 2: Datos Personales */}
-        <div style={{ borderTop: '1px solid #e6dfd3', paddingTop: '20px' }}>
-          <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '20px' }}>
+          <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <User size={14} /> Datos Personales
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '20px' }}>
               <div className="input-group">
                 <label>Nombre *</label>
                 <div style={{ position: 'relative' }}>
-                  <User size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
-                  <input type="text" required value={formData.first_name} onChange={(e) => { const val = e.target.value.replace(/(^\w|\s\w)/g, m => m.toUpperCase()); setFormData({ ...formData, first_name: val }); setError(''); }} style={{ paddingLeft: '40px', height: '42px', borderColor: error ? '#e07070' : 'var(--border-subtle)' }} />
+                  <User size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#9a9aa3' }} />
+                  <input type="text" required value={formData.first_name} onChange={(e) => { const val = e.target.value.replace(/(^\w|\s\w)/g, m => m.toUpperCase()); setFormData({ ...formData, first_name: val }); setError(''); }} style={{ paddingLeft: '40px', height: '42px', borderColor: error ? '#dc2626' : 'var(--border-subtle)' }} />
                 </div>
               </div>
               <div className="input-group">
                 <label>Apellido *</label>
                 <div style={{ position: 'relative' }}>
-                  <User size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
-                  <input type="text" required value={formData.last_name} onChange={(e) => { const val = e.target.value.replace(/(^\w|\s\w)/g, m => m.toUpperCase()); setFormData({ ...formData, last_name: val }); setError(''); }} style={{ paddingLeft: '40px', height: '42px', borderColor: error ? '#e07070' : 'var(--border-subtle)' }} />
+                  <User size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#9a9aa3' }} />
+                  <input type="text" required value={formData.last_name} onChange={(e) => { const val = e.target.value.replace(/(^\w|\s\w)/g, m => m.toUpperCase()); setFormData({ ...formData, last_name: val }); setError(''); }} style={{ paddingLeft: '40px', height: '42px', borderColor: error ? '#dc2626' : 'var(--border-subtle)' }} />
                 </div>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '20px' }}>
               <div className="input-group">
                 <label>DNI</label>
                 <div style={{ position: 'relative' }}>
-                  <ImageIcon size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
+                  <ImageIcon size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#9a9aa3' }} />
                   <input type="text" value={formData.dni} onChange={(e) => setFormData({ ...formData, dni: e.target.value })} style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)' }} />
                 </div>
               </div>
               <div className="input-group" style={{ gridColumn: 'span 2' }}>
                 <label>Dirección</label>
                 <div style={{ position: 'relative' }}>
-                  <MapPin size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
+                  <MapPin size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#9a9aa3' }} />
                   <input type="text" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)' }} />
                 </div>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '20px' }}>
               <div className="input-group">
                 <label>Nacimiento</label>
                 <div style={{ position: 'relative' }}>
-                  <Calendar size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
+                  <Calendar size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#9a9aa3' }} />
                   <input type="date" value={formData.birth_date} onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })} style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)' }} />
                 </div>
               </div>
               <div className="input-group">
                 <label>Equipo</label>
                 <div style={{ position: 'relative' }}>
-                  <Users size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c', pointerEvents: 'none', zIndex: 10 }} />
+                  <Users size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#9a9aa3', pointerEvents: 'none', zIndex: 10 }} />
                   <select value={formData.team} onChange={(e) => setFormData({ ...formData, team: e.target.value })} style={{ paddingLeft: '40px', height: '42px', borderColor: 'var(--border-subtle)', width: '100%' }}>
                     <option value="">Ninguno</option>
                     {teams.map(team => (
@@ -226,22 +227,22 @@ const DelegateForm = ({ delegate, onClose, onSuccess }) => {
         </div>
 
         {/* Sección 3: DNI */}
-        <div style={{ borderTop: '1px solid #e6dfd3', paddingTop: '20px' }}>
-          <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '20px' }}>
+          <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <FileText size={14} /> Identificación DNI
           </h3>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '24px' }}>
             {/* Foto DNI Frente */}
             <div className="input-group">
               <label>DNI Frente</label>
               <div style={{ 
-                border: previews.dni_front ? '1px solid #e6dfd3' : '2px dashed #c4b9a3', 
+                border: previews.dni_front ? '1px solid var(--border-subtle)' : '2px dashed #c4b9a3', 
                 borderRadius: '12px', 
                 padding: previews.dni_front ? '16px' : '24px', 
                 textAlign: 'center', 
                 position: 'relative', 
-                background: '#fcfbfa',
+                background: '#fafafb',
                 minHeight: '130px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -263,7 +264,7 @@ const DelegateForm = ({ delegate, onClose, onSuccess }) => {
                 
                 {previews.dni_front ? (
                   <>
-                    <div style={{ position: 'relative', width: '100%', height: '100px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #e6dfd3' }}>
+                    <div style={{ position: 'relative', width: '100%', height: '100px', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
                       <img src={previews.dni_front} alt="DNI Frente" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                     </div>
                     <div style={{ display: 'flex', gap: '8px', zIndex: 10 }}>
@@ -279,7 +280,7 @@ const DelegateForm = ({ delegate, onClose, onSuccess }) => {
                         type="button"
                         onClick={(e) => { e.stopPropagation(); handleClearFile('dni_front'); }}
                         className="secondary"
-                        style={{ padding: '6px 12px', height: '30px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#cc7a5c', borderColor: '#e5c5bb' }}
+                        style={{ padding: '6px 12px', height: '30px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#dc2626', borderColor: '#fecaca' }}
                       >
                         <Trash2 size={12} /> Eliminar
                       </button>
@@ -287,8 +288,8 @@ const DelegateForm = ({ delegate, onClose, onSuccess }) => {
                   </>
                 ) : (
                   <div style={{ pointerEvents: 'none' }}>
-                    <Upload size={24} style={{ color: '#cc7a5c', marginBottom: '4px' }} />
-                    <div style={{ fontSize: '12px', fontWeight: '600', color: '#191919' }}>Subir Frente</div>
+                    <Upload size={24} style={{ color: 'var(--gx-primary-ink)', marginBottom: '4px' }} />
+                    <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)' }}>Subir Frente</div>
                   </div>
                 )}
               </div>
@@ -298,12 +299,12 @@ const DelegateForm = ({ delegate, onClose, onSuccess }) => {
             <div className="input-group">
               <label>DNI Dorso</label>
               <div style={{ 
-                border: previews.dni_back ? '1px solid #e6dfd3' : '2px dashed #c4b9a3', 
+                border: previews.dni_back ? '1px solid var(--border-subtle)' : '2px dashed #c4b9a3', 
                 borderRadius: '12px', 
                 padding: previews.dni_back ? '16px' : '24px', 
                 textAlign: 'center', 
                 position: 'relative', 
-                background: '#fcfbfa',
+                background: '#fafafb',
                 minHeight: '130px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -325,7 +326,7 @@ const DelegateForm = ({ delegate, onClose, onSuccess }) => {
                 
                 {previews.dni_back ? (
                   <>
-                    <div style={{ position: 'relative', width: '100%', height: '100px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #e6dfd3' }}>
+                    <div style={{ position: 'relative', width: '100%', height: '100px', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
                       <img src={previews.dni_back} alt="DNI Dorso" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                     </div>
                     <div style={{ display: 'flex', gap: '8px', zIndex: 10 }}>
@@ -341,7 +342,7 @@ const DelegateForm = ({ delegate, onClose, onSuccess }) => {
                         type="button"
                         onClick={(e) => { e.stopPropagation(); handleClearFile('dni_back'); }}
                         className="secondary"
-                        style={{ padding: '6px 12px', height: '30px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#cc7a5c', borderColor: '#e5c5bb' }}
+                        style={{ padding: '6px 12px', height: '30px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#dc2626', borderColor: '#fecaca' }}
                       >
                         <Trash2 size={12} /> Eliminar
                       </button>
@@ -349,8 +350,8 @@ const DelegateForm = ({ delegate, onClose, onSuccess }) => {
                   </>
                 ) : (
                   <div style={{ pointerEvents: 'none' }}>
-                    <Upload size={24} style={{ color: '#cc7a5c', marginBottom: '4px' }} />
-                    <div style={{ fontSize: '12px', fontWeight: '600', color: '#191919' }}>Subir Dorso</div>
+                    <Upload size={24} style={{ color: 'var(--gx-primary-ink)', marginBottom: '4px' }} />
+                    <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)' }}>Subir Dorso</div>
                   </div>
                 )}
               </div>
@@ -359,14 +360,14 @@ const DelegateForm = ({ delegate, onClose, onSuccess }) => {
         </div>
         
         {error && (
-          <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'rgba(204, 122, 92, 0.05)', color: '#cc7a5c', fontSize: '13px', border: '1px solid #e5c5bb' }}>
+          <div style={{ padding: '12px 16px', borderRadius: '12px', background: '#fef2f2', color: '#dc2626', fontSize: '13px', border: '1px solid #fecaca' }}>
             {typeof error === 'object' ? Object.values(error).flat().join(', ') : error}
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '16px', borderTop: '1px solid #e6dfd3' }}>
-          <button type="button" onClick={onClose} className="secondary" style={{ height: '40px' }}>Cancelar</button>
-          <button type="submit" disabled={submitting} style={{ height: '40px' }}>
+        <div className="dt-form-actions">
+          <button type="button" onClick={onClose} className="secondary">Cancelar</button>
+          <button type="submit" disabled={submitting}>
             {submitting ? '...' : <><Check size={18} /> {delegate ? 'Guardar' : 'Crear'}</>}
           </button>
         </div>

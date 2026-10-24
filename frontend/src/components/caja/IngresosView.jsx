@@ -31,17 +31,17 @@ function TransaccionModal({ show, onClose, onSave, initial, tipo, equipos }) {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.38)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="form-container" style={{ width: '100%', maxWidth: '520px', margin: 0, animation: 'fadeIn 0.25s ease-out' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(3px)', zIndex: 9500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+      <div className="form-container" style={{ width: '100%', maxWidth: '520px', margin: 0, maxHeight: '100%', overflowY: 'auto', borderRadius: '18px', boxShadow: '0 24px 60px rgba(0,0,0,0.3)', animation: 'fadeIn 0.25s ease-out' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 800 }}>{initial?.id ? 'Editar' : 'Nuevo'} {tipo === 'ingreso' ? 'Ingreso' : 'Egreso'}</h2>
+          <h2 style={{ fontSize: '1.2rem', fontWeight: 700, textTransform: 'uppercase' }}>{initial?.id ? 'Editar' : 'Nuevo'} {tipo === 'ingreso' ? 'Ingreso' : 'Egreso'}</h2>
           <button className="secondary icon-only" onClick={onClose}><X size={16} /></button>
         </div>
 
-        {error && <div style={{ background: 'rgba(220,60,60,0.1)', border: '1px solid rgba(220,60,60,0.25)', borderRadius: 10, padding: '10px 14px', color: '#e07070', fontSize: '0.85rem', marginBottom: '1rem' }}>{error}</div>}
+        {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 12, padding: '10px 14px', color: '#dc2626', fontSize: '0.85rem', marginBottom: '1rem' }}>{error}</div>}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
             <div className="input-group">
               <label>Concepto *</label>
               <input placeholder="Ej: Cuota mensual" value={form.concepto} onChange={e => setForm(p => ({ ...p, concepto: e.target.value }))} />
@@ -51,7 +51,7 @@ function TransaccionModal({ show, onClose, onSave, initial, tipo, equipos }) {
               <input type="number" step="0.01" min="0" placeholder="0.00" value={form.monto} onChange={e => setForm(p => ({ ...p, monto: e.target.value }))} />
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
             <div className="input-group">
               <label>Método de Pago</label>
               <select value={form.metodo_pago} onChange={e => setForm(p => ({ ...p, metodo_pago: e.target.value }))}>
@@ -74,11 +74,11 @@ function TransaccionModal({ show, onClose, onSave, initial, tipo, equipos }) {
           <div className="input-group">
             <label>Descripción adicional</label>
             <textarea placeholder="Notas opcionales..." value={form.descripcion} onChange={e => setForm(p => ({ ...p, descripcion: e.target.value }))}
-              style={{ background: 'var(--input-bg)', border: '1px solid var(--border-subtle)', borderRadius: 10, padding: '10px 16px', color: 'var(--text-primary)', fontSize: '0.88rem', fontFamily: 'inherit', resize: 'vertical', minHeight: '80px', outline: 'none' }} />
+              style={{ background: 'var(--input-bg)', border: '1px solid var(--border-subtle)', borderRadius: 12, padding: '10px 14px', color: 'var(--text-primary)', fontSize: '0.88rem', fontFamily: 'inherit', resize: 'vertical', minHeight: '80px', outline: 'none' }} />
           </div>
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
             <button type="button" className="secondary" onClick={onClose}>Cancelar</button>
-            <button type="submit" disabled={loading} style={{ background: tipo === 'ingreso' ? 'linear-gradient(135deg,#6BCB77,#4aaa55)' : 'linear-gradient(135deg,#e07070,#c05050)', color: '#fff', border: 'none' }}>
+            <button type="submit" disabled={loading} style={{ background: tipo === 'ingreso' ? '#059669' : '#dc2626', color: '#fff', border: 'none' }}>
               {loading ? '...' : <><Check size={14} /> Guardar</>}
             </button>
           </div>
@@ -118,25 +118,25 @@ export default function IngresosView({ onTransaccion }) {
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+      <div className="gx-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', padding: '14px 18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#6BCB77' }}>↑ Ingresos</h2>
-          {!loading && <span className="badge" style={{ background: 'rgba(107,203,119,0.12)', color: '#6BCB77', border: '1px solid rgba(107,203,119,0.2)' }}>{formatARS(total)}</span>}
+          <h2 style={{ fontSize: '1.3rem', fontWeight: 700, textTransform: 'uppercase', color: '#059669' }}>↑ Ingresos</h2>
+          {!loading && <span className="badge" style={{ background: 'rgba(16,185,129,0.1)', color: '#059669', border: '1px solid rgba(16,185,129,0.25)' }}>{formatARS(total)}</span>}
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <select value={filtroMetodo} onChange={e => setFiltroMetodo(e.target.value)}
-            style={{ height: '36px', padding: '0 12px', fontSize: '0.8rem', width: 'auto', background: 'var(--input-bg)', border: '1px solid var(--border-subtle)', borderRadius: '8px', color: 'var(--text-secondary)' }}>
+            style={{ height: '36px', padding: '0 12px', fontSize: '0.8rem', width: 'auto', background: 'var(--input-bg)', border: '1px solid var(--border-subtle)', borderRadius: '12px', color: 'var(--text-secondary)' }}>
             <option value="">Todos</option>
             <option value="efectivo">💵 Efectivo</option>
             <option value="banco">🏦 Banco</option>
           </select>
-          <button onClick={() => { setEditing(null); setModal(true); }} style={{ background: 'linear-gradient(135deg,#6BCB77,#4aaa55)', color: '#fff', border: 'none' }}>
+          <button onClick={() => { setEditing(null); setModal(true); }} style={{ background: '#059669', color: '#fff', border: 'none' }}>
             <Plus size={14} /> Nuevo Ingreso
           </button>
         </div>
       </div>
 
-      <div className="table-container">
+      <div className="table-container mobile-cards">
         <table>
           <thead><tr>
             <th>Fecha</th><th>Concepto</th><th>Método</th><th>Equipo</th><th>Monto</th><th></th>
@@ -148,19 +148,19 @@ export default function IngresosView({ onTransaccion }) {
               <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>No hay ingresos registrados</td></tr>
             ) : items.map(item => (
               <tr key={item.id}>
-                <td style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>{item.fecha}</td>
-                <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+                <td data-label="Fecha" style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>{item.fecha}</td>
+                <td className="mc-title" data-label="" style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
                   {item.concepto}
                   {item.descripcion && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>{item.descripcion}</div>}
                 </td>
-                <td>
-                  <span className="badge" style={item.metodo_pago === 'banco' ? { background: 'rgba(126,184,212,0.12)', color: '#7EB8D4', border: '1px solid rgba(126,184,212,0.2)' } : {}}>
+                <td data-label="Método">
+                  <span className="badge" style={item.metodo_pago === 'banco' ? { background: 'rgba(37,99,235,0.08)', color: '#2563eb', border: '1px solid rgba(37,99,235,0.25)' } : {}}>
                     {item.metodo_pago === 'banco' ? '🏦 Banco' : '💵 Efectivo'}
                   </span>
                 </td>
-                <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>{item.equipo_nombre ?? '—'}</td>
-                <td style={{ color: '#6BCB77', fontWeight: 700 }}>{formatARS(item.monto)}</td>
-                <td>
+                <td data-label="Equipo" style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>{item.equipo_nombre ?? '—'}</td>
+                <td data-label="Monto" style={{ color: '#059669', fontWeight: 700 }}>{formatARS(item.monto)}</td>
+                <td className="mc-actions" data-label="">
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <button className="secondary icon-only" title="Editar" onClick={() => { setEditing(item); setModal(true); }}><Pencil size={13} /></button>
                     <button className="danger icon-only" title="Eliminar" onClick={() => handleDelete(item.id)}><Trash2 size={13} /></button>

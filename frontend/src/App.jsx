@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { LayoutDashboard, Users, Contact, UserCheck, Award, Trophy, Settings, FileText, ArrowRight, Wallet } from 'lucide-react';
+import FinanzasView from './components/finanzas/FinanzasView';
+import PageHeader from './components/ui/PageHeader';
 import DashboardLayout from './components/DashboardLayout';
 import EquiposView from './components/teams/EquiposView';
 import DelegadosView from './components/delegates/DelegadosView';
@@ -100,35 +103,57 @@ const HomeView = () => {
 
   const userName = user?.first_name || user?.username || '';
 
-  return (
-    <div className="anthropic-theme animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <h1 className="anthropic-title" style={{ marginBottom: '8px' }}>
-            <Typewriter text={`Hola, ${userName}`} />
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Bienvenido de nuevo al panel de control de La Superliga.</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setShowMerger(true)}
-          style={{
-            height: '42px', padding: '0 20px', fontSize: '14px'
-          }}
-        >
-          📄 Unir PDF
-        </button>
-      </div>
+  const QUICK_LINKS = [
+    { to: '/equipos', label: 'Equipos', desc: 'Clubes, escudos y delegados', icon: Users },
+    { to: '/delegados', label: 'Delegados', desc: 'Responsables de cada equipo', icon: Contact },
+    { to: '/jugadores', label: 'Jugadores', desc: 'Base general de jugadores', icon: UserCheck },
+    { to: '/categorias', label: 'Categorías', desc: 'Reglas y edades por categoría', icon: Award },
+    { to: '/torneos', label: 'Torneos', desc: 'Fixture, zonas y resultados', icon: Trophy },
+    { to: '/finanzas', label: 'Finanzas', desc: 'Caja de fecha, socios y deudas', icon: Wallet },
+    { to: '/configuracion', label: 'Configuración', desc: 'Carrusel, noticias y torneo actual', icon: Settings },
+  ];
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginTop: '2rem' }}>
-        <div className="glass-card" style={{ transition: 'all 0.3s ease' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--brand-beige)' }}></span>
+  return (
+    <div className="anthropic-theme animate-fade-in" style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <PageHeader
+        icon={LayoutDashboard}
+        title={<Typewriter text={`Hola, ${userName}`} />}
+        subtitle="Bienvenido de nuevo al panel de control de La Superliga."
+        actions={
+          <button type="button" onClick={() => setShowMerger(true)}>
+            <FileText size={16} /> Unir PDF
+          </button>
+        }
+      />
+
+      <div className="gx-card-dark" style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 260px', minWidth: 0 }}>
+          <span style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#a1a1aa', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--gx-primary)' }} />
             Resumen General
-          </h3>
-          <p style={{ color: 'var(--text-muted)', lineHeight: '1.6' }}>
+          </span>
+          <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, marginTop: '6px', lineHeight: 1.2 }}>
+            Panel de Gestión
+          </p>
+          <p style={{ color: '#a1a1aa', lineHeight: 1.6, fontSize: '13.5px', marginTop: '6px' }}>
             Próximamente podrás visualizar estadísticas en tiempo real sobre equipos, categorías y torneos.
           </p>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="gx-card-title" style={{ border: 'none', padding: 0, marginBottom: '12px' }}>Accesos rápidos</h3>
+        <div className="gx-grid">
+          {QUICK_LINKS.map(({ to, label, desc, icon: Icon }) => (
+            <Link key={to} to={to} className="gx-quick">
+              <div className="gx-icon-box"><Icon size={22} /></div>
+              <div style={{ minWidth: 0 }}>
+                <div className="t">{label}</div>
+                <div className="s">{desc}</div>
+              </div>
+              <ArrowRight size={18} className="arrow" />
+            </Link>
+          ))}
         </div>
       </div>
 
@@ -152,6 +177,7 @@ function App() {
                   <Route path="/delegados" element={<AdminRoute><DelegadosView /></AdminRoute>} />
                   <Route path="/jugadores" element={<AdminRoute><JugadoresView /></AdminRoute>} />
                   <Route path="/caja" element={<AdminRoute><CajaView /></AdminRoute>} />
+                  <Route path="/finanzas" element={<AdminRoute><FinanzasView /></AdminRoute>} />
                   <Route path="/categorias" element={<AdminRoute><CategoriasView /></AdminRoute>} />
                   <Route path="/torneos" element={<AdminRoute><TorneosView /></AdminRoute>} />
                   <Route path="/torneos/:id" element={<AdminRoute><TournamentDetailView /></AdminRoute>} />

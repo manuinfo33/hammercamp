@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { Plus, Search, Trophy, Trash2, Edit2, Calendar, Eye, X, Check, ChevronRight, Layers, Users, Award } from 'lucide-react';
 import TournamentForm from './TournamentForm';
+import PageHeader from '../ui/PageHeader';
+import '../../styles/tournaments.css';
 
 const TorneosView = () => {
   const navigate = useNavigate();
@@ -96,41 +98,33 @@ const TorneosView = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem', height: '100%' }} className="anthropic-theme animate-fade-in">
+    <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }} className="anthropic-theme animate-fade-in">
 
       {/* Header de la vista */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <h1 className="anthropic-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Trophy size={30} style={{ color: '#cc7a5c' }} />
-            {showForm ? (editingTournament ? 'Editar Torneo' : 'Nuevo Torneo') : 'Torneos'}
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>
-            {showForm
-              ? 'Ingresa la información básica y las fechas del torneo.'
-              : 'Gestión de torneos, zonas y tablas de posiciones.'}
-          </p>
-        </div>
-
-        {showForm ? (
-          <button 
-            type="button" 
-            onClick={() => { setShowForm(false); setEditingTournament(null); }} 
-            className="secondary icon-only" 
-            style={{ width: '36px', height: '36px' }}
+      <PageHeader
+        icon={Trophy}
+        title={showForm ? (editingTournament ? 'Editar Torneo' : 'Nuevo Torneo') : 'Torneos'}
+        subtitle={showForm
+          ? 'Ingresa la información básica y las fechas del torneo.'
+          : 'Gestión de torneos, zonas y tablas de posiciones.'}
+        actions={showForm ? (
+          <button
+            type="button"
+            onClick={() => { setShowForm(false); setEditingTournament(null); }}
+            className="secondary icon-only"
             title="Volver a Torneos"
           >
             <X size={18} />
           </button>
         ) : (
-          <button 
+          <button
             onClick={() => { setEditingTournament(null); setShowForm(true); }}
-            style={{ height: '40px', padding: '0 20px', fontSize: '14px' }}
           >
             <Plus size={18} /> Nuevo Torneo
           </button>
         )}
-      </div>
+        style={{ marginBottom: 0 }}
+      />
 
       {/* Vista de Formulario In-Page */}
       {showForm ? (
@@ -185,13 +179,13 @@ const TorneosView = () => {
                 textAlign: 'center',
                 background: '#ffffff',
                 borderRadius: '12px',
-                border: '1px dashed #d8cfc0',
+                border: '1px dashed #d4d4d8',
               }}
             >
               <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>No hay torneos registrados.</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 340px), 1fr))', gap: '20px' }}>
               {tournaments.map((t) => {
                 const totalTeams = t.zones?.reduce((acc, z) => acc + (z.zone_teams?.length || 0), 0) || 0;
                 const totalZones = t.zones?.length || 0;
@@ -202,27 +196,27 @@ const TorneosView = () => {
                     onClick={() => navigate(`/torneos/${t.id}`)}
                     style={{
                       background: '#ffffff',
-                      border: '1px solid #e6dfd3',
+                      border: '1px solid #e4e4e7',
                       borderRadius: '16px',
                       padding: '20px 22px',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
                       gap: '18px',
-                      boxShadow: '0 4px 16px rgba(25, 20, 15, 0.03)',
+                      boxShadow: '0 1px 2px rgba(24, 24, 27, 0.05)',
                       transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
                       cursor: 'pointer',
                       position: 'relative'
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#cc7a5c';
+                      e.currentTarget.style.borderColor = '#f2bb2b';
                       e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 8px 24px rgba(204, 122, 92, 0.12)';
+                      e.currentTarget.style.boxShadow = '0 8px 24px rgba(24, 24, 27, 0.1)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = '#e6dfd3';
+                      e.currentTarget.style.borderColor = '#e4e4e7';
                       e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 4px 16px rgba(25, 20, 15, 0.03)';
+                      e.currentTarget.style.boxShadow = '0 1px 2px rgba(24, 24, 27, 0.05)';
                     }}
                   >
                     <div>
@@ -232,11 +226,11 @@ const TorneosView = () => {
                           <h3
                             style={{
                               margin: 0,
-                              fontFamily: "'Outfit', system-ui, sans-serif",
-                              fontSize: '19px',
-                              fontWeight: '700',
-                              color: '#191919',
-                              letterSpacing: '-0.3px',
+                              fontFamily: "var(--font-display)",
+                              fontSize: '20px',
+                              fontWeight: '800',
+                              color: '#1c1d21',
+                              letterSpacing: '0',
                               lineHeight: 1.3,
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
@@ -253,11 +247,11 @@ const TorneosView = () => {
                             width: '28px',
                             height: '28px',
                             borderRadius: '50%',
-                            background: '#faf8f5',
+                            background: '#fafafb',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: '#8c827a',
+                            color: '#6f737b',
                             flexShrink: 0
                           }}
                         >
@@ -269,9 +263,9 @@ const TorneosView = () => {
                       <div style={{
                         marginTop: '16px',
                         padding: '14px 16px',
-                        background: '#faf8f5',
+                        background: '#fafafb',
                         borderRadius: '12px',
-                        border: '1px solid #efe9e0',
+                        border: '1px solid #ececef',
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '14px'
@@ -287,20 +281,20 @@ const TorneosView = () => {
                             <div style={{
                               width: '32px',
                               height: '32px',
-                              borderRadius: '8px',
-                              background: '#ffffff',
-                              border: '1px solid #e6dfd3',
+                              borderRadius: '10px',
+                              background: 'rgba(242, 187, 43, 0.14)',
+                              border: 'none',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              color: '#cc7a5c',
+                              color: '#b98a10',
                               flexShrink: 0
                             }}>
                               <Layers size={15} />
                             </div>
                             <div>
-                              <div style={{ fontSize: '10.5px', color: '#8c827a', fontWeight: '500', textTransform: 'uppercase' }}>Zonas</div>
-                              <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#191919' }}>{totalZones} {totalZones === 1 ? 'Zona' : 'Zonas'}</div>
+                              <div style={{ fontSize: '10.5px', color: '#6f737b', fontWeight: '500', textTransform: 'uppercase' }}>Zonas</div>
+                              <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#1c1d21' }}>{totalZones} {totalZones === 1 ? 'Zona' : 'Zonas'}</div>
                             </div>
                           </div>
 
@@ -309,20 +303,20 @@ const TorneosView = () => {
                             <div style={{
                               width: '32px',
                               height: '32px',
-                              borderRadius: '8px',
-                              background: '#ffffff',
-                              border: '1px solid #e6dfd3',
+                              borderRadius: '10px',
+                              background: 'rgba(242, 187, 43, 0.14)',
+                              border: 'none',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              color: '#cc7a5c',
+                              color: '#b98a10',
                               flexShrink: 0
                             }}>
                               <Users size={15} />
                             </div>
                             <div>
-                              <div style={{ fontSize: '10.5px', color: '#8c827a', fontWeight: '500', textTransform: 'uppercase' }}>Equipos</div>
-                              <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#191919' }}>{totalTeams} {totalTeams === 1 ? 'Equipo' : 'Equipos'}</div>
+                              <div style={{ fontSize: '10.5px', color: '#6f737b', fontWeight: '500', textTransform: 'uppercase' }}>Equipos</div>
+                              <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#1c1d21' }}>{totalTeams} {totalTeams === 1 ? 'Equipo' : 'Equipos'}</div>
                             </div>
                           </div>
 
@@ -331,20 +325,20 @@ const TorneosView = () => {
                             <div style={{
                               width: '32px',
                               height: '32px',
-                              borderRadius: '8px',
-                              background: '#ffffff',
-                              border: '1px solid #e6dfd3',
+                              borderRadius: '10px',
+                              background: 'rgba(242, 187, 43, 0.14)',
+                              border: 'none',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              color: '#cc7a5c',
+                              color: '#b98a10',
                               flexShrink: 0
                             }}>
                               <Award size={15} />
                             </div>
                             <div style={{ minWidth: 0, overflow: 'hidden' }}>
-                              <div style={{ fontSize: '10.5px', color: '#8c827a', fontWeight: '500', textTransform: 'uppercase' }}>Categoría</div>
-                              <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#191919', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={t.category_name || 'Sin Categoría'}>
+                              <div style={{ fontSize: '10.5px', color: '#6f737b', fontWeight: '500', textTransform: 'uppercase' }}>Categoría</div>
+                              <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#1c1d21', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={t.category_name || 'Sin Categoría'}>
                                 {t.category_name || 'Sin Categoría'}
                               </div>
                             </div>
@@ -355,20 +349,20 @@ const TorneosView = () => {
                             <div style={{
                               width: '32px',
                               height: '32px',
-                              borderRadius: '8px',
-                              background: '#ffffff',
-                              border: '1px solid #e6dfd3',
+                              borderRadius: '10px',
+                              background: 'rgba(242, 187, 43, 0.14)',
+                              border: 'none',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              color: '#cc7a5c',
+                              color: '#b98a10',
                               flexShrink: 0
                             }}>
                               <Calendar size={15} />
                             </div>
                             <div>
-                              <div style={{ fontSize: '10.5px', color: '#8c827a', fontWeight: '500', textTransform: 'uppercase' }}>Fecha de Inicio</div>
-                              <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#191919' }}>
+                              <div style={{ fontSize: '10.5px', color: '#6f737b', fontWeight: '500', textTransform: 'uppercase' }}>Fecha de Inicio</div>
+                              <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#1c1d21' }}>
                                 {t.start_date ? formatDate(t.start_date) : 'Sin fecha'}
                               </div>
                             </div>
@@ -385,7 +379,7 @@ const TorneosView = () => {
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         paddingTop: '12px',
-                        borderTop: '1px solid #f2ede4',
+                        borderTop: '1px solid #f0f0f2',
                         gap: '8px'
                       }}
                     >
@@ -442,10 +436,10 @@ const TorneosView = () => {
                             height: '32px',
                             minWidth: '32px',
                             padding: 0,
-                            borderRadius: '6px',
-                            border: '1px solid #d8cfc0',
+                            borderRadius: '10px',
+                            border: '1px solid #d4d4d8',
                             background: '#ffffff',
-                            color: '#59534d',
+                            color: '#3f4249',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
@@ -454,12 +448,12 @@ const TorneosView = () => {
                           }}
                           title="Editar información del torneo"
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = '#191919';
-                            e.currentTarget.style.color = '#191919';
+                            e.currentTarget.style.borderColor = '#1c1d21';
+                            e.currentTarget.style.color = '#1c1d21';
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = '#d8cfc0';
-                            e.currentTarget.style.color = '#59534d';
+                            e.currentTarget.style.borderColor = '#d4d4d8';
+                            e.currentTarget.style.color = '#3f4249';
                           }}
                         >
                           <Edit2 size={13} />
@@ -473,7 +467,7 @@ const TorneosView = () => {
                             height: '32px',
                             minWidth: '32px',
                             padding: 0,
-                            borderRadius: '6px',
+                            borderRadius: '10px',
                             border: '1px solid #f3d4d4',
                             background: '#ffffff',
                             color: '#c62828',
@@ -513,7 +507,8 @@ const TorneosView = () => {
           left: 0,
           width: '100vw',
           height: '100vh',
-          background: 'rgba(0, 0, 0, 0.38)',
+          background: 'rgba(0, 0, 0, 0.6)',
+          backdropFilter: 'blur(3px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -522,21 +517,26 @@ const TorneosView = () => {
         }}>
           <div style={{
             background: '#ffffff',
-            border: '1px solid #e6dfd3',
-            borderRadius: '16px',
+            border: '1px solid #e4e4e7',
+            borderRadius: '18px',
             maxWidth: '460px',
             width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
             padding: '24px',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 24px 60px rgba(0, 0, 0, 0.3)',
             display: 'flex',
             flexDirection: 'column',
             gap: '16px',
             animation: 'fadeIn 0.2s ease-out'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#191919', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                Eliminar Torneo {tournamentToDelete.name}
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                <div className="gx-icon-box sm" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}><Trash2 size={18} /></div>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', textTransform: 'uppercase', color: '#1c1d21', minWidth: 0 }}>
+                  Eliminar Torneo {tournamentToDelete.name}
+                </h3>
+              </div>
               <button
                 type="button"
                 onClick={() => setTournamentToDelete(null)}
@@ -564,7 +564,7 @@ const TorneosView = () => {
 
             <form onSubmit={handleConfirmDelete} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div className="input-group">
-                <label style={{ fontSize: '12px', fontWeight: '600', color: '#191919', marginBottom: '6px', display: 'block' }}>Contraseña de Usuario *</label>
+                <label style={{ fontSize: '12px', fontWeight: '600', color: '#1c1d21', marginBottom: '6px', display: 'block' }}>Contraseña de Usuario *</label>
                 <input
                   type="password"
                   required
@@ -576,10 +576,10 @@ const TorneosView = () => {
                     width: '100%',
                     padding: '10px 14px',
                     height: '42px',
-                    borderRadius: '8px',
-                    border: deleteError ? '1px solid #e07070' : '1px solid #d8cfc0',
+                    borderRadius: '12px',
+                    border: deleteError ? '1px solid #e07070' : '1px solid #d4d4d8',
                     background: '#ffffff',
-                    color: '#191919',
+                    color: '#1c1d21',
                     fontSize: '14px',
                     outline: 'none',
                     boxSizing: 'border-box'
@@ -598,25 +598,25 @@ const TorneosView = () => {
                   type="button"
                   onClick={() => setTournamentToDelete(null)}
                   style={{
-                    height: '38px',
-                    padding: '0 16px',
+                    height: '42px',
+                    padding: '0 18px',
                     background: '#ffffff',
-                    border: '1px solid #d8cfc0',
-                    borderRadius: '8px',
-                    color: '#191919',
+                    border: '1px solid #d4d4d8',
+                    borderRadius: '12px',
+                    color: '#1c1d21',
                     fontWeight: '600',
                     fontSize: '13px',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = '#191919';
+                    e.currentTarget.style.borderColor = '#1c1d21';
                     e.currentTarget.style.color = '#000000';
-                    e.currentTarget.style.background = '#faf8f5';
+                    e.currentTarget.style.background = '#fafafb';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = '#d8cfc0';
-                    e.currentTarget.style.color = '#191919';
+                    e.currentTarget.style.borderColor = '#d4d4d8';
+                    e.currentTarget.style.color = '#1c1d21';
                     e.currentTarget.style.background = '#ffffff';
                   }}
                 >
@@ -626,9 +626,9 @@ const TorneosView = () => {
                   type="submit"
                   disabled={deleting || !confirmPassword}
                   style={{
-                    height: '38px', padding: '0 16px',
-                    backgroundColor: '#c62828', color: '#fff', border: 'none',
-                    borderRadius: '8px', fontWeight: '600', cursor: deleting ? 'not-allowed' : 'pointer'
+                    height: '42px', padding: '0 18px',
+                    backgroundColor: '#dc2626', color: '#fff', border: 'none',
+                    borderRadius: '12px', fontWeight: '600', cursor: deleting ? 'not-allowed' : 'pointer'
                   }}
                 >
                   {deleting ? 'Eliminando...' : 'Eliminar'}
@@ -658,7 +658,7 @@ const TorneosView = () => {
           <span style={{
             fontSize: '13px',
             fontWeight: '600',
-            color: '#f5ede4',
+            color: '#f4f4f5',
             whiteSpace: 'nowrap'
           }}>
             {toastMessage}
@@ -670,7 +670,7 @@ const TorneosView = () => {
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              color: '#a8957e',
+              color: '#a1a1aa',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

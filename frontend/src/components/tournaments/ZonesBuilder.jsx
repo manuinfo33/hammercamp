@@ -481,7 +481,7 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
           <div 
             style={{
               background: '#ffffff',
-              border: '1px solid #e6dfd3',
+              border: '1px solid #e4e4e7',
               borderRadius: '16px',
               maxWidth: '440px',
               width: '100%',
@@ -509,7 +509,7 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
                 }}>
                   <AlertTriangle size={18} color="#856404" />
                 </div>
-                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '700', color: '#191919' }}>
+                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '700', color: '#1c1d21' }}>
                   {customAlert.title || 'Atención'}
                 </h3>
               </div>
@@ -522,7 +522,7 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
               </button>
             </div>
 
-            <p style={{ fontSize: '14px', color: '#383530', margin: 0, lineHeight: '1.5', fontWeight: '500' }}>
+            <p style={{ fontSize: '14px', color: '#3f4249', margin: 0, lineHeight: '1.5', fontWeight: '500' }}>
               {customAlert.message}
             </p>
 
@@ -533,10 +533,10 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
                 style={{
                   height: '38px',
                   padding: '0 22px',
-                  background: '#191919',
+                  background: 'var(--gx-primary)',
                   border: 'none',
                   borderRadius: '8px',
-                  color: '#ffffff',
+                  color: '#151515',
                   fontWeight: '600',
                   fontSize: '13px',
                   cursor: 'pointer',
@@ -545,8 +545,8 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
                   gap: '6px',
                   transition: 'background 0.15s'
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = '#333333'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = '#191919'; }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--gx-primary-hover)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--gx-primary)'; }}
               >
                 Aceptar
               </button>

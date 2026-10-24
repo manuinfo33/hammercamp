@@ -1,35 +1,33 @@
 import React from 'react';
 import { User, AlertCircle, ShieldAlert } from 'lucide-react';
 import Typewriter from '../Typewriter';
+import PageHeader from '../ui/PageHeader';
 
 export default function DelegateWelcomeDashboard({ user }) {
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      <div>
-        <h1 className="gradient-text" style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '8px' }}>
-          <Typewriter text={`¡Hola, ${user.first_name}!`} />
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
-          Bienvenido al Panel de Control de Delegado para <strong>{user.team_name}</strong>.
-        </p>
-      </div>
+    <div className="anthropic-theme animate-fade-in" style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      <PageHeader
+        icon={User}
+        title={<Typewriter text={`¡Hola, ${user.first_name}!`} />}
+        subtitle={<>Bienvenido al Panel de Control de Delegado para <strong>{user.team_name}</strong>.</>}
+      />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginTop: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1.25rem' }}>
         {/* Team Card */}
-        <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
-            <User size={20} color="var(--brand-beige)" />
+        <div className="gx-card-dark" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <h3 style={{ fontSize: '1.05rem', fontWeight: '600', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px', color: '#fff' }}>
+            <User size={20} color="var(--gx-primary)" />
             Mi Equipo
           </h3>
-          <p style={{ color: 'var(--text-muted)', lineHeight: '1.6', fontSize: '0.9rem' }}>
+          <p style={{ color: '#a1a1aa', lineHeight: '1.6', fontSize: '0.9rem' }}>
             Estás gestionando el equipo <strong>{user.team_name}</strong>. Desde la sección <strong>Mi Equipo</strong> podés actualizar los datos y fotos del club.
           </p>
         </div>
 
         {/* Alerts Card */}
         <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
-            <AlertCircle size={20} color="var(--brand-beige)" />
+          <h3 style={{ fontSize: '1.05rem', fontWeight: '600', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
+            <AlertCircle size={20} color="var(--gx-primary-ink)" />
             Panel de Alertas
           </h3>
           <p style={{ color: 'var(--text-muted)', lineHeight: '1.6', fontSize: '0.9rem' }}>
@@ -39,8 +37,8 @@ export default function DelegateWelcomeDashboard({ user }) {
 
         {/* Sanctions Card */}
         <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
-            <ShieldAlert size={20} color="var(--brand-beige)" />
+          <h3 style={{ fontSize: '1.05rem', fontWeight: '600', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
+            <ShieldAlert size={20} color="var(--gx-primary-ink)" />
             Sanciones del Roster
           </h3>
           <p style={{ color: 'var(--text-muted)', lineHeight: '1.6', fontSize: '0.9rem' }}>

@@ -350,7 +350,7 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
                 <div className="input-group">
                   <label>Nombre del torneo *</label>
                   <div style={{ position: 'relative' }}>
-                    <FileText size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
+                    <FileText size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a1a1aa' }} />
                     <input
                       ref={nameInputRef}
                       type="text" required
@@ -379,7 +379,7 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
                 <div className="input-group">
                   <label>Categoría *</label>
                   <div style={{ position: 'relative' }}>
-                    <Layers size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c', pointerEvents: 'none', zIndex: 10 }} />
+                    <Layers size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a1a1aa', pointerEvents: 'none', zIndex: 10 }} />
                     <select
                       required
                       value={formData.category}
@@ -411,7 +411,7 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
                 <div className="input-group">
                   <label>Fecha de Inicio</label>
                   <div style={{ position: 'relative' }}>
-                    <Calendar size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
+                    <Calendar size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a1a1aa' }} />
                     <input
                       type="date"
                       value={formData.start_date}
@@ -423,7 +423,7 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
                 <div className="input-group">
                   <label>Duración de cada Tiempo *</label>
                   <div style={{ position: 'relative' }}>
-                    <Clock size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c' }} />
+                    <Clock size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a1a1aa' }} />
                     <input
                       type="number"
                       required
@@ -454,7 +454,7 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
         </div>
 
         {/* Sección 2: Configuración de Zonas y Equipos */}
-        <div style={{ borderTop: '1px solid #e6dfd3', paddingTop: '20px' }}>
+        <div style={{ borderTop: '1px solid #e4e4e7', paddingTop: '20px' }}>
           <div
             onClick={() => setIsZonesOpen(!isZonesOpen)}
             style={{
@@ -501,7 +501,7 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
         </div>
 
         {/* Sección: Lista de Buena Fe */}
-        <div style={{ borderTop: '1px solid #e6dfd3', paddingTop: '20px' }}>
+        <div style={{ borderTop: '1px solid #e4e4e7', paddingTop: '20px' }}>
           <div
             onClick={() => setIsBuenaFeOpen(!isBuenaFeOpen)}
             style={{
@@ -531,7 +531,7 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
               <div className="input-group">
                 <label>Cantidad máxima de jugadores en lista de buena fe</label>
                 <div style={{ position: 'relative' }}>
-                  <Users size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a69b8c', pointerEvents: 'none' }} />
+                  <Users size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a1a1aa', pointerEvents: 'none' }} />
                   <input
                     type="number"
                     min={0}
@@ -559,7 +559,7 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
         </div>
 
         {/* Sección 4: Puntaje fair play */}
-        <div style={{ borderTop: '1px solid #e6dfd3', paddingTop: '20px' }}>
+        <div style={{ borderTop: '1px solid #e4e4e7', paddingTop: '20px' }}>
           <div
             onClick={() => setIsFairPlayOpen(!isFairPlayOpen)}
             style={{
@@ -803,7 +803,7 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
         </div>
 
         {/* Sección: Configuraciones Extras */}
-        <div style={{ borderTop: '1px solid #e6dfd3', paddingTop: '20px' }}>
+        <div style={{ borderTop: '1px solid #e4e4e7', paddingTop: '20px' }}>
           <div
             onClick={() => setIsExtrasOpen(!isExtrasOpen)}
             style={{
@@ -919,7 +919,7 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
         </div>
 
         {/* Sección 3: Criterio de desempate */}
-        <div style={{ borderTop: '1px solid #e6dfd3', paddingTop: '20px' }}>
+        <div style={{ borderTop: '1px solid #e4e4e7', paddingTop: '20px' }}>
           <div
             onClick={() => setIsTiebreakerOpen(!isTiebreakerOpen)}
             style={{
@@ -966,7 +966,7 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
                       borderColor: 'var(--border-subtle)',
                       width: '100%',
                       borderRadius: '8px',
-                      background: '#f8f6f2',
+                      background: '#fafafb',
                       color: '#666',
                       padding: '0 12px',
                       cursor: 'not-allowed',
@@ -1016,7 +1016,7 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
         )}
 
         {/* Actions */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '16px', borderTop: '1px solid #e6dfd3' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '16px', borderTop: '1px solid #e4e4e7' }}>
           <button type="button" onClick={onClose} className="secondary" style={{ height: '40px' }}>
             {saved ? 'Cerrar' : 'Cancelar'}
           </button>

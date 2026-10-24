@@ -41,12 +41,12 @@ const fieldStyle = (hasError) => ({
   width: '100%',
   height: '42px',
   borderRadius: '8px',
-  border: hasError ? '1.5px solid #ef4444' : '1.5px solid #d8cfc0',
+  border: hasError ? '1.5px solid #ef4444' : '1.5px solid #d4d4d8',
   background: '#ffffff',
   padding: '0 34px 0 12px',
   fontSize: '13px',
   fontWeight: '600',
-  color: '#191919',
+  color: '#1c1d21',
   outline: 'none',
   boxSizing: 'border-box',
   appearance: 'none',
@@ -55,12 +55,12 @@ const fieldStyle = (hasError) => ({
 });
 
 const btnSecondary = {
-  flex: 1, height: '40px', borderRadius: '8px', border: '1px solid #d8cfc0',
+  flex: 1, height: '40px', borderRadius: '8px', border: '1px solid #d4d4d8',
   background: '#ffffff', color: '#4b5563', fontWeight: '700', fontSize: '13px', cursor: 'pointer',
 };
 const btnPrimary = {
   flex: 1, height: '40px', borderRadius: '8px', border: 'none',
-  background: '#191919', color: '#ffffff', fontWeight: '700', fontSize: '13px', cursor: 'pointer',
+  background: 'var(--gx-primary)', color: '#151515', fontWeight: '700', fontSize: '13px', cursor: 'pointer',
 };
 
 const formatDate = (iso) => {
@@ -153,13 +153,13 @@ export function BlueCardModal({ tournament, enabled, bluePts, onClose, onSaved }
         style={{
           background: '#ffffff', borderRadius: '16px', width: '100%', maxWidth: '400px', padding: '24px',
           boxShadow: '0 12px 32px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column', gap: '16px',
-          border: '1px solid #e6dfd3', boxSizing: 'border-box',
+          border: '1px solid #e4e4e7', boxSizing: 'border-box',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <CardIcon color={BLUE} w={24} h={32} glow />
           <div style={{ flex: 1 }}>
-            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#191919' }}>Tarjeta Azul</h3>
+            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#1c1d21' }}>Tarjeta Azul</h3>
             {enabled && (
               <span style={{ fontSize: '12px', fontWeight: '600', color: '#cc7a5c' }}>
                 Suma {bluePts} pts en la tabla de Fair Play
@@ -190,13 +190,13 @@ export function BlueCardModal({ tournament, enabled, bluePts, onClose, onSaved }
                   id="blue-card-team"
                   value={teamId}
                   onChange={e => { setTeamId(e.target.value); setRoundId(''); setError(''); }}
-                  style={{ ...fieldStyle(error && !teamId), color: teamId ? '#191919' : '#7f776f' }}
+                  style={{ ...fieldStyle(error && !teamId), color: teamId ? '#1c1d21' : '#6f737b' }}
                   autoFocus
                 >
                   <option value="">Seleccionar equipo...</option>
                   {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
-                <ChevronDown size={15} color="#7f776f" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                <ChevronDown size={15} color="#6f737b" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
               </div>
             </div>
 
@@ -208,12 +208,12 @@ export function BlueCardModal({ tournament, enabled, bluePts, onClose, onSaved }
                   value={roundId}
                   onChange={e => setRoundId(e.target.value)}
                   disabled={!selectedTeam}
-                  style={{ ...fieldStyle(false), color: roundId ? '#191919' : '#7f776f', opacity: selectedTeam ? 1 : 0.6, cursor: selectedTeam ? 'pointer' : 'not-allowed' }}
+                  style={{ ...fieldStyle(false), color: roundId ? '#1c1d21' : '#6f737b', opacity: selectedTeam ? 1 : 0.6, cursor: selectedTeam ? 'pointer' : 'not-allowed' }}
                 >
                   <option value="">Sin fecha asociada</option>
                   {roundOptions.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
                 </select>
-                <ChevronDown size={15} color="#7f776f" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                <ChevronDown size={15} color="#6f737b" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
               </div>
             </div>
 
@@ -292,7 +292,7 @@ function StatPill({ icon, label, value, accent, bg, border, active, onClick }) {
       <div style={{ height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {icon}
       </div>
-      <span className="fp-stat-value" style={{ fontSize: '20px', fontWeight: '800', color: accent || '#191919', lineHeight: 1.1 }}>
+      <span className="fp-stat-value" style={{ fontSize: '20px', fontWeight: '800', color: accent || '#1c1d21', lineHeight: 1.1 }}>
         {value}
       </span>
       <span className="fp-stat-label" style={{
@@ -891,11 +891,11 @@ export function TeamFairPlayHistoryModal({ tournamentId, team, canEdit, onClose,
         <div style={{ ...overlayStyle, zIndex: 1000001 }} onClick={e => { e.stopPropagation(); setConfirmDeleteId(null); }}>
           <div className="animate-fade-in anthropic-theme" onClick={e => e.stopPropagation()} style={{
             background: '#ffffff', borderRadius: '16px', width: '100%', maxWidth: '360px', padding: '24px',
-            boxShadow: '0 12px 32px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid #e6dfd3',
+            boxShadow: '0 12px 32px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid #e4e4e7',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <CardIcon color={BLUE} w={20} h={26} glow />
-              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#191919' }}>Eliminar tarjeta azul</h3>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#1c1d21' }}>Eliminar tarjeta azul</h3>
             </div>
             <p style={{ margin: 0, fontSize: '13px', color: '#4b5563', lineHeight: 1.4 }}>
               Se descontarán los puntos de la tabla de Fair Play. ¿Deseás continuar?

@@ -147,36 +147,36 @@ const NewsConfigView = () => {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h2 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '22px', fontWeight: '400', color: 'var(--text-primary)', margin: 0 }}>Gestión de Noticias</h2>
+        <h2 className="cf-section-title">Gestión de Noticias</h2>
       </div>
 
       {error && (
-        <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'rgba(204, 122, 92, 0.05)', color: '#cc7a5c', fontSize: '13px', border: '1px solid #e5c5bb', marginBottom: '16px' }}>
+        <div className="cf-alert">
           {error}
         </div>
       )}
 
       {/* Formulario Agregar Nueva Noticia */}
-      <div style={{ marginBottom: '32px', borderBottom: '1px solid #e6dfd3', paddingBottom: '32px' }}>
-        <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ marginBottom: '32px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '32px' }}>
+        <h3 className="cf-eyebrow" style={{ marginBottom: '16px' }}>
           <Newspaper size={14} /> Agregar Nueva Noticia
         </h3>
         
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div style={{ display: 'flex', gap: '20px' }}>
+          <div className="cf-row-3">
             <div className="input-group" style={{ flex: 1 }}>
               <label>Título</label>
               <input type="text" name="title" value={formData.title} onChange={handleInputChange} required style={{ borderColor: 'var(--border-subtle)' }} />
             </div>
             
-            <div className="input-group" style={{ width: '220px' }}>
+            <div className="input-group cf-w220" style={{ width: '220px' }}>
               <label>Categoría</label>
               <select name="category" value={formData.category} onChange={handleInputChange} style={{ borderColor: 'var(--border-subtle)' }}>
                 {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
               </select>
             </div>
             
-            <div className="input-group" style={{ width: '180px' }}>
+            <div className="input-group cf-w180" style={{ width: '180px' }}>
               <label>Fecha</label>
               <input type="date" name="date" value={formData.date} onChange={handleInputChange} required style={{ borderColor: 'var(--border-subtle)' }} />
             </div>
@@ -184,18 +184,18 @@ const NewsConfigView = () => {
           
           <div className="input-group">
             <label>Resumen / Descripción corta</label>
-            <textarea name="excerpt" value={formData.excerpt} onChange={handleInputChange} rows={2} required style={{ borderColor: 'var(--border-subtle)', borderRadius: '10px', padding: '10px 16px', fontSize: '0.88rem', fontFamily: 'inherit', outline: 'none' }} />
+            <textarea name="excerpt" value={formData.excerpt} onChange={handleInputChange} rows={2} required style={{ borderColor: 'var(--border-subtle)', borderRadius: '12px', padding: '10px 14px', fontSize: '0.88rem', fontFamily: 'inherit', outline: 'none' }} />
           </div>
 
-          <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-end' }}>
+          <div className="cf-form-row">
             <div className="input-group" style={{ flex: 1 }}>
               <label>Imagen</label>
               <div style={{
-                border: formData.image ? '1px solid #e6dfd3' : '2px dashed #c4b9a3',
+                border: formData.image ? '1px solid var(--border-medium)' : '2px dashed var(--border-medium)',
                 borderRadius: '12px',
                 padding: '10px 16px',
                 textAlign: 'center',
-                background: '#fcfbfa',
+                background: '#fafafb',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -217,7 +217,7 @@ const NewsConfigView = () => {
                 />
                 {formData.image ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '13px', color: '#cc7a5c', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formData.image.name}</span>
+                    <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formData.image.name}</span>
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); setFormData(prev => ({ ...prev, image: null })); }}
@@ -228,8 +228,8 @@ const NewsConfigView = () => {
                   </div>
                 ) : (
                   <>
-                    <Upload size={16} style={{ color: '#cc7a5c' }} />
-                    <span style={{ fontSize: '13px', color: '#7f776f' }}>Subir Imagen</span>
+                    <Upload size={16} style={{ color: 'var(--gx-primary-ink)' }} />
+                    <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Subir Imagen</span>
                   </>
                 )}
               </div>
@@ -243,20 +243,12 @@ const NewsConfigView = () => {
       </div>
 
       {/* Grid de noticias */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '20px' }}>
         {newsList.length === 0 ? (
           <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>No hay noticias publicadas.</p>
         ) : (
           newsList.map((item) => (
-            <div key={item.id} style={{ 
-              background: '#ffffff', 
-              borderRadius: '12px', 
-              overflow: 'hidden',
-              border: '1px solid #e6dfd3',
-              boxShadow: '0 2px 8px rgba(25, 20, 15, 0.03)',
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
+            <div key={item.id} className="cf-media-card" style={{ display: 'flex', flexDirection: 'column' }}>
               {editingId === item.id ? (
                 <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div className="input-group">
@@ -264,7 +256,7 @@ const NewsConfigView = () => {
                     <input type="text" name="title" value={editFormData.title} onChange={handleEditChange} style={{ borderColor: 'var(--border-subtle)', height: '38px' }} />
                   </div>
                   
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="cf-grid-2">
                     <div className="input-group">
                       <label>Categoría</label>
                       <select name="category" value={editFormData.category} onChange={handleEditChange} style={{ borderColor: 'var(--border-subtle)', height: '38px', padding: '6px 12px' }}>
@@ -285,10 +277,10 @@ const NewsConfigView = () => {
                   <div className="input-group">
                     <label>Imagen</label>
                     <div style={{
-                      border: editFormData.image ? '1px solid #e6dfd3' : '1px dashed #c4b9a3',
-                      borderRadius: '8px',
+                      border: editFormData.image ? '1px solid var(--border-medium)' : '1px dashed var(--border-medium)',
+                      borderRadius: '12px',
                       padding: '8px 12px',
-                      background: '#fcfbfa',
+                      background: '#fafafb',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -308,11 +300,11 @@ const NewsConfigView = () => {
                         onChange={handleEditChange} 
                       />
                       {editFormData.image ? (
-                        <span style={{ fontSize: '12px', color: '#cc7a5c', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{editFormData.image.name}</span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{editFormData.image.name}</span>
                       ) : (
                         <>
-                          <Upload size={14} style={{ color: '#cc7a5c' }} />
-                          <span style={{ fontSize: '12px', color: '#7f776f' }}>Cambiar Imagen</span>
+                          <Upload size={14} style={{ color: 'var(--gx-primary-ink)' }} />
+                          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Cambiar Imagen</span>
                         </>
                       )}
                     </div>
@@ -325,12 +317,12 @@ const NewsConfigView = () => {
                 </div>
               ) : (
                 <>
-                  <div style={{ width: '100%', height: '160px', background: '#faf9f6', borderBottom: '1px solid #e6dfd3' }}>
+                  <div style={{ width: '100%', height: '160px', background: '#f4f4f6', borderBottom: '1px solid var(--border-subtle)' }}>
                     <img src={item.image} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                   <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '10px', background: '#eae4d8', color: '#191919', border: '1px solid #d8cfc0', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      <span style={{ fontSize: '10px', background: 'var(--gx-primary-soft)', color: '#8a6508', border: '1px solid rgba(242,187,43,0.35)', padding: '2px 8px', borderRadius: '6px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                         {item.category}
                       </span>
                       <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -340,14 +332,14 @@ const NewsConfigView = () => {
                     <h4 style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px', fontSize: '15px' }}>{item.title}</h4>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '13px', flex: 1, lineHeight: '1.5' }}>{item.excerpt}</p>
                     
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #e6dfd3' }}>
-                      <button onClick={() => startEdit(item)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#cc7a5c', display: 'flex', alignItems: 'center', padding: '4px' }} title="Editar">
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f0f0f2' }}>
+                      <button onClick={() => startEdit(item)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', padding: '8px' }} title="Editar">
                         <Edit2 size={16} />
                       </button>
                       
                       {deletingId === item.id ? (
                         <div style={{ display: 'flex', gap: '4px', alignItems: 'center', animation: 'fadeIn 0.2s ease' }}>
-                          <span style={{ fontSize: '10px', color: '#cc7a5c', fontWeight: 'bold', marginRight: '4px' }}>¿Eliminar?</span>
+                          <span style={{ fontSize: '10px', color: '#dc2626', fontWeight: 'bold', marginRight: '4px' }}>¿Eliminar?</span>
                           <button 
                             type="button"
                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(item.id); }} 
@@ -366,7 +358,7 @@ const NewsConfigView = () => {
                           </button>
                         </div>
                       ) : (
-                        <button onClick={() => setDeletingId(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#cc7a5c', display: 'flex', alignItems: 'center', padding: '4px' }} title="Eliminar">
+                        <button onClick={() => setDeletingId(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', display: 'flex', alignItems: 'center', padding: '8px' }} title="Eliminar">
                           <Trash2 size={16} />
                         </button>
                       )}

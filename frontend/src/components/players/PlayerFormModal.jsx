@@ -116,7 +116,7 @@ const BirthDatePicker = ({ value, onChange, isMobile }) => {
           width: '100%',
           height: '46px',
           background: '#ffffff',
-          border: '1px solid #d8cfc0',
+          border: '1px solid var(--border-medium)',
           borderRadius: '8px',
           display: 'flex',
           alignItems: 'center',
@@ -153,7 +153,7 @@ const BirthDatePicker = ({ value, onChange, isMobile }) => {
             minWidth: '260px',
             maxWidth: '320px',
             background: '#ffffff',
-            border: '1px solid #d8cfc0',
+            border: '1px solid var(--border-medium)',
             borderRadius: '14px',
             boxShadow: '0 12px 30px rgba(0, 0, 0, 0.22)',
             zIndex: 10025,
@@ -210,8 +210,8 @@ const BirthDatePicker = ({ value, onChange, isMobile }) => {
                   fontSize: '12.5px',
                   fontWeight: '600',
                   color: '#191919',
-                  background: '#fcfbfa',
-                  border: '1px solid #d8cfc0',
+                  background: '#f4f5f7',
+                  border: '1px solid var(--border-medium)',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   width: 'auto'
@@ -231,8 +231,8 @@ const BirthDatePicker = ({ value, onChange, isMobile }) => {
                   fontSize: '12.5px',
                   fontWeight: '600',
                   color: '#191919',
-                  background: '#fcfbfa',
-                  border: '1px solid #d8cfc0',
+                  background: '#f4f5f7',
+                  border: '1px solid var(--border-medium)',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   width: 'auto'
@@ -309,8 +309,8 @@ const BirthDatePicker = ({ value, onChange, isMobile }) => {
                     fontWeight: isSelected ? '700' : '500',
                     borderRadius: '6px',
                     cursor: 'pointer',
-                    background: isSelected ? '#191919' : 'transparent',
-                    color: isSelected ? '#ffffff' : '#262422',
+                    background: isSelected ? 'var(--gx-primary)' : 'transparent',
+                    color: isSelected ? 'var(--gx-on-primary)' : '#262422',
                     transition: 'all 0.1s ease'
                   }}
                   onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = '#f2ede4'; }}
@@ -323,7 +323,7 @@ const BirthDatePicker = ({ value, onChange, isMobile }) => {
           </div>
 
           {value && (
-            <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #eae4d8', display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'flex-end' }}>
               <button
                 type="button"
                 onClick={() => {
@@ -586,7 +586,7 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
       <div className="input-group" style={{ margin: 0 }}>
         <label style={{ fontSize: '12px', fontWeight: '600', color: '#7f776f', marginBottom: '4px' }}>{label}</label>
         <div style={{ 
-          border: hasPreview ? '1px solid #d8cfc0' : '2px dashed #c4b9a3', 
+          border: hasPreview ? '1px solid var(--border-medium)' : '2px dashed #c4b9a3', 
           borderRadius: '10px', 
           padding: '10px', 
           textAlign: 'center', 
@@ -619,7 +619,7 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
                 borderRadius: '8px', 
                 overflow: 'hidden',
                 background: '#f4efe6',
-                border: '1px solid #e6dfd3',
+                border: '1px solid var(--border-subtle)',
                 flexShrink: 0
               }}>
                 <img 
@@ -639,7 +639,7 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
                     width: '32px',
                     height: '32px',
                     borderRadius: '50%',
-                    border: '1px solid #d8cfc0',
+                    border: '1px solid var(--border-medium)',
                     background: '#ffffff',
                     color: '#383530',
                     display: 'flex',
@@ -776,8 +776,8 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
             minHeight: `${btnDim}px`,
             maxHeight: `${btnDim}px`,
             borderRadius: '50%',
-            background: '#191919',
-            color: '#ffffff',
+            background: 'var(--gx-primary)',
+            color: 'var(--gx-on-primary)',
             boxShadow: '0 0 0 2.5px #ffffff, 0 3px 8px rgba(0,0,0,0.3)',
             display: 'flex',
             alignItems: 'center',
@@ -803,7 +803,7 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
               right: field === 'photo' ? 'auto' : '0',
               zIndex: 10020,
               background: '#ffffff',
-              border: '1px solid #d8cfc0',
+              border: '1px solid var(--border-medium)',
               borderRadius: '14px',
               boxShadow: '0 12px 32px rgba(0, 0, 0, 0.22)',
               minWidth: '180px',
@@ -923,7 +923,7 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
             alignItems: 'center',
             background: '#ffffff',
             borderRadius: '16px',
-            border: '1px solid #eae4d8',
+            border: '1px solid var(--border-subtle)',
             marginBottom: '4px',
             position: 'relative'
           }}>
@@ -960,7 +960,7 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
       </div>
 
       {/* Sección 2: Datos Personales (En Mobile sin título y en una sola columna) */}
-      <div style={{ borderTop: isMobile ? 'none' : '1px solid #eae4d8', paddingTop: isMobile ? '0px' : '16px' }}>
+      <div style={{ borderTop: isMobile ? 'none' : '1px solid var(--border-subtle)', paddingTop: isMobile ? '0px' : '16px' }}>
         {!isMobile && (
           <h3 style={{ fontSize: '11px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <User size={13} /> Datos Personales
@@ -1059,7 +1059,7 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
       </div>
 
       {/* Sección 3: Contacto (En Mobile sin título y en una sola columna) */}
-      <div style={{ borderTop: isMobile ? 'none' : '1px solid #eae4d8', paddingTop: isMobile ? '0px' : '16px' }}>
+      <div style={{ borderTop: isMobile ? 'none' : '1px solid var(--border-subtle)', paddingTop: isMobile ? '0px' : '16px' }}>
         {!isMobile && (
           <h3 style={{ fontSize: '11px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Phone size={13} /> Contacto
@@ -1131,7 +1131,7 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
           justifyContent: 'flex-end', 
           gap: '10px', 
           paddingTop: '16px', 
-          borderTop: '1px solid #eae4d8',
+          borderTop: '1px solid var(--border-subtle)',
           marginTop: '6px'
         }}>
           <button 
@@ -1144,7 +1144,7 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
               fontSize: '13px',
               fontWeight: '600',
               background: '#ffffff',
-              border: '1px solid #d8cfc0',
+              border: '1px solid var(--border-medium)',
               color: '#4b5563'
             }}
           >
@@ -1156,8 +1156,8 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
             style={{ 
               height: '42px', 
               borderRadius: '10px',
-              background: '#191919',
-              color: '#ffffff',
+              background: 'var(--gx-primary)',
+              color: 'var(--gx-on-primary)',
               border: 'none',
               fontSize: '14px',
               fontWeight: '700',
@@ -1243,7 +1243,7 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0, 0, 0, 0.45)',
+        background: 'rgba(0, 0, 0, 0.6)',
         zIndex: 100020,
         display: 'flex',
         alignItems: 'center',
@@ -1256,7 +1256,7 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
       <div 
         style={{
           background: '#ffffff',
-          border: '1px solid #e6dfd3',
+          border: '1px solid var(--border-subtle)',
           borderRadius: '16px',
           maxWidth: '420px',
           width: '100%',
@@ -1284,7 +1284,7 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
             }}>
               <AlertTriangle size={18} color="#856404" />
             </div>
-            <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '700', color: '#191919' }}>
+            <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '700', color: '#191919', fontFamily: 'var(--font-display)', }}>
               {customConfirm.title || 'Atención'}
             </h3>
           </div>
@@ -1309,7 +1309,7 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
               height: '38px',
               padding: '0 16px',
               background: '#ffffff',
-              border: '1px solid #d8cfc0',
+              border: '1px solid var(--border-medium)',
               borderRadius: '8px',
               color: '#191919',
               fontWeight: '600',
@@ -1326,10 +1326,10 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
             style={{
               height: '38px',
               padding: '0 20px',
-              background: '#191919',
+              background: 'var(--gx-primary)',
               border: 'none',
-              borderRadius: '8px',
-              color: '#ffffff',
+              borderRadius: '12px',
+              color: 'var(--gx-on-primary)',
               fontWeight: '700',
               fontSize: '13px',
               cursor: 'pointer',
@@ -1338,8 +1338,8 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
               gap: '6px',
               transition: 'background 0.15s'
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = '#333333'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = '#191919'; }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = '#f7c946'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = '#f2bb2b'; }}
           >
             {customConfirm.confirmText || 'Ok'}
           </button>
@@ -1358,7 +1358,7 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
             style={{
               position: 'fixed',
               inset: 0,
-              background: 'rgba(8, 7, 6, 0.82)',
+              background: 'rgba(0, 0, 0, 0.6)',
               zIndex: 10005,
               display: 'flex',
               alignItems: 'center',
@@ -1372,8 +1372,8 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
             <div 
               style={{
                 background: '#ffffff',
-                border: '1px solid #e6dfd3',
-                borderRadius: '20px',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '18px',
                 maxWidth: '680px',
                 width: '100%',
                 maxHeight: '90vh',
@@ -1385,22 +1385,22 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
               onClick={e => e.stopPropagation()}
             >
               {/* Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #eae4d8', paddingBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div style={{
                     width: '38px',
                     height: '38px',
                     borderRadius: '10px',
-                    background: 'rgba(204, 122, 92, 0.12)',
-                    border: '1px solid rgba(204, 122, 92, 0.25)',
+                    background: 'var(--gx-primary-soft)',
+                    border: '1px solid rgba(242, 187, 43, 0.3)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0
                   }}>
-                    <UserPlus size={18} color="#cc7a5c" />
+                    <UserPlus size={18} color="var(--gx-primary-ink)" />
                   </div>
-                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#191919' }}>
+                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#191919', fontFamily: 'var(--font-display)', }}>
                     {player ? 'Editar Jugador' : 'Nuevo Jugador'}
                   </h3>
                 </div>
@@ -1443,7 +1443,7 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
             position: 'fixed',
             inset: 0,
             zIndex: 10005,
-            background: '#fcfbfa',
+            background: '#f4f5f7',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden'
@@ -1452,8 +1452,8 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
           {/* Mobile Header Bar fijo */}
           <div style={{
             height: '56px',
-            background: '#fdfcfb',
-            borderBottom: '1px solid #eae4d8',
+            background: '#ffffff',
+            borderBottom: '1px solid var(--border-subtle)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -1468,7 +1468,7 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
             >
               <ArrowLeft size={20} />
             </button>
-            <span style={{ fontWeight: '800', fontSize: '1.05rem', color: '#383530' }}>
+            <span style={{ fontWeight: '700', fontSize: '1.05rem', color: '#383530', fontFamily: 'var(--font-display)', }}>
               {player ? 'Editar Jugador' : 'Nuevo Jugador'}
             </span>
             <button 
@@ -1491,8 +1491,8 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
 
           {/* Footer fijo inferior en la pantalla con botones GUARDAR y BORRAR */}
           <div style={{
-            background: '#fdfcfb',
-            borderTop: '1px solid #eae4d8',
+            background: '#ffffff',
+            borderTop: '1px solid var(--border-subtle)',
             padding: '12px 16px calc(12px + env(safe-area-inset-bottom, 0px))',
             flexShrink: 0,
             zIndex: 100,
@@ -1550,7 +1550,7 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
               <AlertTriangle size={28} />
             </div>
 
-            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#191919' }}>
+            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#191919', fontFamily: 'var(--font-display)', }}>
               Atención: Jugador/a ya existente
             </h3>
 
@@ -1591,7 +1591,7 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
                   color: '#333333',
                   fontWeight: '600',
                   fontSize: '13px',
-                  border: '1px solid #d8cfc0',
+                  border: '1px solid var(--border-medium)',
                   cursor: 'pointer'
                 }}
               >

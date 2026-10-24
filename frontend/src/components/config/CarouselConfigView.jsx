@@ -81,22 +81,22 @@ const CarouselConfigView = () => {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h2 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '22px', fontWeight: '400', color: 'var(--text-primary)', margin: 0 }}>Imágenes del Carrusel</h2>
+        <h2 className="cf-section-title">Imágenes del Carrusel</h2>
       </div>
 
       {error && (
-        <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'rgba(204, 122, 92, 0.05)', color: '#cc7a5c', fontSize: '13px', border: '1px solid #e5c5bb', marginBottom: '16px' }}>
+        <div className="cf-alert">
           {error}
         </div>
       )}
 
       {/* Formulario Agregar Nueva Imagen */}
-      <div style={{ marginBottom: '32px', borderBottom: '1px solid #e6dfd3', paddingBottom: '32px' }}>
-        <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ marginBottom: '32px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '32px' }}>
+        <h3 className="cf-eyebrow" style={{ marginBottom: '16px' }}>
           <ImageIcon size={14} /> Agregar Nueva Imagen
         </h3>
         
-        <form onSubmit={handleUpload} style={{ display: 'flex', gap: '20px', alignItems: 'flex-end' }}>
+        <form onSubmit={handleUpload} className="cf-form-row">
           <div className="input-group" style={{ flex: 1 }}>
             <label>Título (opcional)</label>
             <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} style={{ borderColor: 'var(--border-subtle)' }} />
@@ -105,11 +105,11 @@ const CarouselConfigView = () => {
           <div className="input-group" style={{ flex: 1 }}>
             <label>Imagen</label>
             <div style={{
-              border: newImage ? '1px solid #e6dfd3' : '2px dashed #c4b9a3',
+              border: newImage ? '1px solid var(--border-medium)' : '2px dashed var(--border-medium)',
               borderRadius: '12px',
               padding: '10px 16px',
               textAlign: 'center',
-              background: '#fcfbfa',
+              background: '#fafafb',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -130,7 +130,7 @@ const CarouselConfigView = () => {
               />
               {newImage ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '13px', color: '#cc7a5c', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{newImage.name}</span>
+                  <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{newImage.name}</span>
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setNewImage(null); }}
@@ -141,8 +141,8 @@ const CarouselConfigView = () => {
                 </div>
               ) : (
                 <>
-                  <Upload size={16} style={{ color: '#cc7a5c' }} />
-                  <span style={{ fontSize: '13px', color: '#7f776f' }}>Subir Imagen</span>
+                  <Upload size={16} style={{ color: 'var(--gx-primary-ink)' }} />
+                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Subir Imagen</span>
                 </>
               )}
             </div>
@@ -155,20 +155,13 @@ const CarouselConfigView = () => {
       </div>
 
       {/* Grid de imágenes */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))', gap: '20px' }}>
         {images.length === 0 ? (
           <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>No hay imágenes configuradas.</p>
         ) : (
           images.map((img) => (
-            <div key={img.id} style={{ 
-              background: '#ffffff', 
-              borderRadius: '12px', 
-              overflow: 'hidden',
-              border: '1px solid #e6dfd3',
-              boxShadow: '0 2px 8px rgba(25, 20, 15, 0.03)',
-              position: 'relative'
-            }}>
-              <div style={{ width: '100%', height: '160px', background: '#faf9f6', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '1px solid #e6dfd3' }}>
+            <div key={img.id} className="cf-media-card">
+              <div style={{ width: '100%', height: '160px', background: '#f4f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '1px solid var(--border-subtle)' }}>
                 <img src={img.image} alt={img.title || 'Carrusel'} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: img.is_active ? 1 : 0.4 }} />
               </div>
               <div style={{ padding: '16px' }}>
@@ -178,7 +171,7 @@ const CarouselConfigView = () => {
                     onClick={() => toggleActive(img.id, img.is_active)}
                     style={{ 
                       background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
-                      color: img.is_active ? '#2e7d32' : 'var(--text-muted)' 
+                      color: img.is_active ? '#059669' : 'var(--text-muted)' 
                     }}
                   >
                     {img.is_active ? <CheckCircle size={18} /> : <XCircle size={18} />}
@@ -187,7 +180,7 @@ const CarouselConfigView = () => {
                   
                   {deletingId === img.id ? (
                     <div style={{ display: 'flex', gap: '4px', alignItems: 'center', animation: 'fadeIn 0.2s ease' }}>
-                      <span style={{ fontSize: '10px', color: '#cc7a5c', fontWeight: 'bold', marginRight: '4px' }}>¿Eliminar?</span>
+                      <span style={{ fontSize: '10px', color: '#dc2626', fontWeight: 'bold', marginRight: '4px' }}>¿Eliminar?</span>
                       <button 
                         type="button"
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(img.id); }} 
@@ -208,7 +201,7 @@ const CarouselConfigView = () => {
                   ) : (
                     <button 
                       onClick={() => setDeletingId(img.id)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#cc7a5c', display: 'flex', alignItems: 'center', padding: '4px' }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', display: 'flex', alignItems: 'center', padding: '8px' }}
                       title="Eliminar imagen"
                     >
                       <Trash2 size={18} />

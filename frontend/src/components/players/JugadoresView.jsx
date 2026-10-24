@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import api from '../../api';
 import { Plus, Search, UserCheck, Trash2, Edit, Eye, Mail, Phone, Calendar, X, Check } from 'lucide-react';
 import PlayerFormModal from './PlayerFormModal';
+import PageHeader from '../ui/PageHeader';
 
 const JugadoresView = () => {
   const [players, setPlayers] = useState([]);
@@ -56,33 +57,24 @@ const JugadoresView = () => {
     <div style={{ maxWidth: '1200px', margin: '0 auto' }} className="anthropic-theme players-container animate-fade-in">
       
       {/* Header Section */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-        <div>
-          <h1 className="anthropic-title" style={{ margin: 0 }}>
-            {showForm ? (editingPlayer ? 'Editar Jugador' : 'Nuevo Jugador') : 'Jugadores'}
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>
-            {showForm ? 'Completa la información del jugador para la base de datos' : 'Base de datos central y documentación de todos los jugadores'}
-          </p>
-        </div>
-        {showForm ? (
-          <button 
-            type="button" 
-            onClick={() => setShowForm(false)} 
-            className="secondary icon-only" 
-            style={{ width: '36px', height: '36px' }}
+      <PageHeader
+        icon={UserCheck}
+        title={showForm ? (editingPlayer ? 'Editar Jugador' : 'Nuevo Jugador') : 'Jugadores'}
+        subtitle={showForm ? 'Completa la información del jugador para la base de datos' : 'Base de datos central y documentación de todos los jugadores'}
+        actions={showForm ? (
+          <button
+            type="button"
+            onClick={() => setShowForm(false)}
+            className="secondary icon-only"
           >
             <X size={18} />
           </button>
         ) : (
-          <button 
-            onClick={() => { setEditingPlayer(null); setShowForm(true); }}
-            style={{ height: '40px', padding: '0 20px', fontSize: '14px' }}
-          >
+          <button onClick={() => { setEditingPlayer(null); setShowForm(true); }}>
             <Plus size={18} /> Nuevo Jugador
           </button>
         )}
-      </div>
+      />
 
       {showForm && (
         <PlayerFormModal 
@@ -125,7 +117,7 @@ const JugadoresView = () => {
           </div>
 
           {/* Table */}
-          <div className="table-container" style={{ overflowX: 'auto' }}>
+          <div className="table-container mobile-cards" style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '800px' }}>
               <thead>
                 <tr>
@@ -144,19 +136,18 @@ const JugadoresView = () => {
                 ) : (
                   players.map((player) => (
                     <tr key={player.id} className="table-row-hover">
-                      <td>
+                      <td className="mc-title" data-label="">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <div style={{ 
                             width: '40px', 
                             height: '40px', 
-                            borderRadius: '8px', 
-                            background: '#f4efe6', 
+                            borderRadius: '10px', flexShrink: 0, background: 'var(--gx-primary-soft)', 
                             display: 'flex', 
                             alignItems: 'center', 
                             justifyContent: 'center', 
-                            color: '#cc7a5c',
+                            color: 'var(--gx-primary-ink)',
                             overflow: 'hidden',
-                            border: '1px solid #e6dfd3'
+                            border: '1px solid var(--border-subtle)'
                           }}>
                             {player.photo ? (
                               <img src={player.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -176,11 +167,11 @@ const JugadoresView = () => {
                           </div>
                         </div>
                       </td>
-                      <td style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '700' }}>
+                      <td data-label="DNI" style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '700' }}>
                         {player.dni}
                       </td>
-                      <td>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <td data-label="Contacto">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-end' }}>
                           {player.phone && (
                             <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                               <Phone size={12} /> {player.phone}
@@ -194,8 +185,8 @@ const JugadoresView = () => {
                           {!player.phone && !player.email && <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>-</span>}
                         </div>
                       </td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '8px' }}>
+                      <td data-label="Documentación">
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                           {player.dni_front ? (
                             <button 
                               type="button" 
@@ -222,11 +213,11 @@ const JugadoresView = () => {
                           )}
                         </div>
                       </td>
-                      <td style={{ textAlign: 'right' }}>
+                      <td className="mc-actions" data-label="" style={{ textAlign: 'right' }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                           {deletingId === player.id ? (
                             <div style={{ display: 'flex', gap: '4px', alignItems: 'center', animation: 'fadeIn 0.2s ease' }}>
-                              <span style={{ fontSize: '10px', color: '#cc7a5c', fontWeight: 'bold', marginRight: '4px' }}>¿Eliminar?</span>
+                              <span style={{ fontSize: '10px', color: '#dc2626', fontWeight: 'bold', marginRight: '4px' }}>¿Eliminar?</span>
                               <button 
                                 type="button"
                                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(player.id); }} 

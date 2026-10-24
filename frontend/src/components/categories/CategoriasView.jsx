@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import api from '../../api';
 import { Plus, Edit2, Trash2, Award, X, Check } from 'lucide-react';
 import CategoryForm from './CategoryForm';
+import PageHeader from '../ui/PageHeader';
 
 const CategoriasView = () => {
   const location = useLocation();
@@ -96,40 +97,30 @@ const CategoriasView = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem', height: '100%' }} className="anthropic-theme animate-fade-in">
+    <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '0', height: '100%' }} className="anthropic-theme animate-fade-in">
       {/* Header de la vista */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <h1 className="anthropic-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Award size={30} style={{ color: '#cc7a5c' }} />
-            {showForm ? (selectedCategory ? 'Editar Categoría' : 'Nueva Categoría') : 'Categorías'}
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>
-            {showForm
-              ? 'Ingresa la información básica, la modalidad de fútbol y las reglas de edad.'
-              : 'Administra las categorías y sus reglas de edad para la plataforma.'}
-          </p>
-        </div>
-
-        {showForm ? (
-          <button 
-            type="button" 
-            onClick={() => setShowForm(false)} 
-            className="secondary icon-only" 
+      <PageHeader
+        icon={Award}
+        title={showForm ? (selectedCategory ? 'Editar Categoría' : 'Nueva Categoría') : 'Categorías'}
+        subtitle={showForm
+          ? 'Ingresa la información básica, la modalidad de fútbol y las reglas de edad.'
+          : 'Administra las categorías y sus reglas de edad para la plataforma.'}
+        actions={showForm ? (
+          <button
+            type="button"
+            onClick={() => setShowForm(false)}
+            className="secondary icon-only"
             style={{ width: '36px', height: '36px' }}
             title="Volver a Categorías"
           >
             <X size={18} />
           </button>
         ) : (
-          <button 
-            onClick={handleCreateNew}
-            style={{ height: '40px', padding: '0 20px', fontSize: '14px' }}
-          >
+          <button onClick={handleCreateNew}>
             <Plus size={18} /> Nueva Categoría
           </button>
         )}
-      </div>
+      />
 
       {/* Vista de Formulario In-Page */}
       {showForm ? (
@@ -160,14 +151,14 @@ const CategoriasView = () => {
                 padding: '40px',
                 textAlign: 'center',
                 background: '#ffffff',
-                borderRadius: '12px',
-                border: '1px dashed #d8cfc0',
+                borderRadius: '16px',
+                border: '1px dashed var(--border-medium)',
               }}
             >
               <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>No hay categorías configuradas aún.</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '16px' }}>
               {categories.map((cat) => {
                 const isSenior = cat.category_type === 'senior' || cat.category_type === 'veteranos';
                 const isLibre = cat.category_type === 'libre';
@@ -177,28 +168,28 @@ const CategoriasView = () => {
                     key={cat.id}
                     style={{
                       background: '#ffffff',
-                      border: '1px solid #e6dfd3',
-                      borderRadius: '12px',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: '16px',
                       padding: '20px',
                       display: 'flex',
                       flexDirection: 'column',
-                      justify: 'space-between',
+                      justifyContent: 'space-between',
                       gap: '14px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                      boxShadow: 'var(--gx-shadow-sm)',
                       transition: 'border-color 0.2s ease',
                     }}
                   >
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#191919' }}>{cat.name}</h3>
+                        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-primary)', textTransform: 'uppercase' }}>{cat.name}</h3>
                         <span
                           style={{
                             fontSize: '11px',
                             fontWeight: '600',
                             padding: '4px 8px',
                             borderRadius: '6px',
-                            backgroundColor: '#eae4d8',
-                            color: '#191919',
+                            backgroundColor: 'var(--gx-primary-soft)',
+                            color: '#8a6508',
                             whiteSpace: 'nowrap',
                           }}
                         >
@@ -233,9 +224,9 @@ const CategoriasView = () => {
                           style={{
                             marginTop: '12px',
                             padding: '12px',
-                            background: '#faf8f5',
-                            borderRadius: '8px',
-                            border: '1px solid #efe9e0',
+                            background: '#fafafb',
+                            borderRadius: '12px',
+                            border: '1px solid #ececef',
                             fontSize: '12px',
                             color: '#444',
                             display: 'flex',
@@ -263,19 +254,20 @@ const CategoriasView = () => {
                     <div
                       style={{
                         display: 'flex',
-                        justify: 'flex-end',
+                        justifyContent: 'flex-end',
                         gap: '8px',
-                        paddingTop: '10px',
-                        borderTop: '1px solid #f2ede4',
+                        paddingTop: '12px',
+                        borderTop: '1px solid #f0f0f2',
                       }}
                     >
                       <button
                         onClick={() => handleEdit(cat)}
                         style={{
-                          background: 'none',
-                          border: '1px solid #d8cfc0',
-                          borderRadius: '6px',
-                          padding: '6px 12px',
+                          background: '#ffffff',
+                          border: '1px solid var(--border-medium)',
+                          borderRadius: '10px',
+                          padding: '8px 14px',
+                          minHeight: '38px',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
@@ -290,17 +282,18 @@ const CategoriasView = () => {
                       <button
                         onClick={() => handleOpenDeleteModal(cat)}
                         style={{
-                          background: 'none',
-                          border: '1px solid #f1c5c5',
-                          borderRadius: '6px',
-                          padding: '6px 12px',
+                          background: '#fef2f2',
+                          border: '1px solid #fecaca',
+                          borderRadius: '10px',
+                          padding: '8px 14px',
+                          minHeight: '38px',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
                           gap: '6px',
                           fontSize: '12px',
-                          color: '#c62828',
-                          fontWeight: '500',
+                          color: '#dc2626',
+                          fontWeight: '600',
                         }}
                       >
                         <Trash2 size={14} /> Eliminar
@@ -322,7 +315,8 @@ const CategoriasView = () => {
           left: 0,
           width: '100vw',
           height: '100vh',
-          background: 'rgba(0, 0, 0, 0.38)',
+          background: 'rgba(0, 0, 0, 0.6)',
+          backdropFilter: 'blur(3px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -331,19 +325,19 @@ const CategoriasView = () => {
         }}>
           <div style={{
             background: '#ffffff',
-            border: '1px solid #e6dfd3',
-            borderRadius: '16px',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: '18px',
             maxWidth: '460px',
             width: '100%',
             padding: '24px',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 24px 60px rgba(0, 0, 0, 0.3)',
             display: 'flex',
             flexDirection: 'column',
             gap: '16px',
             animation: 'fadeIn 0.2s ease-out'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#191919', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700', color: 'var(--text-primary)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 Eliminar Categoría {categoryToDelete.name}
               </h3>
               <button
@@ -360,9 +354,9 @@ const CategoriasView = () => {
             </p>
 
             <div style={{
-              background: '#fff8f8',
-              border: '1px solid #f8d7da',
-              borderRadius: '8px',
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              borderRadius: '12px',
               padding: '12px',
               fontSize: '12px',
               color: '#721c24',
@@ -385,10 +379,10 @@ const CategoriasView = () => {
                     width: '100%',
                     padding: '10px 14px',
                     height: '42px',
-                    borderRadius: '8px',
-                    border: deleteError ? '1px solid #e07070' : '1px solid #d8cfc0',
-                    background: '#ffffff',
-                    color: '#191919',
+                    borderRadius: '12px',
+                    border: deleteError ? '1px solid #dc2626' : '1px solid var(--border-subtle)',
+                    background: '#f1f2f4',
+                    color: 'var(--text-primary)',
                     fontSize: '14px',
                     outline: 'none',
                     boxSizing: 'border-box'
@@ -397,7 +391,7 @@ const CategoriasView = () => {
               </div>
 
               {deleteError && (
-                <div style={{ fontSize: '12px', color: '#c62828', fontWeight: '500' }}>
+                <div style={{ fontSize: '12px', color: '#dc2626', fontWeight: '500' }}>
                   {deleteError}
                 </div>
               )}
@@ -407,11 +401,11 @@ const CategoriasView = () => {
                   type="button"
                   onClick={() => setCategoryToDelete(null)}
                   style={{
-                    height: '38px',
-                    padding: '0 16px',
+                    height: '42px',
+                    padding: '0 18px',
                     background: '#ffffff',
-                    border: '1px solid #d8cfc0',
-                    borderRadius: '8px',
+                    border: '1px solid var(--border-medium)',
+                    borderRadius: '12px',
                     color: '#191919',
                     fontWeight: '600',
                     fontSize: '13px',
@@ -421,10 +415,10 @@ const CategoriasView = () => {
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = '#191919';
                     e.currentTarget.style.color = '#000000';
-                    e.currentTarget.style.background = '#faf8f5';
+                    e.currentTarget.style.background = '#f4f4f6';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = '#d8cfc0';
+                    e.currentTarget.style.borderColor = '#d4d4d8';
                     e.currentTarget.style.color = '#191919';
                     e.currentTarget.style.background = '#ffffff';
                   }}
@@ -435,9 +429,9 @@ const CategoriasView = () => {
                   type="submit"
                   disabled={deleting || !confirmPassword}
                   style={{
-                    height: '38px', padding: '0 16px',
-                    backgroundColor: '#c62828', color: '#fff', border: 'none',
-                    borderRadius: '8px', fontWeight: '600', cursor: deleting ? 'not-allowed' : 'pointer'
+                    height: '42px', padding: '0 18px',
+                    backgroundColor: '#dc2626', color: '#fff', border: 'none',
+                    borderRadius: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '12px', cursor: deleting ? 'not-allowed' : 'pointer'
                   }}
                 >
                   {deleting ? 'Eliminando...' : 'Eliminar'}
@@ -456,7 +450,7 @@ const CategoriasView = () => {
             width: '22px',
             height: '22px',
             borderRadius: '50%',
-            background: '#2e7d32',
+            background: '#059669',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

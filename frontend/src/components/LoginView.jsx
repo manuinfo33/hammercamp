@@ -29,7 +29,7 @@ const LoginView = () => {
     <div className="anthropic-theme" style={{ 
       minHeight: '100vh', 
       display: 'flex', 
-      background: '#f9f6f0',
+      background: '#f4f5f7',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '20px'
@@ -38,7 +38,7 @@ const LoginView = () => {
 
         {/* Logo + Brand */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{ width: '130px', height: '130px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0e0d0b', borderRadius: '24px', padding: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}>
+          <div style={{ width: '120px', height: '120px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#18181b', borderRadius: '24px', padding: '12px', boxShadow: '0 12px 32px rgba(0,0,0,0.18)' }}>
             <img src="/logo-superliga.png" alt="La Superliga Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
         </div>
@@ -46,12 +46,12 @@ const LoginView = () => {
         {/* Login Card */}
         <div style={{ 
           background: '#ffffff', 
-          border: '1px solid #e6dfd3', 
-          borderRadius: '16px', 
-          padding: '40px',
-          boxShadow: '0 12px 40px rgba(25, 20, 15, 0.05)'
+          border: '1px solid var(--border-subtle)', 
+          borderRadius: '18px', 
+          padding: 'clamp(22px, 6vw, 40px)',
+          boxShadow: '0 12px 40px rgba(24, 24, 27, 0.08)'
         }}>
-          <h2 style={{ fontFamily: 'Newsreader, Georgia, serif', fontSize: '26px', fontWeight: '400', color: '#191919', marginBottom: '24px', textAlign: 'center' }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.7rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '24px', textAlign: 'center' }}>
             Iniciar Sesión
           </h2>
 
@@ -59,10 +59,10 @@ const LoginView = () => {
             {error && (
               <div style={{ 
                 padding: '11px 15px', 
-                background: 'rgba(204, 122, 92, 0.05)', 
-                border: '1px solid #e5c5bb', 
-                borderRadius: '10px', 
-                color: '#cc7a5c', 
+                background: '#fef2f2', 
+                border: '1px solid #fecaca', 
+                borderRadius: '12px', 
+                color: '#dc2626', 
                 fontSize: '13px',
                 animation: 'shake 0.4s ease-in-out'
               }}>
@@ -104,11 +104,11 @@ const LoginView = () => {
               type="submit" 
               disabled={isSubmitting}
               style={{ 
-                height: '46px', 
-                fontSize: '14px', 
+                height: '48px', 
+                fontSize: '13px', 
                 marginTop: '10px',
                 width: '100%',
-                fontWeight: '600'
+                fontWeight: '700'
               }}
             >
               {isSubmitting ? (

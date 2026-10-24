@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Wallet, Building2, DollarSign } from 'lucide-react';
+import PageHeader from '../ui/PageHeader';
 import api from '../../api';
 import IngresosView from './IngresosView';
 import EgresosView from './EgresosView';
@@ -18,17 +19,17 @@ const formatARS = (num) =>
 function ResumenCard({ icon: Icon, label, value, color, sub }) {
   const isNeg = value < 0;
   return (
-    <div className="glass-card" style={{ flex: 1, minWidth: '220px', position: 'relative', overflow: 'hidden' }}>
+    <div className="glass-card" style={{ position: 'relative', overflow: 'hidden' }}>
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
         background: color,
       }} />
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem' }}>
         <div>
-          <p style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '6px' }}>{label}</p>
+          <p style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>{label}</p>
           <p style={{
-            fontSize: '1.8rem', fontWeight: 800,
-            color: isNeg ? '#e07070' : 'var(--text-primary)',
+            fontSize: '1.7rem', fontWeight: 700, fontFamily: 'var(--font-display)',
+            color: isNeg ? '#dc2626' : 'var(--text-primary)',
             letterSpacing: '-1px',
           }}>
             {formatARS(value)}
@@ -40,7 +41,7 @@ function ResumenCard({ icon: Icon, label, value, color, sub }) {
           background: color.includes('gradient') ? color : `${color}22`,
           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
         }}>
-          <Icon size={22} color={isNeg ? '#e07070' : '#D4B896'} />
+          <Icon size={22} color={isNeg ? '#dc2626' : (color.includes('gradient') ? '#151515' : color)} />
         </div>
       </div>
     </div>
@@ -63,78 +64,83 @@ export default function CajaView() {
   useEffect(() => { fetchResumen(); }, []);
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div className="anthropic-theme animate-fade-in" style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Header */}
-      <div>
-        <h1 className="gradient-text" style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '6px' }}>Caja</h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem' }}>
-          Gestión financiera del club — Ingresos, egresos y saldos de socios.
-        </p>
-      </div>
+      <PageHeader
+        icon={Wallet}
+        title="Caja"
+        subtitle="Gestión financiera del club — Ingresos, egresos y saldos de socios."
+        style={{ marginBottom: 0 }}
+      />
 
       {/* Tarjetas de resumen siempre visibles */}
       {loading ? (
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+        <div className="gx-grid">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="glass-card" style={{ flex: 1, minWidth: '220px', height: '120px',
+            <div key={i} className="glass-card" style={{ height: '120px',
               background: 'linear-gradient(90deg, var(--bg-card) 25%, var(--bg-elevated) 50%, var(--bg-card) 75%)',
               backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
           ))}
         </div>
       ) : resumen ? (
-        <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
+        <div className="gx-grid">
           <ResumenCard
             icon={Wallet}
             label="Saldo Total"
             value={resumen.saldo_total}
-            color="linear-gradient(135deg, #D4B896, #A08060)"
+            color="linear-gradient(135deg, #f2bb2b, #d99a0b)"
             sub="Efectivo + Banco"
           />
           <ResumenCard
             icon={DollarSign}
             label="Efectivo"
             value={resumen.saldo_efectivo}
-            color="#D4B896"
+            color="#d99a0b"
           />
           <ResumenCard
             icon={Building2}
             label="Banco"
             value={resumen.saldo_banco}
-            color="#7EB8D4"
+            color="#2563eb"
           />
           <ResumenCard
             icon={TrendingUp}
             label="Total Ingresos"
             value={resumen.ingresos_total}
-            color="#6BCB77"
+            color="#059669"
           />
           <ResumenCard
             icon={TrendingDown}
             label="Total Egresos"
             value={-resumen.egresos_total}
-            color="#e07070"
+            color="#dc2626"
           />
         </div>
       ) : null}
 
       {/* Tabs de navegación */}
-      <div style={{ borderBottom: '1px solid var(--border-subtle)', display: 'flex', gap: '4px' }}>
+      <div style={{ borderBottom: '1px solid #d8cfc0', display: 'flex', gap: '28px', overflowX: 'auto', scrollbarWidth: 'none' }}>
         {TABS.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             style={{
-              background: activeTab === tab.id ? 'var(--brand-beige)' : 'transparent',
-              color: activeTab === tab.id ? '#1a1512' : 'var(--text-muted)',
+              background: 'transparent',
+              color: activeTab === tab.id ? 'var(--gx-coral)' : '#191919',
               border: 'none',
-              borderBottom: activeTab === tab.id ? '2px solid var(--brand-beige)' : '2px solid transparent',
-              borderRadius: '8px 8px 0 0',
-              padding: '8px 20px',
-              fontWeight: 700,
-              fontSize: '0.85rem',
+              borderBottom: activeTab === tab.id ? '4px solid var(--gx-coral)' : '4px solid transparent',
+              borderRadius: 0,
+              padding: '12px 4px',
+              height: 'auto',
+              fontWeight: activeTab === tab.id ? 700 : 500,
+              fontSize: '14.5px',
+              textTransform: 'none',
+              letterSpacing: 0,
               cursor: 'pointer',
-              transition: 'all 0.2s ease',
+              transition: 'all 0.15s ease',
               marginBottom: '-1px',
+              flexShrink: 0,
+              boxShadow: 'none',
             }}
           >
             {tab.label}
@@ -146,7 +152,7 @@ export default function CajaView() {
       <div>
         {activeTab === 'resumen' && (
           <div className="glass-card animate-fade-in">
-            <h3 style={{ fontWeight: 700, marginBottom: '1rem', color: 'var(--text-primary)' }}>
+            <h3 style={{ fontWeight: 700, marginBottom: '1rem', color: 'var(--text-primary)', textTransform: 'uppercase' }}>
               📊 Resumen General
             </h3>
             <p style={{ color: 'var(--text-muted)', lineHeight: 1.7 }}>

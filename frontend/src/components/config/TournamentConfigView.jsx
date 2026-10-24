@@ -165,8 +165,8 @@ const TournamentConfigView = () => {
       {/* Cabecera de Sección */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#191919', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Award size={22} style={{ color: '#cc7a5c' }} />
+          <h2 className="cf-section-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Award size={22} style={{ color: 'var(--gx-primary-ink)' }} />
             Categorías de Torneos
           </h2>
           <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
@@ -181,14 +181,15 @@ const TournamentConfigView = () => {
             alignItems: 'center',
             gap: '8px',
             padding: '10px 18px',
-            backgroundColor: '#cc7a5c',
-            color: '#ffffff',
+            backgroundColor: 'var(--gx-primary)',
+            color: 'var(--gx-on-primary)',
             border: 'none',
-            borderRadius: '8px',
-            fontSize: '13px',
-            fontWeight: '600',
+            borderRadius: '12px',
+            fontSize: '12px',
+            fontWeight: '700',
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
             cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(204, 122, 92, 0.25)',
             transition: 'all 0.2s ease',
           }}
           className="btn-hover-effect"
@@ -206,15 +207,15 @@ const TournamentConfigView = () => {
           style={{
             padding: '40px',
             textAlign: 'center',
-            background: '#faf8f5',
+            background: '#fafafb',
             borderRadius: '12px',
-            border: '1px dashed #d8cfc0',
+            border: '1px dashed var(--border-medium)',
           }}
         >
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>No hay categorías configuradas aún.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '16px' }}>
           {categories.map((cat) => {
             const isSenior = cat.category_type === 'senior' || cat.category_type === 'veteranos';
             const isLibre = cat.category_type === 'libre';
@@ -224,12 +225,12 @@ const TournamentConfigView = () => {
                 key={cat.id}
                 style={{
                   background: '#ffffff',
-                  border: '1px solid #e6dfd3',
-                  borderRadius: '12px',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '16px',
                   padding: '20px',
                   display: 'flex',
                   flexDirection: 'column',
-                  justify: 'space-between',
+                  justifyContent: 'space-between',
                   gap: '14px',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
                   transition: 'border-color 0.2s ease',
@@ -237,15 +238,15 @@ const TournamentConfigView = () => {
               >
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                    <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#191919' }}>{cat.name}</h3>
+                    <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)' }}>{cat.name}</h3>
                     <span
                       style={{
                         fontSize: '11px',
                         fontWeight: '600',
                         padding: '4px 8px',
                         borderRadius: '6px',
-                        backgroundColor: '#eae4d8',
-                        color: '#191919',
+                        backgroundColor: 'var(--gx-primary-soft)',
+                        color: 'var(--text-primary)',
                         whiteSpace: 'nowrap',
                       }}
                     >
@@ -262,7 +263,7 @@ const TournamentConfigView = () => {
                         padding: '4px 10px',
                         borderRadius: '6px',
                         backgroundColor: isSenior ? '#fff3ec' : isLibre ? '#eef7ed' : '#f4f0ea',
-                        color: isSenior ? '#cc7a5c' : isLibre ? '#2e7d32' : '#666',
+                        color: isSenior ? '#cc7a5c' : isLibre ? '#059669' : '#666',
                         border: `1px solid ${isSenior ? '#fcdbc9' : isLibre ? '#c8e6c9' : '#e2dad0'}`,
                       }}
                     >
@@ -280,9 +281,9 @@ const TournamentConfigView = () => {
                       style={{
                         marginTop: '12px',
                         padding: '12px',
-                        background: '#faf8f5',
+                        background: '#fafafb',
                         borderRadius: '8px',
-                        border: '1px solid #efe9e0',
+                        border: '1px solid #ececef',
                         fontSize: '12px',
                         color: '#444',
                         display: 'flex',
@@ -310,17 +311,17 @@ const TournamentConfigView = () => {
                 <div
                   style={{
                     display: 'flex',
-                    justify: 'flex-end',
+                    justifyContent: 'flex-end',
                     gap: '8px',
                     paddingTop: '10px',
-                    borderTop: '1px solid #f2ede4',
+                    borderTop: '1px solid #f0f0f2',
                   }}
                 >
                   <button
                     onClick={() => handleOpenModal(cat)}
                     style={{
                       background: 'none',
-                      border: '1px solid #d8cfc0',
+                      border: '1px solid var(--border-medium)',
                       borderRadius: '6px',
                       padding: '6px 12px',
                       cursor: 'pointer',
@@ -338,7 +339,7 @@ const TournamentConfigView = () => {
                     onClick={() => handleDelete(cat.id, cat.name)}
                     style={{
                       background: 'none',
-                      border: '1px solid #f1c5c5',
+                      border: '1px solid #fecaca',
                       borderRadius: '6px',
                       padding: '6px 12px',
                       cursor: 'pointer',
@@ -346,7 +347,7 @@ const TournamentConfigView = () => {
                       alignItems: 'center',
                       gap: '6px',
                       fontSize: '12px',
-                      color: '#c62828',
+                      color: '#dc2626',
                       fontWeight: '500',
                     }}
                   >
@@ -368,7 +369,8 @@ const TournamentConfigView = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.38)',
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(3px)',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
@@ -384,8 +386,8 @@ const TournamentConfigView = () => {
               width: '100%',
               maxHeight: '90vh',
               overflowY: 'auto',
-              boxShadow: '0 12px 36px rgba(0,0,0,0.18)',
-              border: '1px solid #e6dfd3',
+              boxShadow: '0 24px 60px rgba(0,0,0,0.3)',
+              border: '1px solid var(--border-subtle)',
             }}
             className="animate-fade-in"
           >
@@ -393,16 +395,16 @@ const TournamentConfigView = () => {
             <div
               style={{
                 padding: '20px 24px',
-                borderBottom: '1px solid #e6dfd3',
+                borderBottom: '1px solid var(--border-subtle)',
                 display: 'flex',
-                justify: 'space-between',
+                justifyContent: 'space-between',
                 alignItems: 'center',
-                background: '#faf8f5',
+                background: '#ffffff',
                 borderTopLeftRadius: '16px',
                 borderTopRightRadius: '16px',
               }}
             >
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#191919' }}>
+              <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '700', color: 'var(--text-primary)', textTransform: 'uppercase' }}>
                 {editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}
               </h3>
               <button
@@ -428,11 +430,11 @@ const TournamentConfigView = () => {
               {errorMsg && (
                 <div
                   style={{
-                    backgroundColor: '#fdeded',
-                    border: '1px solid #f5c2c2',
+                    backgroundColor: '#fef2f2',
+                    border: '1px solid #fecaca',
                     borderRadius: '8px',
                     padding: '10px 14px',
-                    color: '#b71c1c',
+                    color: '#b91c1c',
                     fontSize: '13px',
                     display: 'flex',
                     alignItems: 'center',
@@ -446,8 +448,8 @@ const TournamentConfigView = () => {
 
               {/* Nombre de Categoría */}
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#191919', marginBottom: '6px' }}>
-                  Nombre de Categoría <span style={{ color: '#c62828' }}>*</span>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '6px' }}>
+                  Nombre de Categoría <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <input
                   type="text"
@@ -457,8 +459,8 @@ const TournamentConfigView = () => {
                   style={{
                     width: '100%',
                     padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid #d8cfc0',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-subtle)',
                     fontSize: '14px',
                     outline: 'none',
                     boxSizing: 'border-box',
@@ -468,8 +470,8 @@ const TournamentConfigView = () => {
 
               {/* Tipo de Fútbol */}
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#191919', marginBottom: '6px' }}>
-                  Tipo de Fútbol <span style={{ color: '#c62828' }}>*</span>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '6px' }}>
+                  Tipo de Fútbol <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <select
                   value={formData.football_type}
@@ -477,11 +479,11 @@ const TournamentConfigView = () => {
                   style={{
                     width: '100%',
                     padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid #d8cfc0',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-subtle)',
                     fontSize: '14px',
                     outline: 'none',
-                    backgroundColor: '#ffffff',
+                    backgroundColor: '#f1f2f4',
                     boxSizing: 'border-box',
                   }}
                 >
@@ -495,8 +497,8 @@ const TournamentConfigView = () => {
 
               {/* Tipo de Categoría */}
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#191919', marginBottom: '6px' }}>
-                  Tipo de Categoría <span style={{ color: '#c62828' }}>*</span>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '6px' }}>
+                  Tipo de Categoría <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <select
                   value={formData.category_type}
@@ -504,11 +506,11 @@ const TournamentConfigView = () => {
                   style={{
                     width: '100%',
                     padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid #d8cfc0',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-subtle)',
                     fontSize: '14px',
                     outline: 'none',
-                    backgroundColor: '#ffffff',
+                    backgroundColor: '#f1f2f4',
                     boxSizing: 'border-box',
                   }}
                 >
@@ -524,8 +526,8 @@ const TournamentConfigView = () => {
               {formData.category_type === 'senior' && (
                 <div
                   style={{
-                    background: '#faf8f5',
-                    border: '1px solid #e6dfd3',
+                    background: '#fafafb',
+                    border: '1px solid var(--border-subtle)',
                     borderRadius: '12px',
                     padding: '20px',
                     display: 'flex',
@@ -534,7 +536,7 @@ const TournamentConfigView = () => {
                   }}
                   className="animate-fade-in"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #efe9e0', paddingBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #ececef', paddingBottom: '10px' }}>
                     <Award size={18} style={{ color: '#cc7a5c' }} />
                     <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#cc7a5c' }}>
                       Configuración de Senior
@@ -543,7 +545,7 @@ const TournamentConfigView = () => {
 
                   {/* PREGUNTA 1: ¿Para mayores de qué edad? */}
                   <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '13px', fontWeight: '600', color: '#191919', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ background: '#cc7a5c', color: '#fff', width: '20px', height: '20px', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px' }}>1</span>
                       ¿Para mayores de qué edad?
                     </label>
@@ -553,8 +555,8 @@ const TournamentConfigView = () => {
                       style={{
                         width: '100%',
                         padding: '10px 14px',
-                        borderRadius: '8px',
-                        border: '1px solid #d8cfc0',
+                        borderRadius: '12px',
+                        border: '1px solid var(--border-subtle)',
                         fontSize: '14px',
                         outline: 'none',
                         backgroundColor: '#ffffff',
@@ -571,8 +573,8 @@ const TournamentConfigView = () => {
 
                   {/* PREGUNTA 2: Aparece tras definir min_age */}
                   {formData.min_age && (
-                    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '10px', borderTop: '1px dashed #e6dfd3' }}>
-                      <label style={{ fontSize: '13px', fontWeight: '600', color: '#191919', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '10px', borderTop: '1px dashed var(--border-subtle)' }}>
+                      <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span style={{ background: '#cc7a5c', color: '#fff', width: '20px', height: '20px', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px' }}>2</span>
                         ¿Cuántos menores de {formData.min_age} años se permiten?
                       </label>
@@ -582,8 +584,8 @@ const TournamentConfigView = () => {
                         style={{
                           width: '100%',
                           padding: '10px 14px',
-                          borderRadius: '8px',
-                          border: '1px solid #d8cfc0',
+                          borderRadius: '12px',
+                          border: '1px solid var(--border-subtle)',
                           fontSize: '14px',
                           outline: 'none',
                           backgroundColor: '#ffffff',
@@ -602,13 +604,13 @@ const TournamentConfigView = () => {
 
                   {/* PREGUNTA 3: Solo si seleccionan 1 o más menores */}
                   {formData.min_age && formData.max_underage_allowed > 0 && (
-                    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '10px', borderTop: '1px dashed #e6dfd3' }}>
-                      <label style={{ fontSize: '13px', fontWeight: '600', color: '#191919', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '10px', borderTop: '1px dashed var(--border-subtle)' }}>
+                      <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span style={{ background: '#cc7a5c', color: '#fff', width: '20px', height: '20px', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px' }}>3</span>
                         ¿Cuál es el rango de edad permitido para los menores?
                       </label>
                       
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', background: '#ffffff', padding: '12px 14px', borderRadius: '8px', border: '1px solid #d8cfc0' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', background: '#ffffff', padding: '12px 14px', borderRadius: '8px', border: '1px solid var(--border-medium)' }}>
                         <span style={{ fontSize: '13px', color: '#555', fontWeight: '500' }}>Desde</span>
                         <select
                           value={formData.min_underage_age || 18}
@@ -616,9 +618,9 @@ const TournamentConfigView = () => {
                           style={{
                             padding: '6px 12px',
                             borderRadius: '6px',
-                            border: '1px solid #d8cfc0',
+                            border: '1px solid var(--border-medium)',
                             fontSize: '13px',
-                            backgroundColor: '#faf8f5',
+                            backgroundColor: '#fafafb',
                             outline: 'none',
                           }}
                         >
@@ -640,8 +642,8 @@ const TournamentConfigView = () => {
 
                   {/* PREGUNTA 4: Diseño estilizado de botones Sí / No */}
                   {formData.min_age && (
-                    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '10px', borderTop: '1px dashed #e6dfd3' }}>
-                      <label style={{ fontSize: '13px', fontWeight: '600', color: '#191919', lineHeight: '1.4', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+                    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '10px', borderTop: '1px dashed var(--border-subtle)' }}>
+                      <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', lineHeight: '1.4', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
                         <span style={{ background: '#cc7a5c', color: '#fff', width: '20px', height: '20px', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', flexShrink: 0, marginTop: '2px' }}>
                           {formData.max_underage_allowed > 0 ? 4 : 3}
                         </span>
@@ -656,7 +658,7 @@ const TournamentConfigView = () => {
                           style={{
                             padding: '14px',
                             borderRadius: '10px',
-                            border: formData.allow_birthday_in_year ? '2px solid #cc7a5c' : '1px solid #d8cfc0',
+                            border: formData.allow_birthday_in_year ? '2px solid #cc7a5c' : '1px solid var(--border-medium)',
                             backgroundColor: formData.allow_birthday_in_year ? '#fff7f3' : '#ffffff',
                             cursor: 'pointer',
                             transition: 'all 0.2s ease',
@@ -687,7 +689,7 @@ const TournamentConfigView = () => {
                           style={{
                             padding: '14px',
                             borderRadius: '10px',
-                            border: !formData.allow_birthday_in_year ? '2px solid #191919' : '1px solid #d8cfc0',
+                            border: !formData.allow_birthday_in_year ? '2px solid #191919' : '1px solid var(--border-medium)',
                             backgroundColor: !formData.allow_birthday_in_year ? '#f5f5f5' : '#ffffff',
                             cursor: 'pointer',
                             transition: 'all 0.2s ease',
@@ -721,11 +723,11 @@ const TournamentConfigView = () => {
               <div
                 style={{
                   display: 'flex',
-                  justify: 'flex-end',
+                  justifyContent: 'flex-end',
                   gap: '12px',
                   marginTop: '10px',
                   paddingTop: '16px',
-                  borderTop: '1px solid #e6dfd3',
+                  borderTop: '1px solid var(--border-subtle)',
                 }}
               >
                 <button
@@ -734,8 +736,8 @@ const TournamentConfigView = () => {
                   disabled={saving}
                   style={{
                     padding: '10px 18px',
-                    borderRadius: '8px',
-                    border: '1px solid #d8cfc0',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-subtle)',
                     backgroundColor: 'transparent',
                     color: '#444',
                     fontSize: '13px',
@@ -751,12 +753,13 @@ const TournamentConfigView = () => {
                     padding: '10px 20px',
                     borderRadius: '8px',
                     border: 'none',
-                    backgroundColor: '#cc7a5c',
-                    color: '#ffffff',
-                    fontSize: '13px',
-                    fontWeight: '600',
+                    backgroundColor: 'var(--gx-primary)',
+                    color: 'var(--gx-on-primary)',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
                     cursor: saving ? 'not-allowed' : 'pointer',
-                    boxShadow: '0 2px 8px rgba(204, 122, 92, 0.25)',
                   }}
                 >
                   {saving ? 'Guardando...' : editingCategory ? 'Guardar Cambios' : 'Crear Categoría'}

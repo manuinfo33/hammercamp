@@ -193,52 +193,54 @@ const UnirPDF = ({ onClose }) => {
     <div style={{
       position: 'fixed', 
       inset: 0, 
-      background: 'rgba(0,0,0,0.8)',
+      background: 'rgba(0,0,0,0.6)',
       display: 'flex', 
       alignItems: 'center', 
       justifyContent: 'center',
       zIndex: 2000, 
-      backdropFilter: 'blur(8px)', 
-      padding: '40px',
+      backdropFilter: 'blur(3px)', 
+      padding: 'clamp(10px, 3vw, 40px)',
       animation: 'fadeIn 0.3s ease-out'
     }}>
       <div style={{
-        background: 'var(--bg-card)', 
+        background: '#ffffff', 
         border: '1px solid var(--border-subtle)',
-        borderRadius: '24px', 
-        padding: '40px', 
+        borderRadius: '18px', 
+        padding: 'clamp(16px, 4vw, 32px)', 
         width: '100%', 
         maxWidth: '680px',
-        maxHeight: '85vh', 
+        maxHeight: '90vh', 
         overflowY: 'auto', 
-        boxShadow: '0 40px 100px rgba(0,0,0,0.8)',
+        boxShadow: '0 24px 60px rgba(0,0,0,0.3)',
         position: 'relative',
         animation: 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
         scrollbarWidth: 'thin',
         scrollbarColor: 'var(--border-medium) transparent'
       }}>
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-          <div>
-            <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
-              Unir PDF / Modo Masivo
-            </h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '4px' }}>
-              Uní archivos individuales o seleccioná una carpeta con subcarpetas de pacientes
-            </p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid var(--border-subtle)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+            <div className="gx-icon-box sm"><FileText size={20} /></div>
+            <div style={{ minWidth: 0 }}>
+              <h2 style={{ fontSize: '1.2rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-primary)', margin: 0 }}>
+                Unir PDF / Modo Masivo
+              </h2>
+              <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '2px' }}>
+                Uní archivos individuales o seleccioná una carpeta con subcarpetas de pacientes
+              </p>
+            </div>
           </div>
-          <button type="button" onClick={onClose} className="secondary"
-            style={{ minWidth: 'auto', width: '32px', height: '32px', padding: 0 }}>
+          <button type="button" onClick={onClose} className="modal-close-btn">
             <X size={16} />
           </button>
         </div>
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            style={{ flex: 1, height: '60px', background: 'var(--brand-beige-subtle)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', borderRadius: '12px' }}
+            style={{ flex: '1 1 120px', height: '64px', background: '#fafafb', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', borderRadius: '12px' }}
           >
             <FileText size={18} color="var(--brand-beige)" />
             <span style={{ fontSize: '10px', fontWeight: '800', textTransform: 'uppercase' }}>Archivos</span>
@@ -246,17 +248,17 @@ const UnirPDF = ({ onClose }) => {
           <button
             type="button"
             onClick={() => singleFolderInputRef.current?.click()}
-            style={{ flex: 1, height: '60px', background: 'var(--brand-beige-subtle)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', borderRadius: '12px' }}
+            style={{ flex: '1 1 120px', height: '64px', background: '#fafafb', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', borderRadius: '12px' }}
           >
-            <FolderPlus size={18} color="var(--brand-beige-light)" />
+            <FolderPlus size={18} color="var(--gx-primary-ink)" />
             <span style={{ fontSize: '10px', fontWeight: '800', textTransform: 'uppercase' }}>Carpeta (1 PDF)</span>
           </button>
           <button
             type="button"
             onClick={() => folderInputRef.current?.click()}
-            style={{ flex: 1, height: '60px', background: 'var(--brand-beige-subtle)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', borderRadius: '12px' }}
+            style={{ flex: '1 1 120px', height: '64px', background: '#fafafb', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', borderRadius: '12px' }}
           >
-            <FolderOpen size={18} color="var(--brand-beige-dim)" />
+            <FolderOpen size={18} color="var(--gx-coral)" />
             <span style={{ fontSize: '10px', fontWeight: '800', textTransform: 'uppercase' }}>Carpeta (Masivo)</span>
           </button>
         </div>
@@ -267,13 +269,13 @@ const UnirPDF = ({ onClose }) => {
 
         {/* Progress Indicator */}
         {progress && (
-          <div style={{ marginBottom: '20px', padding: '16px', background: 'var(--brand-beige-subtle)', border: '1px solid var(--border-subtle)', borderRadius: '12px' }}>
+          <div style={{ marginBottom: '20px', padding: '16px', background: '#fafafb', border: '1px solid var(--border-subtle)', borderRadius: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span style={{ fontSize: '12px', color: 'var(--brand-beige-light)', fontWeight: '700' }}>Procesando {progress.current} de {progress.total}</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: '700' }}>Procesando {progress.current} de {progress.total}</span>
               <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{Math.round((progress.current / progress.total) * 100)}%</span>
             </div>
-            <div style={{ height: '6px', background: 'rgba(0,0,0,0.3)', borderRadius: '10px', overflow: 'hidden' }}>
-              <div style={{ height: '100%', background: 'var(--brand-beige)', width: `${(progress.current / progress.total) * 100}%`, transition: 'width 0.3s' }} />
+            <div style={{ height: '6px', background: '#e4e4e7', borderRadius: '10px', overflow: 'hidden' }}>
+              <div style={{ height: '100%', background: 'var(--gx-primary)', width: `${(progress.current / progress.total) * 100}%`, transition: 'width 0.3s' }} />
             </div>
             <p style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '8px', fontStyle: 'italic' }}>
               Actual: {progress.name || 'Iniciando...'}
@@ -283,13 +285,13 @@ const UnirPDF = ({ onClose }) => {
 
         {/* Groups list (Patient Mode) */}
         {Object.keys(groups).length > 0 && (
-          <div style={{ marginBottom: '20px', background: 'var(--bg-card)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
+          <div style={{ marginBottom: '20px', background: '#ffffff', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
             <p style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px', fontWeight: '700' }}>
               Pacientes detectados ({Object.keys(groups).length})
             </p>
             <div style={{ maxHeight: '150px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
               {Object.keys(groups).sort().map(name => (
-                <div key={name} style={{ fontSize: '12px', color: 'var(--text-primary)', padding: '6px 10px', background: 'var(--brand-beige-subtle)', borderRadius: '6px', display: 'flex', justifyContent: 'space-between' }}>
+                <div key={name} style={{ fontSize: '12px', color: 'var(--text-primary)', padding: '8px 12px', background: '#f4f4f6', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
                   <span>{name}</span>
                   <span style={{ color: 'var(--text-muted)' }}>{groups[name].length} archivos</span>
                 </div>
@@ -308,7 +310,7 @@ const UnirPDF = ({ onClose }) => {
               {files.map(({ file, id }, idx) => (
                 <div key={id} style={{
                   display: 'flex', alignItems: 'center', gap: '10px',
-                  background: 'var(--brand-beige-subtle)', borderRadius: '10px',
+                  background: '#fafafb', borderRadius: '12px',
                   padding: '10px 12px', border: '1px solid var(--border-subtle)'
                 }}>
                   <GripVertical size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
@@ -361,10 +363,10 @@ const UnirPDF = ({ onClose }) => {
         {/* Result message */}
         {result && (
           <div style={{
-            padding: '12px 16px', borderRadius: '10px', marginBottom: '20px',
-            background: result.type === 'success' ? 'rgba(34,197,94,0.1)' : result.type === 'warning' ? 'rgba(234,179,8,0.1)' : 'rgba(239,68,68,0.1)',
+            padding: '12px 16px', borderRadius: '12px', marginBottom: '20px',
+            background: result.type === 'success' ? 'rgba(34,197,94,0.1)' : result.type === 'warning' ? 'rgba(234,179,8,0.12)' : 'rgba(239,68,68,0.08)',
             border: `1px solid ${result.type === 'success' ? 'rgba(34,197,94,0.3)' : result.type === 'warning' ? 'rgba(234,179,8,0.3)' : 'rgba(239,68,68,0.3)'}`,
-            color: result.type === 'success' ? '#4ade80' : result.type === 'warning' ? '#fbbf24' : '#f87171',
+            color: result.type === 'success' ? '#15803d' : result.type === 'warning' ? '#a16207' : '#dc2626',
             fontSize: '13px', display: 'flex', gap: '10px', alignItems: 'flex-start', whiteSpace: 'pre-line'
           }}>
             {result.type === 'success' ? <CheckCircle2 size={18} style={{ flexShrink: 0, marginTop: '1px' }} /> : <AlertCircle size={18} style={{ flexShrink: 0, marginTop: '1px' }} />}
@@ -373,7 +375,7 @@ const UnirPDF = ({ onClose }) => {
         )}
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', flexWrap: 'wrap', alignItems: 'center', paddingTop: '16px', borderTop: '1px solid var(--border-subtle)' }}>
           <button type="button" onClick={onClose} className="secondary" style={{ height: '44px' }}>
             Cerrar
           </button>
@@ -386,7 +388,7 @@ const UnirPDF = ({ onClose }) => {
               type="button"
               onClick={() => { window.location.href = downloadReady.url; }}
               style={{
-                height: '44px', padding: '0 22px', borderRadius: '10px',
+                height: '44px', padding: '0 22px', borderRadius: '12px',
                 background: 'linear-gradient(135deg, #22c55e, #16a34a)',
                 color: 'white', border: 'none', display: 'inline-flex',
                 alignItems: 'center', gap: '8px', fontSize: '14px',
@@ -418,9 +420,6 @@ const UnirPDF = ({ onClose }) => {
         @keyframes pulse { 0%, 100% { box-shadow: 0 6px 16px -4px rgba(34,197,94,0.5); } 50% { box-shadow: 0 6px 24px -2px rgba(34,197,94,0.8); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
       `}</style>
     </div>
   );

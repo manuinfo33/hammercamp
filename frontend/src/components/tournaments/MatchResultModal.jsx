@@ -547,14 +547,14 @@ const MatchResultModal = ({
       <div style={{
         background: '#ffffff',
         borderRadius: '14px',
-        border: '1px solid #d8cfc0',
+        border: '1px solid #d4d4d8',
         boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
         position: 'relative'
       }}>
         {/* Cabecera con Nombre del Equipo (Gris más oscuro que #EAE4D8) */}
         <div style={{
-          background: '#d9d2c5',
-          color: '#191919',
+          background: '#d4d4d8',
+          color: '#1c1d21',
           padding: '11px 16px',
           textAlign: 'center',
           fontWeight: '800',
@@ -570,7 +570,7 @@ const MatchResultModal = ({
         {/* Subcabecera con columnas exactamente centradas (#EAE4D8) */}
         <div style={{
           background: '#EAE4D8',
-          color: '#191919',
+          color: '#1c1d21',
           borderBottom: '1px solid #dfd8cc',
           padding: '8px 14px',
           display: 'flex',
@@ -580,7 +580,7 @@ const MatchResultModal = ({
           fontWeight: '800',
           letterSpacing: '0.05em'
         }}>
-          <span style={{ flex: 1, textTransform: 'uppercase', color: '#191919' }}>JUGADOR/A</span>
+          <span style={{ flex: 1, textTransform: 'uppercase', color: '#1c1d21' }}>JUGADOR/A</span>
           <div style={{
             display: 'grid',
             gridTemplateColumns: '28px 28px 28px 28px 40px',
@@ -589,18 +589,18 @@ const MatchResultModal = ({
             justifyItems: 'center',
             textAlign: 'center'
           }}>
-            <span style={{ width: '28px', textAlign: 'center', color: '#191919' }}>G</span>
+            <span style={{ width: '28px', textAlign: 'center', color: '#1c1d21' }}>G</span>
             <span style={{ width: '28px', textAlign: 'center', color: '#ca8a04' }}>A</span>
             <span style={{ width: '28px', textAlign: 'center', color: '#dc2626' }}>R</span>
-            <span style={{ width: '28px', textAlign: 'center', color: '#191919' }}>F</span>
-            <span style={{ width: '40px', textAlign: 'center', color: '#191919' }}>J</span>
+            <span style={{ width: '28px', textAlign: 'center', color: '#1c1d21' }}>F</span>
+            <span style={{ width: '40px', textAlign: 'center', color: '#1c1d21' }}>J</span>
           </div>
         </div>
 
         {/* Filas de Jugadores */}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {roster.length === 0 ? (
-            <div style={{ padding: '24px 16px', textAlign: 'center', color: '#7f776f', fontSize: '13px' }}>
+            <div style={{ padding: '24px 16px', textAlign: 'center', color: '#6f737b', fontSize: '13px' }}>
               No hay jugadores en la lista de buena fe de este equipo.
             </div>
           ) : (
@@ -617,7 +617,7 @@ const MatchResultModal = ({
                     justifyContent: 'space-between',
                     padding: '8px 14px',
                     borderBottom: idx === roster.length - 1 ? 'none' : '1px solid #f0eae1',
-                    background: idx % 2 === 0 ? '#fdfcfb' : '#ffffff',
+                    background: idx % 2 === 0 ? '#fafafb' : '#ffffff',
                     minHeight: '44px'
                   }}
                 >
@@ -636,7 +636,7 @@ const MatchResultModal = ({
                         <span style={{
                           fontSize: '13px',
                           fontWeight: '500',
-                          color: '#191919',
+                          color: '#1c1d21',
                           wordBreak: 'break-word',
                           whiteSpace: 'normal'
                         }}>
@@ -659,7 +659,7 @@ const MatchResultModal = ({
                       <span style={{
                         fontSize: '13px',
                         fontWeight: '500',
-                        color: '#191919',
+                        color: '#1c1d21',
                         wordBreak: 'break-word',
                         whiteSpace: 'normal'
                       }}>
@@ -693,9 +693,9 @@ const MatchResultModal = ({
                         width: '28px',
                         height: '28px',
                         borderRadius: '5px',
-                        border: '1.5px solid #d8cfc0',
+                        border: '1.5px solid #d4d4d8',
                         background: '#ffffff',
-                        color: player.goals > 0 ? '#191919' : '#4b5563',
+                        color: player.goals > 0 ? '#1c1d21' : '#4b5563',
                         fontWeight: '700',
                         fontSize: '13px',
                         display: 'flex',
@@ -724,7 +724,7 @@ const MatchResultModal = ({
                         width: '28px',
                         height: '28px',
                         borderRadius: '5px',
-                        border: player.yellow_card ? '1.5px solid #ca8a04' : '1.5px solid #d8cfc0',
+                        border: player.yellow_card ? '1.5px solid #ca8a04' : '1.5px solid #d4d4d8',
                         background: player.yellow_card ? '#facc15' : '#ffffff',
                         cursor: 'pointer',
                         display: 'flex',
@@ -749,7 +749,7 @@ const MatchResultModal = ({
                         width: '28px',
                         height: '28px',
                         borderRadius: '5px',
-                        border: player.red_card ? '1.5px solid #dc2626' : '1.5px solid #d8cfc0',
+                        border: player.red_card ? '1.5px solid #dc2626' : '1.5px solid #d4d4d8',
                         background: player.red_card ? '#ef4444' : '#ffffff',
                         color: '#ffffff',
                         cursor: 'pointer',
@@ -783,8 +783,8 @@ const MatchResultModal = ({
                         width: '28px',
                         height: '28px',
                         borderRadius: '50%',
-                        border: player.is_figura ? '2px solid #191919' : '1.5px solid #d8cfc0',
-                        background: player.is_figura ? '#191919' : '#ffffff',
+                        border: player.is_figura ? '2px solid #191919' : '1.5px solid #d4d4d8',
+                        background: player.is_figura ? '#1c1d21' : '#ffffff',
                         color: '#ffffff',
                         cursor: 'pointer',
                         display: 'flex',
@@ -843,14 +843,14 @@ const MatchResultModal = ({
       <div style={{
         background: '#ffffff',
         borderRadius: '14px',
-        border: '1px solid #d8cfc0',
+        border: '1px solid #d4d4d8',
         boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
         position: 'relative'
       }}>
         {/* Barra superior con la Fecha (Gris más oscuro que #EAE4D8) */}
         <div style={{
-          background: '#d9d2c5',
-          color: '#191919',
+          background: '#d4d4d8',
+          color: '#1c1d21',
           padding: '10px 16px',
           textAlign: 'center',
           fontWeight: '800',
@@ -885,11 +885,11 @@ const MatchResultModal = ({
               height: isMobile ? '52px' : '64px',
               borderRadius: '8px',
               overflow: 'hidden',
-              background: '#f4efe6',
+              background: '#f4f4f6',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              border: '1px solid #e6dfd3'
+              border: '1px solid #e4e4e7'
             }}>
               {match.local_team_logo ? (
                 <img src={match.local_team_logo} alt={match.local_team_name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
@@ -900,7 +900,7 @@ const MatchResultModal = ({
             <span style={{
               fontWeight: '700',
               fontSize: isMobile ? '0.82rem' : '0.92rem',
-              color: '#191919',
+              color: '#1c1d21',
               lineHeight: '1.2'
             }}>
               {match.local_team_name}
@@ -930,10 +930,10 @@ const MatchResultModal = ({
                   fontSize: '22px',
                   fontWeight: '800',
                   textAlign: 'center',
-                  border: '1.5px solid #d8cfc0',
+                  border: '1.5px solid #d4d4d8',
                   borderRadius: '8px',
                   background: '#ffffff',
-                  color: '#191919',
+                  color: '#1c1d21',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -965,10 +965,10 @@ const MatchResultModal = ({
                     fontSize: '26px',
                     fontWeight: '800',
                     textAlign: 'center',
-                    border: '1.5px solid #d8cfc0',
+                    border: '1.5px solid #d4d4d8',
                     borderRadius: '8px',
                     background: '#ffffff',
-                    color: '#191919',
+                    color: '#1c1d21',
                     outline: 'none',
                     lineHeight: 'normal',
                     padding: 0,
@@ -979,7 +979,7 @@ const MatchResultModal = ({
               )}
             </div>
 
-            <span style={{ fontSize: '18px', fontWeight: '800', color: '#7f776f' }}>-</span>
+            <span style={{ fontSize: '18px', fontWeight: '800', color: '#6f737b' }}>-</span>
 
             {/* Goles Visitante */}
             <div style={{
@@ -998,10 +998,10 @@ const MatchResultModal = ({
                   fontSize: '22px',
                   fontWeight: '800',
                   textAlign: 'center',
-                  border: '1.5px solid #d8cfc0',
+                  border: '1.5px solid #d4d4d8',
                   borderRadius: '8px',
                   background: '#ffffff',
-                  color: '#191919',
+                  color: '#1c1d21',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1033,10 +1033,10 @@ const MatchResultModal = ({
                     fontSize: '26px',
                     fontWeight: '800',
                     textAlign: 'center',
-                    border: '1.5px solid #d8cfc0',
+                    border: '1.5px solid #d4d4d8',
                     borderRadius: '8px',
                     background: '#ffffff',
-                    color: '#191919',
+                    color: '#1c1d21',
                     outline: 'none',
                     lineHeight: 'normal',
                     padding: 0,
@@ -1062,11 +1062,11 @@ const MatchResultModal = ({
               height: isMobile ? '52px' : '64px',
               borderRadius: '8px',
               overflow: 'hidden',
-              background: '#f4efe6',
+              background: '#f4f4f6',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              border: '1px solid #e6dfd3'
+              border: '1px solid #e4e4e7'
             }}>
               {match.visitor_team_logo ? (
                 <img src={match.visitor_team_logo} alt={match.visitor_team_name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
@@ -1077,7 +1077,7 @@ const MatchResultModal = ({
             <span style={{
               fontWeight: '700',
               fontSize: isMobile ? '0.82rem' : '0.92rem',
-              color: '#191919',
+              color: '#1c1d21',
               lineHeight: '1.2'
             }}>
               {match.visitor_team_name}
@@ -1094,10 +1094,10 @@ const MatchResultModal = ({
           alignItems: 'center',
           justifyContent: 'center',
           gap: '10px',
-          background: '#fcfbfa'
+          background: '#fafafb'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '13px', fontWeight: '600', color: '#191919' }}>Penales</span>
+            <span style={{ fontSize: '13px', fontWeight: '600', color: '#1c1d21' }}>Penales</span>
             <MainToggleSwitch 
               checked={penalties}
               onChange={() => setPenalties(!penalties)}
@@ -1130,10 +1130,10 @@ const MatchResultModal = ({
                     fontSize: '16px',
                     fontWeight: '800',
                     textAlign: 'center',
-                    border: '1.5px solid #d8cfc0',
+                    border: '1.5px solid #d4d4d8',
                     borderRadius: '6px',
                     background: '#ffffff',
-                    color: '#191919',
+                    color: '#1c1d21',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1165,10 +1165,10 @@ const MatchResultModal = ({
                       fontSize: '16px',
                       fontWeight: '800',
                       textAlign: 'center',
-                      border: '1.5px solid #d8cfc0',
+                      border: '1.5px solid #d4d4d8',
                       borderRadius: '6px',
                       background: '#ffffff',
-                      color: '#191919',
+                      color: '#1c1d21',
                       outline: 'none',
                       lineHeight: 'normal',
                       padding: 0,
@@ -1180,7 +1180,7 @@ const MatchResultModal = ({
                 )}
               </div>
 
-              <span style={{ fontSize: '15px', fontWeight: '800', color: '#7f776f' }}>-</span>
+              <span style={{ fontSize: '15px', fontWeight: '800', color: '#6f737b' }}>-</span>
 
               {/* Penales Visitante */}
               <div style={{
@@ -1199,10 +1199,10 @@ const MatchResultModal = ({
                     fontSize: '16px',
                     fontWeight: '800',
                     textAlign: 'center',
-                    border: '1.5px solid #d8cfc0',
+                    border: '1.5px solid #d4d4d8',
                     borderRadius: '6px',
                     background: '#ffffff',
-                    color: '#191919',
+                    color: '#1c1d21',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1234,10 +1234,10 @@ const MatchResultModal = ({
                       fontSize: '16px',
                       fontWeight: '800',
                       textAlign: 'center',
-                      border: '1.5px solid #d8cfc0',
+                      border: '1.5px solid #d4d4d8',
                       borderRadius: '6px',
                       background: '#ffffff',
-                      color: '#191919',
+                      color: '#1c1d21',
                       outline: 'none',
                       lineHeight: 'normal',
                       padding: 0,
@@ -1258,13 +1258,13 @@ const MatchResultModal = ({
         background: '#ffffff',
         borderRadius: '12px',
         padding: '12px 16px',
-        border: '1px solid #d8cfc0',
+        border: '1px solid #d4d4d8',
         boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
         display: 'flex',
         flexDirection: 'column',
         gap: '4px'
       }}>
-        <label style={{ fontSize: '11px', fontWeight: '700', color: '#7f776f', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+        <label style={{ fontSize: '11px', fontWeight: '700', color: '#6f737b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
           Estado del partido
         </label>
         <select
@@ -1276,7 +1276,7 @@ const MatchResultModal = ({
             border: 'none',
             borderBottom: '2px solid #191919',
             background: 'transparent',
-            color: '#191919',
+            color: '#1c1d21',
             fontWeight: '500',
             fontSize: '14px',
             outline: 'none',
@@ -1302,12 +1302,12 @@ const MatchResultModal = ({
         background: '#ffffff',
         borderRadius: '14px',
         overflow: 'hidden',
-        border: '1px solid #d8cfc0',
+        border: '1px solid #d4d4d8',
         boxShadow: '0 2px 10px rgba(0,0,0,0.04)'
       }}>
         <div style={{
-          background: '#d9d2c5',
-          color: '#191919',
+          background: '#d4d4d8',
+          color: '#1c1d21',
           padding: '11px 16px',
           textAlign: 'center',
           fontWeight: '800',
@@ -1346,7 +1346,7 @@ const MatchResultModal = ({
               width: '28px',
               height: '28px',
               borderRadius: '5px',
-              border: '1.5px solid #d8cfc0',
+              border: '1.5px solid #d4d4d8',
               background: '#ffffff',
               display: 'flex',
               alignItems: 'center',
@@ -1358,7 +1358,7 @@ const MatchResultModal = ({
                 <Check size={16} strokeWidth={3} color="#000000" />
               )}
             </div>
-            <span style={{ fontSize: '13px', fontWeight: '700', color: '#191919' }}>
+            <span style={{ fontSize: '13px', fontWeight: '700', color: '#1c1d21' }}>
               {match.local_team_name}
             </span>
           </div>
@@ -1382,7 +1382,7 @@ const MatchResultModal = ({
               width: '28px',
               height: '28px',
               borderRadius: '5px',
-              border: '1.5px solid #d8cfc0',
+              border: '1.5px solid #d4d4d8',
               background: '#ffffff',
               display: 'flex',
               alignItems: 'center',
@@ -1394,7 +1394,7 @@ const MatchResultModal = ({
                 <Check size={16} strokeWidth={3} color="#000000" />
               )}
             </div>
-            <span style={{ fontSize: '13px', fontWeight: '700', color: '#191919' }}>
+            <span style={{ fontSize: '13px', fontWeight: '700', color: '#1c1d21' }}>
               {match.visitor_team_name}
             </span>
           </div>
@@ -1469,7 +1469,7 @@ const MatchResultModal = ({
       right: 0,
       bottom: 0,
       zIndex: 99999,
-      background: '#fcfbfa',
+      background: '#fafafb',
       overflowY: 'auto',
       display: 'flex',
       flexDirection: 'column'
@@ -1478,13 +1478,13 @@ const MatchResultModal = ({
         {/* Cabecera Móvil idéntica a TeamDetailEditor (Foto 2) */}
         <div style={{
           height: '56px',
-          background: '#fdfcfb',
-          borderBottom: '1px solid #eae4d8',
+          background: '#fafafb',
+          borderBottom: '1px solid #e4e4e7',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '0 16px',
-          color: '#383530',
+          color: '#3f4249',
           position: 'sticky',
           top: 0,
           zIndex: 100
@@ -1506,7 +1506,7 @@ const MatchResultModal = ({
             <ArrowLeft size={20} />
           </button>
 
-          <span style={{ fontWeight: '800', fontSize: '1.05rem', color: '#383530' }}>
+          <span style={{ fontWeight: '800', fontSize: '1.05rem', color: '#3f4249' }}>
             Cargar Partido
           </span>
 
@@ -1515,7 +1515,7 @@ const MatchResultModal = ({
 
         <div style={{ padding: '16px', flex: 1 }}>
           {loading ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#7f776f' }}>
+            <div style={{ padding: '40px', textAlign: 'center', color: '#6f737b' }}>
               Cargando datos del partido...
             </div>
           ) : content}
@@ -1551,7 +1551,7 @@ const MatchResultModal = ({
                 <Check size={18} color="#cc7a5c" />
               </div>
               <div>
-                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '800', color: '#191919', lineHeight: '1' }}>
+                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '800', color: '#1c1d21', lineHeight: '1' }}>
                   Cargar Partido
                 </h3>
               </div>
@@ -1565,7 +1565,7 @@ const MatchResultModal = ({
         {/* Cuerpo scrolleable */}
         <div style={{ overflowY: 'auto', paddingRight: '4px', flex: 1 }}>
           {loading ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#7f776f' }}>
+            <div style={{ padding: '40px', textAlign: 'center', color: '#6f737b' }}>
               Cargando datos del partido...
             </div>
           ) : content}
@@ -1605,7 +1605,7 @@ const MatchResultModal = ({
             display: 'flex',
             flexDirection: 'column',
             gap: '16px',
-            border: '1px solid #e6dfd3'
+            border: '1px solid #e4e4e7'
           }} className="animate-fade-in anthropic-theme" onClick={e => e.stopPropagation()}>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1616,7 +1616,7 @@ const MatchResultModal = ({
                 background: '#ef4444',
                 boxShadow: '0 2px 6px rgba(239, 68, 68, 0.4)'
               }} />
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#191919' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#1c1d21' }}>
                 Tarjeta Roja
               </h3>
             </div>
@@ -1644,12 +1644,12 @@ const MatchResultModal = ({
                     width: '100%',
                     height: '42px',
                     borderRadius: '8px',
-                    border: redCardError ? '1.5px solid #ef4444' : '1.5px solid #d8cfc0',
+                    border: redCardError ? '1.5px solid #ef4444' : '1.5px solid #d4d4d8',
                     background: '#ffffff',
                     padding: '0 12px',
                     fontSize: '14px',
                     fontWeight: '600',
-                    color: '#191919',
+                    color: '#1c1d21',
                     outline: 'none',
                     boxSizing: 'border-box'
                   }}
@@ -1684,7 +1684,7 @@ const MatchResultModal = ({
                       flex: 1,
                       height: '40px',
                       borderRadius: '8px',
-                      border: '1px solid #d8cfc0',
+                      border: '1px solid #d4d4d8',
                       background: '#ffffff',
                       color: '#4b5563',
                       fontWeight: '700',
@@ -1702,8 +1702,8 @@ const MatchResultModal = ({
                       height: '40px',
                       borderRadius: '8px',
                       border: 'none',
-                      background: '#191919',
-                      color: '#ffffff',
+                      background: 'var(--gx-primary)',
+                      color: '#151515',
                       fontWeight: '700',
                       fontSize: '13px',
                       cursor: 'pointer'
@@ -1730,12 +1730,12 @@ const MatchResultModal = ({
                   style={{
                     width: '100%',
                     borderRadius: '8px',
-                    border: '1.5px solid #d8cfc0',
+                    border: '1.5px solid #d4d4d8',
                     background: '#ffffff',
                     padding: '10px 12px',
                     fontSize: '13px',
                     fontWeight: '500',
-                    color: '#191919',
+                    color: '#1c1d21',
                     outline: 'none',
                     resize: 'none',
                     boxSizing: 'border-box'
@@ -1756,7 +1756,7 @@ const MatchResultModal = ({
                       flex: 1,
                       height: '40px',
                       borderRadius: '8px',
-                      border: '1px solid #d8cfc0',
+                      border: '1px solid #d4d4d8',
                       background: '#ffffff',
                       color: '#4b5563',
                       fontWeight: '700',
@@ -1774,8 +1774,8 @@ const MatchResultModal = ({
                       height: '40px',
                       borderRadius: '8px',
                       border: 'none',
-                      background: '#191919',
-                      color: '#ffffff',
+                      background: 'var(--gx-primary)',
+                      color: '#151515',
                       fontWeight: '700',
                       fontSize: '13px',
                       cursor: 'pointer'
@@ -1833,7 +1833,7 @@ const MatchResultModal = ({
                   flex: 1,
                   height: '40px',
                   borderRadius: '8px',
-                  border: '1px solid #d8cfc0',
+                  border: '1px solid #d4d4d8',
                   background: '#f3f4f6',
                   color: '#4b5563',
                   fontWeight: '700',

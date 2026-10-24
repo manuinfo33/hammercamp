@@ -147,10 +147,10 @@ const CategoryForm = ({ category, onClose, onSuccess }) => {
     <div
       style={{
         background: '#ffffff',
-        border: '1px solid #e6dfd3',
-        borderRadius: '14px',
-        padding: '32px',
-        boxShadow: '0 4px 20px rgba(25, 20, 15, 0.06)',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: '16px',
+        padding: 'clamp(16px, 4vw, 32px)',
+        boxShadow: 'var(--gx-shadow-sm)',
       }}
       className="animate-fade-in"
     >
@@ -158,11 +158,11 @@ const CategoryForm = ({ category, onClose, onSuccess }) => {
         {errorMsg && (
           <div
             style={{
-              backgroundColor: '#fdeded',
-              border: '1px solid #f5c2c2',
+              backgroundColor: '#fef2f2',
+              border: '1px solid #fecaca',
               borderRadius: '8px',
               padding: '12px 16px',
-              color: '#b71c1c',
+              color: '#b91c1c',
               fontSize: '13px',
               display: 'flex',
               alignItems: 'center',
@@ -174,11 +174,11 @@ const CategoryForm = ({ category, onClose, onSuccess }) => {
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '20px' }}>
           {/* Nombre de Categoría */}
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#191919', marginBottom: '8px' }}>
-              Nombre de Categoría <span style={{ color: '#c62828' }}>*</span>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px' }}>
+              Nombre de Categoría <span style={{ color: '#dc2626' }}>*</span>
             </label>
             <input
               type="text"
@@ -188,8 +188,9 @@ const CategoryForm = ({ category, onClose, onSuccess }) => {
               style={{
                 width: '100%',
                 padding: '12px 14px',
-                borderRadius: '8px',
-                border: '1px solid #d8cfc0',
+                borderRadius: '12px',
+                backgroundColor: '#f1f2f4',
+                border: '1px solid var(--border-subtle)',
                 fontSize: '14px',
                 outline: 'none',
                 boxSizing: 'border-box',
@@ -199,8 +200,8 @@ const CategoryForm = ({ category, onClose, onSuccess }) => {
 
           {/* Tipo de Fútbol */}
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#191919', marginBottom: '8px' }}>
-              Tipo de Fútbol <span style={{ color: '#c62828' }}>*</span>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px' }}>
+              Tipo de Fútbol <span style={{ color: '#dc2626' }}>*</span>
             </label>
             <select
               value={formData.football_type}
@@ -208,8 +209,9 @@ const CategoryForm = ({ category, onClose, onSuccess }) => {
               style={{
                 width: '100%',
                 padding: '12px 14px',
-                borderRadius: '8px',
-                border: '1px solid #d8cfc0',
+                borderRadius: '12px',
+                backgroundColor: '#f1f2f4',
+                border: '1px solid var(--border-subtle)',
                 fontSize: '14px',
                 outline: 'none',
                 backgroundColor: '#ffffff',
@@ -226,8 +228,8 @@ const CategoryForm = ({ category, onClose, onSuccess }) => {
 
           {/* Tipo de Categoría */}
           <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#191919', marginBottom: '8px' }}>
-              Tipo de Categoría <span style={{ color: '#c62828' }}>*</span>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px' }}>
+              Tipo de Categoría <span style={{ color: '#dc2626' }}>*</span>
             </label>
             <select
               value={formData.category_type}
@@ -235,8 +237,9 @@ const CategoryForm = ({ category, onClose, onSuccess }) => {
               style={{
                 width: '100%',
                 padding: '12px 14px',
-                borderRadius: '8px',
-                border: '1px solid #d8cfc0',
+                borderRadius: '12px',
+                backgroundColor: '#f1f2f4',
+                border: '1px solid var(--border-subtle)',
                 fontSize: '14px',
                 outline: 'none',
                 backgroundColor: '#ffffff',
@@ -256,8 +259,8 @@ const CategoryForm = ({ category, onClose, onSuccess }) => {
         {formData.category_type === 'senior' && (
           <div
             style={{
-              background: '#faf8f5',
-              border: '1px solid #e6dfd3',
+              background: '#fafafb',
+              border: '1px solid var(--border-subtle)',
               borderRadius: '12px',
               padding: '24px',
               display: 'flex',
@@ -266,7 +269,7 @@ const CategoryForm = ({ category, onClose, onSuccess }) => {
             }}
             className="animate-fade-in"
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #efe9e0', paddingBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #ececef', paddingBottom: '12px' }}>
               <Award size={20} style={{ color: '#cc7a5c' }} />
               <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#cc7a5c' }}>
                 Configuración de Categoría Senior
@@ -275,7 +278,7 @@ const CategoryForm = ({ category, onClose, onSuccess }) => {
 
             {/* PREGUNTA 1: ¿Para mayores de qué edad? */}
             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontSize: '14px', fontWeight: '600', color: '#191919', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <label style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ background: '#cc7a5c', color: '#fff', width: '22px', height: '22px', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700' }}>1</span>
                 ¿Para mayores de qué edad?
               </label>
@@ -287,7 +290,7 @@ const CategoryForm = ({ category, onClose, onSuccess }) => {
                   width: '100%',
                   padding: '12px 14px',
                   borderRadius: '8px',
-                  border: '1px solid #d8cfc0',
+                  border: '1px solid var(--border-medium)',
                   fontSize: '14px',
                   outline: 'none',
                   backgroundColor: '#ffffff',
@@ -304,8 +307,8 @@ const CategoryForm = ({ category, onClose, onSuccess }) => {
 
             {/* PREGUNTA 2: Aparece ÚNICAMENTE tras responder la Pregunta 1 */}
             {selectedMinAge !== null && (
-              <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '16px', borderTop: '1px dashed #e6dfd3' }}>
-                <label style={{ fontSize: '14px', fontWeight: '600', color: '#191919', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '16px', borderTop: '1px dashed var(--border-subtle)' }}>
+                <label style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ background: '#cc7a5c', color: '#fff', width: '22px', height: '22px', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700' }}>2</span>
                   ¿Cuántos menores de {selectedMinAge} años se permiten?
                 </label>
@@ -317,7 +320,7 @@ const CategoryForm = ({ category, onClose, onSuccess }) => {
                     width: '100%',
                     padding: '12px 14px',
                     borderRadius: '8px',
-                    border: '1px solid #d8cfc0',
+                    border: '1px solid var(--border-medium)',
                     fontSize: '14px',
                     outline: 'none',
                     backgroundColor: '#ffffff',
@@ -336,13 +339,13 @@ const CategoryForm = ({ category, onClose, onSuccess }) => {
 
             {/* PREGUNTA 3: Solo si seleccionaron 1 o más menores en la Pregunta 2 */}
             {selectedMinAge !== null && formData.max_underage_allowed !== '' && formData.max_underage_allowed > 0 && (
-              <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '16px', borderTop: '1px dashed #e6dfd3' }}>
-                <label style={{ fontSize: '14px', fontWeight: '600', color: '#191919', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '16px', borderTop: '1px dashed var(--border-subtle)' }}>
+                <label style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ background: '#cc7a5c', color: '#fff', width: '22px', height: '22px', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700' }}>3</span>
                   ¿Cuál es el rango de edad permitido para los menores?
                 </label>
                 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', background: '#ffffff', padding: '14px 16px', borderRadius: '8px', border: '1px solid #d8cfc0', maxWidth: '480px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', background: '#ffffff', padding: '14px 16px', borderRadius: '8px', border: '1px solid var(--border-medium)', maxWidth: '480px' }}>
                   <span style={{ fontSize: '14px', color: '#555', fontWeight: '500' }}>Desde</span>
                   <select
                     value={formData.min_underage_age || 18}
@@ -350,9 +353,9 @@ const CategoryForm = ({ category, onClose, onSuccess }) => {
                     style={{
                       padding: '8px 14px',
                       borderRadius: '6px',
-                      border: '1px solid #d8cfc0',
+                      border: '1px solid var(--border-medium)',
                       fontSize: '14px',
-                      backgroundColor: '#faf8f5',
+                      backgroundColor: '#fafafb',
                       outline: 'none',
                     }}
                   >
@@ -374,8 +377,8 @@ const CategoryForm = ({ category, onClose, onSuccess }) => {
 
             {/* PREGUNTA 4: Aparece tras responder la Pregunta 2 (o Pregunta 3 si aplica) */}
             {selectedMinAge !== null && formData.max_underage_allowed !== '' && (
-              <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingTop: '16px', borderTop: '1px dashed #e6dfd3' }}>
-                <label style={{ fontSize: '14px', fontWeight: '600', color: '#191919', lineHeight: '1.4', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+              <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingTop: '16px', borderTop: '1px dashed var(--border-subtle)' }}>
+                <label style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)', lineHeight: '1.4', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                   <span style={{ background: '#cc7a5c', color: '#fff', width: '22px', height: '22px', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', flexShrink: 0, marginTop: '2px' }}>
                     {formData.max_underage_allowed > 0 ? 4 : 3}
                   </span>
@@ -383,14 +386,14 @@ const CategoryForm = ({ category, onClose, onSuccess }) => {
                 </label>
 
                 {/* Botones de Selección Premium (Sí / No) */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginTop: '6px', maxWidth: '600px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '16px', marginTop: '6px', maxWidth: '600px' }}>
                   {/* Opción SÍ */}
                   <div
                     onClick={() => setFormData({ ...formData, allow_birthday_in_year: true })}
                     style={{
                       padding: '16px',
                       borderRadius: '12px',
-                      border: formData.allow_birthday_in_year === true ? '2px solid #cc7a5c' : '1px solid #d8cfc0',
+                      border: formData.allow_birthday_in_year === true ? '2px solid #cc7a5c' : '1px solid var(--border-medium)',
                       backgroundColor: formData.allow_birthday_in_year === true ? '#fff7f3' : '#ffffff',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
@@ -421,7 +424,7 @@ const CategoryForm = ({ category, onClose, onSuccess }) => {
                     style={{
                       padding: '16px',
                       borderRadius: '12px',
-                      border: formData.allow_birthday_in_year === false ? '2px solid #191919' : '1px solid #d8cfc0',
+                      border: formData.allow_birthday_in_year === false ? '2px solid #191919' : '1px solid var(--border-medium)',
                       backgroundColor: formData.allow_birthday_in_year === false ? '#f5f5f5' : '#ffffff',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
@@ -455,11 +458,12 @@ const CategoryForm = ({ category, onClose, onSuccess }) => {
         <div
           style={{
             display: 'flex',
-            justify: 'flex-end',
-            gap: '14px',
+            justifyContent: 'flex-end',
+            flexWrap: 'wrap',
+            gap: '12px',
             marginTop: '10px',
             paddingTop: '20px',
-            borderTop: '1px solid #e6dfd3',
+            borderTop: '1px solid var(--border-subtle)',
           }}
         >
           <button
@@ -467,14 +471,18 @@ const CategoryForm = ({ category, onClose, onSuccess }) => {
             onClick={onClose}
             disabled={saving}
             style={{
+              flex: '1 1 140px',
+              minHeight: '44px',
               padding: '12px 22px',
-              borderRadius: '8px',
-              border: '1px solid #d8cfc0',
-              backgroundColor: 'transparent',
-              color: '#444',
-              fontSize: '14px',
+              borderRadius: '12px',
+              border: '1px solid var(--border-medium)',
+              backgroundColor: '#ffffff',
+              color: 'var(--text-secondary)',
+              fontSize: '12px',
               cursor: 'pointer',
-              fontWeight: '500',
+              fontWeight: '700',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
             }}
           >
             Cancelar
@@ -483,15 +491,18 @@ const CategoryForm = ({ category, onClose, onSuccess }) => {
             type="submit"
             disabled={saving}
             style={{
+              flex: '1 1 140px',
+              minHeight: '44px',
               padding: '12px 24px',
-              borderRadius: '8px',
+              borderRadius: '12px',
               border: 'none',
-              backgroundColor: '#cc7a5c',
-              color: '#ffffff',
-              fontSize: '14px',
-              fontWeight: '600',
+              backgroundColor: 'var(--gx-primary)',
+              color: 'var(--gx-on-primary)',
+              fontSize: '12px',
+              fontWeight: '700',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
               cursor: saving ? 'not-allowed' : 'pointer',
-              boxShadow: '0 2px 8px rgba(204, 122, 92, 0.25)',
             }}
           >
             {saving ? 'Guardando...' : category?.id ? 'Guardar Cambios' : 'Crear Categoría'}

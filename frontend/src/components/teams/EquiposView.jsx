@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import api from '../../api';
-import { Search, Plus, Filter, Trash2, Edit2, Check, X } from 'lucide-react';
+import { Search, Plus, Filter, Trash2, Edit2, Check, X, Users } from 'lucide-react';
 import TeamForm from './TeamForm';
+import PageHeader from '../ui/PageHeader';
+import '../../styles/data.css';
 
 const EquiposView = () => {
   const [teams, setTeams] = useState([]);
@@ -78,33 +80,24 @@ const EquiposView = () => {
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto' }} className="anthropic-theme teams-container animate-fade-in">
       {/* Header Section */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-        <div>
-          <h1 className="anthropic-title" style={{ margin: 0 }}>
-            {showForm ? (selectedTeam ? 'Editar Equipo' : 'Nuevo Equipo') : 'Equipos'}
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>
-            {showForm ? 'Ingresa la información básica y fotos' : 'Gestión centralizada de equipos y categorías'}
-          </p>
-        </div>
-        {showForm ? (
-          <button 
-            type="button" 
-            onClick={() => setShowForm(false)} 
-            className="secondary icon-only" 
-            style={{ width: '36px', height: '36px' }}
+      <PageHeader
+        icon={Users}
+        title={showForm ? (selectedTeam ? 'Editar Equipo' : 'Nuevo Equipo') : 'Equipos'}
+        subtitle={showForm ? 'Ingresa la información básica y fotos' : 'Gestión centralizada de equipos y categorías'}
+        actions={showForm ? (
+          <button
+            type="button"
+            onClick={() => setShowForm(false)}
+            className="secondary icon-only"
           >
             <X size={18} />
           </button>
         ) : (
-          <button 
-            onClick={() => { setSelectedTeam(null); setShowForm(true); }}
-            style={{ height: '40px', padding: '0 20px', fontSize: '14px' }}
-          >
+          <button onClick={() => { setSelectedTeam(null); setShowForm(true); }}>
             <Plus size={18} /> Nuevo Equipo
           </button>
         )}
-      </div>
+      />
 
       {showForm && (
         <TeamForm 
@@ -154,7 +147,7 @@ const EquiposView = () => {
           </div>
 
           {/* Teams Table */}
-          <div className="table-container">
+          <div className="table-container mobile-cards">
             <table>
               <thead>
                 <tr>
@@ -175,15 +168,15 @@ const EquiposView = () => {
                 ) : (
                   teams.map((team) => (
                     <tr key={team.id}>
-                      <td>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'var(--brand-beige-subtle)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <td data-label="Escudo">
+                        <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--brand-beige-subtle)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           {team.logo ? <img src={team.logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>N/A</span>}
                         </div>
                       </td>
-                      <td style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text-primary)' }}>{team.name}</td>
-                      <td><span className="badge" style={{ opacity: team.category_name ? 1 : 0.7 }}>{team.category_name || 'Sin Asignar'}</span></td>
-                      <td style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{team.delegate_name || '-'}</td>
-                      <td>
+                      <td className="mc-title" data-label="Nombre" style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text-primary)' }}>{team.name}</td>
+                      <td data-label="Categoría"><span className="badge" style={{ opacity: team.category_name ? 1 : 0.7 }}>{team.category_name || 'Sin Asignar'}</span></td>
+                      <td data-label="Delegado" style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{team.delegate_name || '-'}</td>
+                      <td data-label="Estado">
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           <span className={team.is_active ? "status-badge active" : "status-badge inactive"}>
                             {team.is_active ? <Check size={12} strokeWidth={3} /> : <X size={12} strokeWidth={3} />}
@@ -196,8 +189,8 @@ const EquiposView = () => {
                           )}
                         </div>
                       </td>
-                      <td style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{new Date(team.created_at).toLocaleDateString()}</td>
-                      <td style={{ textAlign: 'right' }}>
+                      <td data-label="Registro" style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{new Date(team.created_at).toLocaleDateString()}</td>
+                      <td className="mc-actions" data-label="" style={{ textAlign: 'right' }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', position: 'relative', zIndex: 10 }}>
                           {deletingId === team.id ? (
                             <div style={{ display: 'flex', gap: '4px', alignItems: 'center', animation: 'fadeIn 0.2s ease' }}>
@@ -258,7 +251,8 @@ const EquiposView = () => {
           left: 0,
           width: '100vw',
           height: '100vh',
-          background: 'rgba(0, 0, 0, 0.38)',
+          background: 'rgba(0, 0, 0, 0.6)',
+          backdropFilter: 'blur(3px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -267,8 +261,8 @@ const EquiposView = () => {
         }}>
           <div style={{
             background: '#ffffff',
-            border: '1px solid #e6dfd3',
-            borderRadius: '16px',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: '18px',
             maxWidth: '460px',
             width: '100%',
             padding: '24px',
@@ -279,7 +273,7 @@ const EquiposView = () => {
             animation: 'fadeIn 0.2s ease-out'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#191919', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 No se puede eliminar el equipo
               </h3>
               <button
@@ -310,17 +304,17 @@ const EquiposView = () => {
                 style={{
                   height: '38px',
                   padding: '0 20px',
-                  background: '#191919',
+                  background: 'var(--gx-primary)',
                   border: 'none',
-                  borderRadius: '8px',
-                  color: '#ffffff',
+                  borderRadius: '12px',
+                  color: 'var(--gx-on-primary)',
                   fontWeight: '600',
                   fontSize: '13px',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease'
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = '#333333'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = '#191919'; }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#f7c946'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#f2bb2b'; }}
               >
                 Entendido
               </button>

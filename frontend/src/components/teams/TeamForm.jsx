@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import api from '../../api';
 import { X, Upload, Check, Image as ImageIcon, UserPlus, Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import '../../styles/data.css';
 import { useNavigate } from 'react-router-dom';
 
 const TeamForm = ({ team, onClose, onSuccess, isModal = false, defaultCategoryId = '' }) => {
@@ -144,28 +145,21 @@ const TeamForm = ({ team, onClose, onSuccess, isModal = false, defaultCategoryId
         border: 'none',
         padding: '0',
         margin: 0
-      } : { 
-        background: 'var(--bg-card)', 
-        border: '1px solid var(--border-subtle)', 
-        borderRadius: '20px', 
-        padding: '32px', 
-        marginBottom: '24px'
-      }} 
-      className="anthropic-theme animate-fade-in"
+      } : undefined} className={`anthropic-theme animate-fade-in ${isModal ? '' : 'form-container'}`}
     >
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         
         {/* Escudo y Foto del equipo a la arriba */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <div className="input-group">
-            <label style={{ fontSize: '13px', color: 'var(--text-secondary, #7f776f)', fontWeight: '500' }}>Escudo</label>
+            <label style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '800' }}>Escudo</label>
             <div style={{ 
-              border: previews.logo ? '1px solid #e6dfd3' : '2px dashed #c4b9a3', 
+              border: previews.logo ? '1px solid var(--border-subtle)' : '2px dashed #c4b9a3', 
               borderRadius: '12px', 
               padding: previews.logo ? '12px' : '16px', 
               textAlign: 'center', 
               position: 'relative', 
-              background: '#fcfbfa',
+              background: '#fafafb',
               minHeight: '130px',
               display: 'flex',
               flexDirection: 'column',
@@ -203,7 +197,7 @@ const TeamForm = ({ team, onClose, onSuccess, isModal = false, defaultCategoryId
                       type="button"
                       onClick={(e) => { e.stopPropagation(); handleClearFile('logo'); }}
                       className="secondary"
-                      style={{ padding: '4px 8px', height: '28px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#cc7a5c', borderColor: '#e5c5bb' }}
+                      style={{ padding: '4px 8px', height: '28px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#dc2626', borderColor: '#fecaca' }}
                     >
                       <Trash2 size={12} /> Eliminar
                     </button>
@@ -211,22 +205,22 @@ const TeamForm = ({ team, onClose, onSuccess, isModal = false, defaultCategoryId
                 </>
               ) : (
                 <div style={{ pointerEvents: 'none' }}>
-                  <Upload size={22} style={{ color: '#cc7a5c', marginBottom: '4px' }} />
-                  <div style={{ fontSize: '12px', fontWeight: '600', color: '#191919' }}>Subir Logo</div>
+                  <Upload size={22} style={{ color: 'var(--gx-primary-ink)', marginBottom: '4px' }} />
+                  <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)' }}>Subir Logo</div>
                 </div>
               )}
             </div>
           </div>
 
           <div className="input-group">
-            <label style={{ fontSize: '13px', color: 'var(--text-secondary, #7f776f)', fontWeight: '500' }}>Foto Equipo</label>
+            <label style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '800' }}>Foto Equipo</label>
             <div style={{ 
-              border: previews.team_photo ? '1px solid #e6dfd3' : '2px dashed #c4b9a3', 
+              border: previews.team_photo ? '1px solid var(--border-subtle)' : '2px dashed #c4b9a3', 
               borderRadius: '12px', 
               padding: previews.team_photo ? '12px' : '16px', 
               textAlign: 'center', 
               position: 'relative', 
-              background: '#fcfbfa',
+              background: '#fafafb',
               minHeight: '130px',
               display: 'flex',
               flexDirection: 'column',
@@ -264,7 +258,7 @@ const TeamForm = ({ team, onClose, onSuccess, isModal = false, defaultCategoryId
                       type="button"
                       onClick={(e) => { e.stopPropagation(); handleClearFile('team_photo'); }}
                       className="secondary"
-                      style={{ padding: '4px 8px', height: '28px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#cc7a5c', borderColor: '#e5c5bb' }}
+                      style={{ padding: '4px 8px', height: '28px', minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#dc2626', borderColor: '#fecaca' }}
                     >
                       <Trash2 size={12} /> Eliminar
                     </button>
@@ -272,8 +266,8 @@ const TeamForm = ({ team, onClose, onSuccess, isModal = false, defaultCategoryId
                 </>
               ) : (
                 <div style={{ pointerEvents: 'none' }}>
-                  <Upload size={22} style={{ color: '#cc7a5c', marginBottom: '4px' }} />
-                  <div style={{ fontSize: '12px', fontWeight: '600', color: '#191919' }}>Subir Foto</div>
+                  <Upload size={22} style={{ color: 'var(--gx-primary-ink)', marginBottom: '4px' }} />
+                  <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)' }}>Subir Foto</div>
                 </div>
               )}
             </div>
@@ -284,7 +278,7 @@ const TeamForm = ({ team, onClose, onSuccess, isModal = false, defaultCategoryId
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <div className="input-group">
             <label>Nombre *</label>
-            <input type="text" required value={formData.name} onChange={(e) => { const val = e.target.value.replace(/(^\w|\s\w)/g, m => m.toUpperCase()); setFormData({ ...formData, name: val }); setError(''); }} style={{ borderColor: error ? '#e07070' : 'var(--border-subtle)', height: '42px' }} />
+            <input type="text" required value={formData.name} onChange={(e) => { const val = e.target.value.replace(/(^\w|\s\w)/g, m => m.toUpperCase()); setFormData({ ...formData, name: val }); setError(''); }} style={{ borderColor: error ? '#dc2626' : 'var(--border-subtle)', height: '42px' }} />
           </div>
           <div className="input-group">
             <label>Categoría *</label>
@@ -369,14 +363,14 @@ const TeamForm = ({ team, onClose, onSuccess, isModal = false, defaultCategoryId
         </div>
 
         {error && (
-          <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'rgba(204, 122, 92, 0.05)', color: '#cc7a5c', fontSize: '13px', border: '1px solid #e5c5bb' }}>
+          <div style={{ padding: '12px 16px', borderRadius: '12px', background: '#fef2f2', color: '#dc2626', fontSize: '13px', border: '1px solid #fecaca' }}>
             {error}
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '16px', borderTop: '1px solid #e6dfd3' }}>
-          <button type="button" onClick={onClose} className="secondary" style={{ height: '40px' }}>Cancelar</button>
-          <button type="submit" disabled={submitting} style={{ height: '40px' }}>
+        <div className="dt-form-actions">
+          <button type="button" onClick={onClose} className="secondary">Cancelar</button>
+          <button type="submit" disabled={submitting}>
             {submitting ? '...' : <><Check size={18} /> {team ? 'Guardar' : 'Crear'}</>}
           </button>
         </div>
@@ -390,7 +384,7 @@ const TeamForm = ({ team, onClose, onSuccess, isModal = false, defaultCategoryId
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(8, 7, 6, 0.82)',
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
           backdropFilter: 'blur(5px)',
           display: 'flex',
           alignItems: 'center',
@@ -400,7 +394,7 @@ const TeamForm = ({ team, onClose, onSuccess, isModal = false, defaultCategoryId
         }}>
           <div style={{
             background: '#ffffff',
-            borderRadius: '16px',
+            borderRadius: '18px',
             padding: '24px',
             maxWidth: '440px',
             width: '100%',
@@ -424,7 +418,7 @@ const TeamForm = ({ team, onClose, onSuccess, isModal = false, defaultCategoryId
               }}>
                 <AlertTriangle size={22} />
               </div>
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#191919' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', fontFamily: 'var(--font-display)', }}>
                 {customAlert.title || 'Atención'}
               </h3>
             </div>
@@ -438,13 +432,13 @@ const TeamForm = ({ team, onClose, onSuccess, isModal = false, defaultCategoryId
                 type="button"
                 onClick={() => setCustomAlert(null)}
                 style={{
-                  background: '#191919',
-                  color: '#ffffff',
+                  background: 'var(--gx-primary)',
+                  color: 'var(--gx-on-primary)',
                   border: 'none',
-                  borderRadius: '8px',
+                  borderRadius: '12px',
                   padding: '10px 20px',
-                  fontWeight: '500',
-                  fontSize: '14px',
+                  fontWeight: '700',
+                  fontSize: '13px',
                   cursor: 'pointer'
                 }}
               >

@@ -4,6 +4,7 @@ import api from '../../api';
 import { Plus, Search, Contact, Trash2, Edit, X, Check } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import DelegateForm from './DelegateForm';
+import PageHeader from '../ui/PageHeader';
 
 const DelegadosView = () => {
   const [delegates, setDelegates] = useState([]);
@@ -66,33 +67,24 @@ const DelegadosView = () => {
     <div style={{ maxWidth: '1200px', margin: '0 auto' }} className="anthropic-theme delegates-container animate-fade-in">
       
       {/* Header Section */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-        <div>
-          <h1 className="anthropic-title">
-            {showForm ? (editingDelegate ? 'Editar Delegado' : 'Nuevo Delegado') : 'Delegados'}
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>
-            {showForm ? 'Completa los datos del representante y sus credenciales.' : 'Gestión de delegados y representantes de equipos'}
-          </p>
-        </div>
-        {showForm ? (
-          <button 
-            type="button" 
-            onClick={() => setShowForm(false)} 
-            className="secondary icon-only" 
-            style={{ width: '36px', height: '36px' }}
+      <PageHeader
+        icon={Contact}
+        title={showForm ? (editingDelegate ? 'Editar Delegado' : 'Nuevo Delegado') : 'Delegados'}
+        subtitle={showForm ? 'Completa los datos del representante y sus credenciales.' : 'Gestión de delegados y representantes de equipos'}
+        actions={showForm ? (
+          <button
+            type="button"
+            onClick={() => setShowForm(false)}
+            className="secondary icon-only"
           >
             <X size={18} />
           </button>
         ) : (
-          <button 
-            onClick={() => { setEditingDelegate(null); setShowForm(true); }}
-            style={{ height: '40px', padding: '0 20px', fontSize: '14px' }}
-          >
+          <button onClick={() => { setEditingDelegate(null); setShowForm(true); }}>
             <Plus size={18} /> Nuevo Delegado
           </button>
         )}
-      </div>
+      />
 
       {showForm && (
         <DelegateForm 
@@ -134,7 +126,7 @@ const DelegadosView = () => {
           </div>
 
           {/* Table */}
-          <div className="table-container">
+          <div className="table-container mobile-cards">
             <table>
               <thead>
                 <tr>
@@ -153,9 +145,9 @@ const DelegadosView = () => {
                 ) : (
                   delegates.map((delegate) => (
                     <tr key={delegate.id} className="table-row-hover">
-                      <td>
+                      <td className="mc-title" data-label="">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'var(--brand-beige-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brand-beige)' }}>
+                          <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--gx-primary-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gx-primary-ink)', flexShrink: 0 }}>
                             <Contact size={20} />
                           </div>
                           <div>
@@ -164,14 +156,14 @@ const DelegadosView = () => {
                           </div>
                         </div>
                       </td>
-                      <td>{delegate.dni || '-'}</td>
-                      <td><span className="badge">{delegate.team_name}</span></td>
-                      <td>{new Date(delegate.created_at).toLocaleDateString()}</td>
-                      <td style={{ textAlign: 'right' }}>
+                      <td data-label="DNI">{delegate.dni || '-'}</td>
+                      <td data-label="Equipo"><span className="badge">{delegate.team_name}</span></td>
+                      <td data-label="Registro">{new Date(delegate.created_at).toLocaleDateString()}</td>
+                      <td className="mc-actions" data-label="" style={{ textAlign: 'right' }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                            {deletingId === delegate.id ? (
                              <div style={{ display: 'flex', gap: '4px', alignItems: 'center', animation: 'fadeIn 0.2s ease' }}>
-                               <span style={{ fontSize: '10px', color: '#cc7a5c', fontWeight: 'bold', marginRight: '4px' }}>¿Eliminar?</span>
+                               <span style={{ fontSize: '10px', color: '#dc2626', fontWeight: 'bold', marginRight: '4px' }}>¿Eliminar?</span>
                                <button 
                                  type="button"
                                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(delegate.id); }} 

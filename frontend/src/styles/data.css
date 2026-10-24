@@ -1,0 +1,29 @@
+/* Formularios y vistas de datos (Equipos, Delegados, Jugadores, Caja) */
+.dt-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 16px;
+  margin-top: 4px;
+  border-top: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+}
+.dt-form-actions button { height: 42px; }
+
+.dt-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 16px;
+}
+
+.dt-upload-box {
+  border: 2px dashed var(--border-medium);
+  border-radius: 14px;
+  background: #fafafb;
+  transition: all 0.2s ease;
+}
+
+@media (max-width: 768px) {
+  .dt-form-actions { flex-direction: column-reverse; }
+  .dt-form-actions button { width: 100%; height: 46px; }
+}

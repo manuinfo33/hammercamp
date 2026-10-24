@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Users, Plus, Trash2, UserCheck, AlertTriangle } from 'lucide-react';
+import PageHeader from '../ui/PageHeader';
 import api from '../../api';
 
 export default function DelegateDashboard({ user }) {
@@ -171,15 +172,12 @@ export default function DelegateDashboard({ user }) {
   }
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      <div>
-        <h1 className="gradient-text" style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '8px' }}>
-          Dashboard de Delegado
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
-          Bienvenido, <strong>{user.first_name} {user.last_name}</strong>. Administrá la lista de buena fe de tu equipo: <strong>{user.team_name}</strong>.
-        </p>
-      </div>
+    <div className="anthropic-theme animate-fade-in" style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      <PageHeader
+        icon={UserCheck}
+        title="Dashboard de Delegado"
+        subtitle={<>Bienvenido, <strong>{user.first_name} {user.last_name}</strong>. Administrá la lista de buena fe de tu equipo: <strong>{user.team_name}</strong>.</>}
+      />
 
       {tournaments.length === 0 ? (
         <div className="glass-card" style={{ padding: '40px', textAlign: 'center' }}>
@@ -197,15 +195,15 @@ export default function DelegateDashboard({ user }) {
                   width: '40px',
                   height: '40px',
                   borderRadius: '12px',
-                  background: 'linear-gradient(135deg, var(--brand-beige), var(--brand-beige-dim))',
+                  background: 'var(--gx-primary-soft)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}>
-                  <Trophy size={20} color="#1a1512" />
+                  <Trophy size={20} color="var(--gx-primary-ink)" />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800' }}>Torneo Activo</h3>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', textTransform: 'uppercase' }}>Torneo Activo</h3>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '12px', margin: 0 }}>
                     {activeTournament?.name} {activeTournament ? `(Categoría: ${activeTournament.category_name})` : ''}
                   </p>
@@ -213,12 +211,12 @@ export default function DelegateDashboard({ user }) {
               </div>
 
               {tournaments.length > 1 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                   <label style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>Cambiar Torneo:</label>
                   <select
                     value={selectedTournamentId}
                     onChange={(e) => setSelectedTournamentId(e.target.value)}
-                    style={{ height: '36px', minWidth: '200px', background: 'var(--input-bg)', border: '1px solid var(--border-strong)', borderRadius: '8px' }}
+                    style={{ height: '40px', minWidth: '200px', width: '100%', background: 'var(--input-bg)', border: '1px solid var(--border-subtle)', borderRadius: '12px' }}
                   >
                     {tournaments.map(t => (
                       <option key={t.id} value={t.id}>{t.name}</option>
@@ -231,12 +229,12 @@ export default function DelegateDashboard({ user }) {
             {activeTournament && (
               <div>
                 {/* Counter & Limit info */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-base)', padding: '12px 20px', borderRadius: '10px', marginBottom: '20px', border: '1px solid var(--border-subtle)' }}>
-                  <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>
-                    Límite de Jugadores: <span style={{ color: 'var(--brand-beige)' }}>{buenaFePlayers.length}</span> / {activeTournament.max_players_buena_fe}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#171717', padding: '14px 20px', borderRadius: '14px', marginBottom: '20px', border: '1px solid #27272a', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#fff' }}>
+                    Límite de Jugadores: <span style={{ color: 'var(--gx-primary)' }}>{buenaFePlayers.length}</span> / {activeTournament.max_players_buena_fe}
                   </div>
                   {buenaFePlayers.length >= activeTournament.max_players_buena_fe && (
-                    <span style={{ fontSize: '11px', color: '#ffb300', fontWeight: 'bold', background: 'rgba(255, 179, 0, 0.1)', padding: '4px 8px', borderRadius: '6px' }}>
+                    <span style={{ fontSize: '11px', color: '#d97706', fontWeight: 'bold', background: 'rgba(245, 158, 11, 0.15)', padding: '4px 10px', borderRadius: '999px' }}>
                       Cupo lleno
                     </span>
                   )}
@@ -244,22 +242,22 @@ export default function DelegateDashboard({ user }) {
 
                 {/* Add Player Form */}
                 {buenaFePlayers.length < activeTournament.max_players_buena_fe ? (
-                  <form onSubmit={handleAddPlayerToRoster} style={{ display: 'grid', gridTemplateColumns: '2fr 120px', gap: '15px', alignItems: 'end', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-subtle)', padding: '16px', borderRadius: '12px', marginBottom: '20px' }}>
+                  <form onSubmit={handleAddPlayerToRoster} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '12px', alignItems: 'end', background: '#fafafb', border: '1px solid var(--border-subtle)', padding: '16px', borderRadius: '14px', marginBottom: '20px' }}>
                     <div className="input-group" style={{ margin: 0 }}>
                       <label style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Buscar y seleccionar Jugador *</label>
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         <input
                           type="text"
                           placeholder="Escribe para buscar..."
                           value={searchPlayerQuery}
                           onChange={(e) => setSearchPlayerQuery(e.target.value)}
-                          style={{ height: '36px', width: '130px', fontSize: '12px', padding: '6px' }}
+                          style={{ height: '40px', flex: '1 1 120px', width: 'auto', fontSize: '13px', padding: '6px 12px' }}
                         />
                         <select
                           required
                           value={selectedPlayerToAdd}
                           onChange={(e) => setSelectedPlayerToAdd(e.target.value)}
-                          style={{ height: '36px', flex: 1, fontSize: '13px' }}
+                          style={{ height: '40px', flex: '2 1 180px', fontSize: '13px' }}
                         >
                           <option value="">-- Elegir jugador --</option>
                           {allPlayersCatalog.map(p => (
@@ -272,19 +270,19 @@ export default function DelegateDashboard({ user }) {
                     <button
                       type="submit"
                       disabled={loadingBuenaFe}
-                      style={{ height: '36px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '13px' }}
+                      style={{ height: '40px', padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '13px' }}
                     >
                       <Plus size={14} /> Inscribir
                     </button>
                   </form>
                 ) : (
-                  <div style={{ textAlign: 'center', color: '#ffb300', fontSize: '13px', background: 'rgba(255,179,0,0.05)', border: '1px solid rgba(255,179,0,0.15)', padding: '12px', borderRadius: '10px', marginBottom: '20px' }}>
+                  <div style={{ textAlign: 'center', color: '#b45309', fontSize: '13px', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', padding: '12px', borderRadius: '12px', marginBottom: '20px' }}>
                     Has alcanzado la cantidad máxima de {activeTournament.max_players_buena_fe} jugadores en este torneo. Remové un jugador para poder añadir otro.
                   </div>
                 )}
 
                 {/* Roster Table */}
-                <div className="table-container" style={{ margin: 0, overflowX: 'auto' }}>
+                <div className="table-container mobile-cards" style={{ margin: 0, overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                       <tr>
@@ -301,25 +299,25 @@ export default function DelegateDashboard({ user }) {
                       ) : (
                         buenaFePlayers.map((record) => (
                           <tr key={record.id}>
-                            <td>
+                            <td className="mc-title" data-label="">
                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <div style={{ width: '30px', height: '30px', borderRadius: '6px', overflow: 'hidden', background: 'var(--brand-beige-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ width: '34px', height: '34px', borderRadius: '10px', flexShrink: 0, overflow: 'hidden', background: 'var(--gx-primary-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                   {record.player_photo ? (
                                     <img src={record.player_photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                   ) : (
-                                    <UserCheck size={14} color="var(--brand-beige)" />
+                                    <UserCheck size={14} color="var(--gx-primary-ink)" />
                                   )}
                                 </div>
                                 <span style={{ fontWeight: '600' }}>{record.player_name}</span>
                               </div>
                             </td>
-                            <td style={{ color: 'var(--text-secondary)' }}>{record.player_dni}</td>
-                            <td style={{ textAlign: 'right' }}>
+                            <td data-label="DNI" style={{ color: 'var(--text-secondary)' }}>{record.player_dni}</td>
+                            <td className="mc-actions" data-label="" style={{ textAlign: 'right' }}>
                               <button
                                 type="button"
                                 onClick={() => handleRemovePlayerFromRoster(record.id)}
                                 className="danger"
-                                style={{ padding: '6px', minWidth: 'auto', height: 'auto', borderRadius: '8px' }}
+                                style={{ padding: '8px', minWidth: 'auto', height: 'auto', borderRadius: '10px' }}
                                 title="Quitar jugador"
                               >
                                 <Trash2 size={14} />
