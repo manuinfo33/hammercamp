@@ -16,7 +16,16 @@ const TABS = [
   { id: 'config', label: 'Configuración de pagos', icon: SlidersHorizontal },
 ];
 const today = () => new Date().toISOString().slice(0, 10);
-const CATS = [['alquiler', 'Alquiler de cancha'], ['cobro_deuda', 'Cobro de deuda de equipo'], ['compra', 'Compra / mantenimiento'], ['inversion', 'Inversión'], ['reintegro_socio', 'Reintegro a socio'], ['otro', 'Otro']];
+const ALL_CATS = [
+  ['caja_fecha', 'Caja de Fecha'],
+  ['alquiler', 'Alquiler de cancha'],
+  ['cobro_deuda', 'Cobro de deuda de equipo'],
+  ['compra', 'Compra / mantenimiento'],
+  ['inversion', 'Inversión'],
+  ['reintegro_socio', 'Reintegro a socio'],
+  ['otro', 'Otro'],
+];
+const MANUAL_CATS = ALL_CATS.filter(([k]) => k !== 'caja_fecha');
 
 function MovementModal({ preset, teams, partners, onClose, onDone }) {
   const [f, setF] = useState({ type: 'egreso', category: 'otro', method: 'efectivo', concept: '', amount: '', date: today(), team: '', partner: '', ...preset });
@@ -33,7 +42,7 @@ function MovementModal({ preset, teams, partners, onClose, onDone }) {
   return (
     <Modal title="Nuevo movimiento" onClose={onClose}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        <Field label="Categoría"><select value={f.category} onChange={(e) => setCat(e.target.value)}>{CATS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></Field>
+        <Field label="Categoría"><select value={f.category} onChange={(e) => setCat(e.target.value)}>{MANUAL_CATS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></Field>
         <Field label="Tipo"><select value={f.type} onChange={(e) => setF({ ...f, type: e.target.value })}><option value="ingreso">Ingreso</option><option value="egreso">Egreso</option></select></Field>
         <Field label="Medio"><select value={f.method} onChange={(e) => setF({ ...f, method: e.target.value })}><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option>{f.type === 'egreso' && f.category !== 'reintegro_socio' && <option value="socio">Puesto por socio</option>}</select></Field>
         <Field label="Fecha"><input type="date" value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} /></Field>
@@ -67,7 +76,16 @@ function GeneralTab({ summary, teams, partners, reload }) {
   const load = useCallback(() => api.get('finances/movements/').then((r) => setRows(list(r))), []);
   useEffect(() => { load(); }, [load]);
   const done = () => { setModal(false); load(); reload(); };
-  const del = async (m) => { if (window.confirm('¿Eliminar movimiento?')) { await api.delete(`finances/movements/${m.id}/`); done(); } };
+  const del = async (m) => {
+    if (m.financial_day) {
+      alert('Este movimiento proviene del cierre de una Caja de Fecha. Para eliminarlo o modificarlo, reabrí o eliminá la jornada desde la pestaña Caja de Fecha.');
+      return;
+    }
+    if (window.confirm('¿Eliminar movimiento?')) {
+      await api.delete(`finances/movements/${m.id}/`);
+      done();
+    }
+  };
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {summary && (
@@ -79,23 +97,57 @@ function GeneralTab({ summary, teams, partners, reload }) {
       )}
       <section className="glass-card" style={{ padding: 18 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>Movimientos fuera de fecha</h3>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>Movimientos de Caja General</h3>
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
+              Ingresos de cajas de fecha cerradas, cobros de deuda, alquileres, compras y reintegros.
+            </p>
+          </div>
           <button type="button" onClick={() => setModal(true)}><Plus size={15} /> Movimiento</button>
         </div>
-        {rows.length === 0 ? <Empty>Sin movimientos. Acá van alquileres, compras, cobros de deuda y reintegros.</Empty> : (
+        {rows.length === 0 ? <Empty>Sin movimientos registrados aún.</Empty> : (
           <div style={{ overflowX: 'auto' }}>
             <table className="responsive-table compact-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><th>Fecha</th><th>Concepto</th><th>Medio</th><th style={{ textAlign: 'right' }}>Monto</th><th /></tr></thead>
               <tbody>
-                {rows.map((m) => (
-                  <tr key={m.id}>
-                    <td>{m.date.split('-').reverse().join('/')}</td>
-                    <td><strong>{m.concept}</strong><div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{CATS.find(([k]) => k === m.category)?.[1]}{m.team_name && ` · ${m.team_name}`}{m.partner_name && ` · ${m.partner_name}`}</div></td>
-                    <td><Badge tone={m.method === 'socio' ? '#cc7a5c' : '#71717a'}>{m.method === 'socio' ? 'Socio' : m.method}</Badge></td>
-                    <td style={{ textAlign: 'right', fontWeight: 700, color: m.type === 'ingreso' ? '#059669' : '#dc2626' }}>{m.type === 'ingreso' ? '+' : '-'}{ars(m.amount)}</td>
-                    <td><button type="button" className="danger icon-only" onClick={() => del(m)}><Trash2 size={14} /></button></td>
-                  </tr>
-                ))}
+                {rows.map((m) => {
+                  const amt = Number(m.amount);
+                  const isNegative = amt < 0 || m.type === 'egreso';
+                  const sign = isNegative ? '-' : '+';
+                  const color = isNegative ? '#dc2626' : '#059669';
+                  const isCajaFecha = m.category === 'caja_fecha' || Boolean(m.financial_day);
+                  const catLabel = ALL_CATS.find(([k]) => k === m.category)?.[1] || m.category;
+                  return (
+                    <tr key={m.id}>
+                      <td>{m.date.split('-').reverse().join('/')}</td>
+                      <td>
+                        <strong>{m.concept}</strong>
+                        <div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
+                          {catLabel}{m.team_name && ` · ${m.team_name}`}{m.partner_name && ` · ${m.partner_name}`}
+                        </div>
+                      </td>
+                      <td>
+                        <Badge tone={isCajaFecha ? '#059669' : m.method === 'socio' ? '#cc7a5c' : '#71717a'}>
+                          {isCajaFecha ? 'Caja de Fecha' : m.method === 'socio' ? 'Socio' : m.method}
+                        </Badge>
+                      </td>
+                      <td style={{ textAlign: 'right', fontWeight: 700, color }}>
+                        {sign}{ars(Math.abs(amt))}
+                      </td>
+                      <td>
+                        {isCajaFecha ? (
+                          <span title="Generado automáticamente al cerrar la Caja de Fecha" style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                            Automático
+                          </span>
+                        ) : (
+                          <button type="button" className="danger icon-only" title="Eliminar movimiento" onClick={() => del(m)}>
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -156,12 +208,28 @@ export default function FinanzasView() {
       <PageHeader icon={Wallet} title="Finanzas" subtitle="Caja de cada fecha, tesorería, socios y deudas de equipos. Solo administradores." />
       <div className="cf-tabs">
         {TABS.map(({ id, label, icon: Icon }) => (
-          <button key={id} type="button" className={`cf-tab ${tab === id ? 'active' : ''}`} onClick={() => { setTab(id); base.reload(); }}>
+          <button
+            key={id}
+            type="button"
+            className={`cf-tab ${tab === id ? 'active' : ''}`}
+            onClick={() => {
+              if (id === tab) return;
+              if (typeof window.__finanzasDayBeforeLeave === 'function') {
+                const proceed = window.__finanzasDayBeforeLeave(() => {
+                  setTab(id);
+                  base.reload();
+                });
+                if (!proceed) return;
+              }
+              setTab(id);
+              base.reload();
+            }}
+          >
             <Icon size={18} /> {label}
           </button>
         ))}
       </div>
-      {tab === 'jornada' && <JornadaView />}
+      {tab === 'jornada' && <JornadaView onDayChanged={base.reload} />}
       {tab === 'general' && <GeneralTab {...base} />}
       {tab === 'socios' && <SociosTab {...base} />}
       {tab === 'deudas' && <DeudasTab {...base} />}

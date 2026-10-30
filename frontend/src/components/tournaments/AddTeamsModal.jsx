@@ -70,7 +70,7 @@ const AddTeamsModal = ({ zone, categoryId, onClose, onTeamsAdded }) => {
   const selectedCount = Object.values(selected).filter(Boolean).length;
 
   return (
-    <div className="premium-modal-overlay" onClick={onClose}>
+    <div className="premium-modal-overlay">
       <div 
         className="premium-modal-card" 
         style={{
@@ -79,8 +79,7 @@ const AddTeamsModal = ({ zone, categoryId, onClose, onTeamsAdded }) => {
           display: 'flex', 
           flexDirection: 'column',
           overflow: 'hidden'
-        }} 
-        onClick={e => e.stopPropagation()}
+        }}
       >
         {/* Header */}
         <div className="modal-header" style={{ padding: '20px 24px 16px', marginBottom: 0 }}>
@@ -209,8 +208,8 @@ const AddTeamsModal = ({ zone, categoryId, onClose, onTeamsAdded }) => {
 
       {/* Nested TeamForm modal */}
       {showTeamForm && (
-        <div className="premium-modal-overlay" onClick={() => setShowTeamForm(false)}>
-          <div className="premium-modal-card" style={{ maxWidth: '600px' }} onClick={e => e.stopPropagation()}>
+        <div className="premium-modal-overlay">
+          <div className="premium-modal-card" style={{ maxWidth: '600px' }}>
             <TeamForm
               onClose={() => setShowTeamForm(false)}
               onSuccess={() => { setShowTeamForm(false); fetchTeams(); }}

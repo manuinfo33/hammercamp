@@ -193,12 +193,11 @@ const UnirPDF = ({ onClose }) => {
     <div style={{
       position: 'fixed', 
       inset: 0, 
-      background: 'rgba(0,0,0,0.6)',
+      background: 'rgba(0, 0, 0, 0.55)',
       display: 'flex', 
       alignItems: 'center', 
       justifyContent: 'center',
       zIndex: 2000, 
-      backdropFilter: 'blur(3px)', 
       padding: 'clamp(10px, 3vw, 40px)',
       animation: 'fadeIn 0.3s ease-out'
     }}>

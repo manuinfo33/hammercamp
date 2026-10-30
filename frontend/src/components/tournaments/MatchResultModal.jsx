@@ -1525,7 +1525,6 @@ const MatchResultModal = ({
       /* VISTA ESCRITORIO (PC): Mismo diseño y posición de ventana que Editar Partido */
       <div 
         className="premium-modal-overlay anthropic-theme" 
-        onClick={onClose}
         style={{ zIndex: 99999 }}
       >
         <div 
@@ -1536,8 +1535,7 @@ const MatchResultModal = ({
             padding: '24px 28px',
             display: 'flex',
             flexDirection: 'column'
-          }} 
-          onClick={e => e.stopPropagation()}
+          }}
         >
           {/* Cabecera idéntica a Editar Partido */}
           <div className="modal-header" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1589,12 +1587,12 @@ const MatchResultModal = ({
           right: 0,
           bottom: 0,
           zIndex: 1000000,
-          background: 'rgba(8, 7, 6, 0.82)',
+          background: 'rgba(0, 0, 0, 0.55)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           padding: '16px'
-        }} onClick={handleRedCardCancel}>
+        }}>
           <div style={{
             background: '#ffffff',
             borderRadius: '16px',
@@ -1802,12 +1800,12 @@ const MatchResultModal = ({
           right: 0,
           bottom: 0,
           zIndex: 1000000,
-          background: 'rgba(8, 7, 6, 0.82)',
+          background: 'rgba(0, 0, 0, 0.55)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           padding: '16px'
-        }} onClick={() => setShowConfirmDelete(false)}>
+        }}>
           <div style={{
             background: '#ffffff',
             borderRadius: '16px',

@@ -40,13 +40,20 @@ class CategoryViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         category = self.get_object()
 
-        # Validación: No se puede eliminar una categoría si ya tiene equipos asignados
-        teams_count = category.teams.count()
-        if teams_count > 0:
+        # Validación: No se puede eliminar si hay torneos con equipos cargados de esta categoría
+        tournaments_with_teams = Tournament.objects.filter(
+            category=category,
+            zones__zone_teams__isnull=False
+        ).distinct()
+
+        if tournaments_with_teams.exists():
+            tour_names = ", ".join(f'"{t.name}"' for t in tournaments_with_teams[:3])
+            more_count = tournaments_with_teams.count() - 3
+            more = f" y {more_count} más" if more_count > 0 else ""
             return Response(
                 {
-                    'detail': 'CATEGORY_HAS_TEAMS',
-                    'message': f'No se puede eliminar la categoría "{category.name}" porque tiene {teams_count} equipo{"s" if teams_count > 1 else ""} asignado{"s" if teams_count > 1 else ""}. Primero debes reasignar o eliminar los equipos pertenecientes a esta categoría.'
+                    'detail': 'CATEGORY_IN_ACTIVE_TOURNAMENT',
+                    'message': f'No se puede eliminar la categoría "{category.name}" porque está siendo utilizada en el torneo {tour_names}{more} que tiene equipos cargados. Primero debes eliminar o vaciar dicho torneo.'
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
@@ -79,6 +86,18 @@ class TeamViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [filters.SearchFilter]
     search_fields = ['name']
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        category = self.request.query_params.get('category')
+        if category:
+            if category in ('none', 'unassigned', 'sin_asignar'):
+                qs = qs.filter(category__isnull=True)
+            elif category.isdigit():
+                qs = qs.filter(category_id=category)
+            else:
+                qs = qs.filter(category__name__iexact=category)
+        return qs
 
     def perform_create(self, serializer):
         team = serializer.save()
@@ -564,16 +583,20 @@ class TournamentViewSet(viewsets.ModelViewSet):
         tournament = self.get_object()
         if not tournament.fp_blue_card_enabled:
             return Response({'detail': 'La tarjeta azul no está habilitada en este torneo.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not MatchRound.objects.filter(tournament_zone__tournament=tournament).exists():
+            return Response({'detail': 'No se pudo cargar la tarjeta azul ya que no se registran fechas cargadas en el fixture del torneo.'}, status=status.HTTP_400_BAD_REQUEST)
         team_id = request.data.get('team')
         reason = (request.data.get('reason') or '').strip()
-        round_id = request.data.get('match_round') or None
+        round_id = request.data.get('match_round')
         if not ZoneTeam.objects.filter(zone__tournament=tournament, team_id=team_id).exists():
             return Response({'detail': 'Seleccioná un equipo del torneo.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not round_id:
+            return Response({'detail': 'No se pudo cargar la tarjeta azul ya que no se seleccionó la fecha correspondiente.'}, status=status.HTTP_400_BAD_REQUEST)
+        match_round = MatchRound.objects.filter(id=round_id, tournament_zone__tournament=tournament).first()
+        if not match_round:
+            return Response({'detail': 'La fecha seleccionada no pertenece al fixture de este torneo.'}, status=status.HTTP_400_BAD_REQUEST)
         if not reason:
             return Response({'detail': 'Ingresá el motivo de la tarjeta azul.'}, status=status.HTTP_400_BAD_REQUEST)
-        match_round = None
-        if round_id:
-            match_round = MatchRound.objects.filter(id=round_id, tournament_zone__tournament=tournament).first()
         BlueCard.objects.create(
             tournament=tournament, team_id=team_id, match_round=match_round, reason=reason,
             created_by=request.user if request.user.is_authenticated else None,
@@ -589,6 +612,32 @@ class TournamentViewSet(viewsets.ModelViewSet):
             return Response({'detail': 'Tarjeta no encontrada.'}, status=status.HTTP_404_NOT_FOUND)
         recalculate_tournament_standings_and_stats(tournament)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=['post'], url_path='clear-fixture')
+    def clear_fixture(self, request, pk=None):
+        tournament = self.get_object()
+        zone_id = request.data.get('zone_id')
+        with transaction.atomic():
+            if zone_id:
+                rounds = MatchRound.objects.filter(tournament_zone_id=zone_id, tournament_zone__tournament=tournament)
+                BlueCard.objects.filter(match_round__in=rounds).delete()
+                rounds.delete()
+                if not MatchRound.objects.filter(tournament_zone__tournament=tournament).exists():
+                    BlueCard.objects.filter(tournament=tournament).delete()
+            else:
+                rounds = MatchRound.objects.filter(tournament_zone__tournament=tournament)
+                BlueCard.objects.filter(tournament=tournament).delete()
+                rounds.delete()
+
+            recalculate_tournament_standings_and_stats(tournament)
+
+        return Response({'detail': 'Fixture y estadísticas reseteados correctamente.'})
+
+    @action(detail=True, methods=['post'], url_path='recalculate-stats')
+    def recalculate_stats(self, request, pk=None):
+        tournament = self.get_object()
+        recalculate_tournament_standings_and_stats(tournament)
+        return Response({'detail': 'Estadísticas recalculadas correctamente.'})
 
     @action(detail=True, methods=['get'], url_path='duplicate-players')
     def duplicate_players(self, request, pk=None):
@@ -1033,10 +1082,35 @@ class MatchRoundViewSet(viewsets.ModelViewSet):
             qs = qs.filter(tournament_zone_id=zone_id)
         return qs.order_by('order')
 
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        update_kwargs = {'date': instance.date}
+        if instance.time is not None:
+            update_kwargs['time'] = instance.time
+        instance.matches.all().update(**update_kwargs)
+
+    def perform_destroy(self, instance):
+        tournament = instance.tournament_zone.tournament
+        with transaction.atomic():
+            BlueCard.objects.filter(match_round=instance).delete()
+            instance.delete()
+            if not MatchRound.objects.filter(tournament_zone__tournament=tournament).exists():
+                BlueCard.objects.filter(tournament=tournament).delete()
+            recalculate_tournament_standings_and_stats(tournament)
+
 
 def recalculate_tournament_standings_and_stats(tournament):
     if not tournament:
         return
+
+    # Si no quedan fechas en el torneo, limpiar tarjetas azules remanentes
+    if not MatchRound.objects.filter(tournament_zone__tournament=tournament).exists():
+        BlueCard.objects.filter(tournament=tournament).delete()
+    else:
+        # Limpiar tarjetas azules que apunten a fechas que ya no existan
+        BlueCard.objects.filter(tournament=tournament, match_round__isnull=False).exclude(
+            match_round__tournament_zone__tournament=tournament
+        ).delete()
 
     # 1. Update ZoneTeam standings for all zones in the tournament
     for zone in tournament.zones.all():
@@ -1173,6 +1247,18 @@ class MatchViewSet(viewsets.ModelViewSet):
     queryset = Match.objects.all()
     serializer_class = MatchSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def perform_update(self, serializer):
+        match = serializer.save()
+        tournament = match.match_round.tournament_zone.tournament
+        recalculate_tournament_standings_and_stats(tournament)
+
+    def perform_destroy(self, instance):
+        tournament = instance.match_round.tournament_zone.tournament
+        with transaction.atomic():
+            MatchPlayerStat.objects.filter(match=instance).delete()
+            instance.delete()
+            recalculate_tournament_standings_and_stats(tournament)
 
     @action(detail=True, methods=['post'], url_path='save-result')
     def save_result(self, request, pk=None):

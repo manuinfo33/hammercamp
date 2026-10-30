@@ -97,7 +97,7 @@ class GeneralMovementViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdmin]
 
     def get_queryset(self):
-        qs = GeneralMovement.objects.select_related('team', 'partner')
+        qs = GeneralMovement.objects.select_related('team', 'partner', 'financial_day')
         p = self.request.query_params
         if p.get('type'):
             qs = qs.filter(type=p['type'])
@@ -109,6 +109,14 @@ class GeneralMovementViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+
+    def perform_destroy(self, instance):
+        if instance.financial_day_id:
+            raise ValidationError(
+                'Este movimiento corresponde al cierre de una Caja de Fecha. '
+                'Para eliminarlo o modificarlo, reabrí o eliminá la planilla desde Caja de Fecha.'
+            )
+        instance.delete()
 
 
 class _DayItemViewSet(viewsets.ModelViewSet):
@@ -165,8 +173,7 @@ class FinancialDayViewSet(viewsets.ModelViewSet):
         serializer.save()
 
     def perform_destroy(self, instance):
-        if instance.status == 'cerrada':
-            raise ValidationError('No se puede eliminar una jornada cerrada.')
+        # Permite eliminar planillas abiertas o cerradas si se completaron mal
         instance.delete()
 
     @action(detail=True, methods=['post'])
@@ -188,17 +195,47 @@ class FinancialDayViewSet(viewsets.ModelViewSet):
                 DayIncome.objects.create(day=day, kind='cancha', team=team, tournament=t,
                                          concept=t.name, amount_due=fee_for(t.id, day.date))
 
-        if not day.expenses.exists():
-            ref_rate = StaffRate.objects.filter(category='arbitro', active=True).first()
-            counts = Counter((m.arbitro or '').strip() for m in matches if (m.arbitro or '').strip())
-            for name, n in counts.items():
-                unit = ref_rate.amount if ref_rate else ZERO
-                DayExpense.objects.create(day=day, category='arbitro', staff_rate=ref_rate,
-                                          concept=f'Árbitro {name}', units=n,
-                                          unit_amount=unit, amount=n * unit)
-            for r in StaffRate.objects.filter(active=True, auto_include=True).exclude(category='arbitro'):
-                DayExpense.objects.create(day=day, category=r.category, staff_rate=r, concept=r.name,
-                                          units=1, unit_amount=r.amount, amount=r.amount)
+        existing_rates = set(day.expenses.filter(staff_rate__isnull=False).values_list('staff_rate_id', flat=True))
+        existing_concepts = set(day.expenses.values_list('concept', flat=True))
+
+        # 1. Todos los ítems de Staff (incluyendo árbitros) que tengan "Auto en fecha" activado
+        auto_rates = list(StaffRate.objects.filter(active=True, auto_include=True))
+        counts = Counter((m.arbitro or '').strip() for m in matches if (m.arbitro or '').strip())
+        matched_fixture_names = set()
+
+        for r in auto_rates:
+            if r.id in existing_rates or r.name in existing_concepts:
+                continue
+            units = 1
+            if r.category == 'arbitro':
+                # Si el árbitro figura asignado en partidos del fixture, calcular su cantidad de partidos
+                for fix_name, cnt in counts.items():
+                    if fix_name.lower() in r.name.lower() or r.name.lower() in fix_name.lower():
+                        units = cnt
+                        matched_fixture_names.add(fix_name)
+                        break
+            DayExpense.objects.create(
+                day=day, category=r.category, staff_rate=r, concept=r.name,
+                units=units, unit_amount=r.amount, amount=units * r.amount
+            )
+            existing_rates.add(r.id)
+            existing_concepts.add(r.name)
+
+        # 2. Si hay árbitros escritos en el fixture que no estaban como tarifa "Auto en fecha"
+        ref_rate = StaffRate.objects.filter(category='arbitro', active=True).first()
+        for name, n in counts.items():
+            if name in matched_fixture_names:
+                continue
+            concept_name = f'Árbitro {name}'
+            if concept_name in existing_concepts or name in existing_concepts:
+                continue
+            unit = ref_rate.amount if ref_rate else ZERO
+            DayExpense.objects.create(
+                day=day, category='arbitro', staff_rate=ref_rate,
+                concept=concept_name, units=n, unit_amount=unit, amount=n * unit
+            )
+            existing_concepts.add(concept_name)
+
         return Response(FinancialDayDetailSerializer(day).data)
 
     @action(detail=True, methods=['post'])
@@ -213,6 +250,26 @@ class FinancialDayViewSet(viewsets.ModelViewSet):
         day.approved_at = timezone.now()
         day.approved_by = request.user
         day.save()
+
+        # Registrar el monto esperado del arqueo en Caja General como línea de ingreso
+        totals = day_totals(day)
+        expected_cash = totals['expected_cash']
+        concept = f"Caja de Fecha {day.date.strftime('%d/%m/%Y')}"
+        if day.name:
+            concept += f" - {day.name}"
+
+        GeneralMovement.objects.update_or_create(
+            financial_day=day,
+            defaults={
+                'type': 'ingreso',
+                'category': 'caja_fecha',
+                'method': 'efectivo',
+                'concept': concept,
+                'amount': expected_cash,
+                'date': day.date,
+                'created_by': request.user,
+            }
+        )
         return Response(FinancialDayDetailSerializer(day).data)
 
     @action(detail=True, methods=['post'])
@@ -220,6 +277,8 @@ class FinancialDayViewSet(viewsets.ModelViewSet):
         day = self.get_object()
         day.status, day.approved_at, day.approved_by = 'abierta', None, None
         day.save()
+        # Al reabrir, se elimina la línea de caja general hasta su próximo cierre
+        GeneralMovement.objects.filter(financial_day=day).delete()
         return Response(FinancialDayDetailSerializer(day).data)
 
 
@@ -230,8 +289,10 @@ def summary(request):
     bal = {'efectivo': ZERO, 'transferencia': ZERO}
     for day in FinancialDay.objects.filter(status='cerrada').prefetch_related('incomes', 'expenses'):
         t = day_totals(day)
-        bal['efectivo'] += t['cash_in'] - t['cash_out']
         bal['transferencia'] += t['transfer_in'] - t['transfer_out']
+        # Si la jornada cerrada aún no tiene movimiento creado en GeneralMovement, sumar su efectivo esperado
+        if not GeneralMovement.objects.filter(financial_day=day).exists():
+            bal['efectivo'] += t['expected_cash']
 
     partner_owed = defaultdict(lambda: ZERO)
     team_debt = defaultdict(lambda: ZERO)

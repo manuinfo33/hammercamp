@@ -28,7 +28,7 @@ const overlayStyle = {
   position: 'fixed',
   inset: 0,
   zIndex: 1000000,
-  background: 'rgba(8, 7, 6, 0.82)',
+  background: 'rgba(0, 0, 0, 0.55)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -126,46 +126,73 @@ export function BlueCardModal({ tournament, enabled, bluePts, onClose, onSaved }
     });
   }, [selectedTeam, roundsByZone, zones]);
 
+  const allRoundsCount = Object.values(roundsByZone).reduce((acc, curr) => acc + (curr?.length || 0), 0);
+
   const handleSave = async () => {
     if (!enabled) return;
+    if (allRoundsCount === 0) {
+      setError('No se pudo cargar la tarjeta azul ya que no se registran fechas cargadas en el fixture del torneo.');
+      return;
+    }
     if (!teamId) { setError('Seleccioná el equipo al que se le carga la tarjeta azul.'); return; }
+    if (!roundId) { setError('Seleccioná la fecha del fixture a la que corresponde la tarjeta azul.'); return; }
     if (!reason.trim()) { setError('Ingresá el motivo de la tarjeta azul.'); return; }
     try {
       setSaving(true);
       await api.post(`tournaments/${tournament.id}/blue-cards/`, {
         team: teamId,
-        match_round: roundId || null,
+        match_round: roundId,
         reason: reason.trim(),
       });
       onSaved?.(selectedTeam?.name);
     } catch (e) {
-      setError(e?.response?.data?.detail || 'No se pudo cargar la tarjeta azul.');
+      setError(e?.response?.data?.detail || 'No se pudo cargar la tarjeta azul ya que no se registran fechas cargadas en el fixture del torneo.');
     } finally {
       setSaving(false);
     }
   };
 
   return createPortal(
-    <div style={overlayStyle} onClick={onClose}>
+    <div style={overlayStyle}>
       <div
         className="animate-fade-in anthropic-theme"
-        onClick={e => e.stopPropagation()}
         style={{
           background: '#ffffff', borderRadius: '16px', width: '100%', maxWidth: '400px', padding: '24px',
           boxShadow: '0 12px 32px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column', gap: '16px',
           border: '1px solid #e4e4e7', boxSizing: 'border-box',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <CardIcon color={BLUE} w={24} h={32} glow />
-          <div style={{ flex: 1 }}>
-            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#1c1d21' }}>Tarjeta Azul</h3>
-            {enabled && (
-              <span style={{ fontSize: '12px', fontWeight: '600', color: '#cc7a5c' }}>
-                Suma {bluePts} pts en la tabla de Fair Play
-              </span>
-            )}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <CardIcon color={BLUE} w={24} h={32} glow />
+            <div>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#1c1d21' }}>Tarjeta Azul</h3>
+              {enabled && (
+                <span style={{ fontSize: '12px', fontWeight: '600', color: '#cc7a5c' }}>
+                  Suma {bluePts} pts en la tabla de Fair Play
+                </span>
+              )}
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Cerrar ventana"
+            style={{
+              background: '#f4f4f5',
+              border: '1px solid #e4e4e7',
+              borderRadius: '8px',
+              width: '32px',
+              height: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#71717a'
+            }}
+          >
+            <X size={16} />
+          </button>
         </div>
 
         {!enabled ? (
@@ -176,6 +203,19 @@ export function BlueCardModal({ tournament, enabled, bluePts, onClose, onSaved }
             }}>
               <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '1px' }} />
               <span>La tarjeta azul no está habilitada en la configuración de Fair Play de este torneo.</span>
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button type="button" onClick={onClose} style={btnPrimary}>Entendido</button>
+            </div>
+          </>
+        ) : allRoundsCount === 0 ? (
+          <>
+            <div style={{
+              background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '12px',
+              borderRadius: '8px', fontSize: '13px', fontWeight: '600', display: 'flex', gap: '8px', lineHeight: 1.4,
+            }}>
+              <AlertCircle size={18} style={{ flexShrink: 0, marginTop: '1px' }} />
+              <span>No se pudo cargar la tarjeta azul ya que no se registran fechas cargadas en el fixture del torneo.</span>
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
               <button type="button" onClick={onClose} style={btnPrimary}>Entendido</button>
@@ -201,16 +241,16 @@ export function BlueCardModal({ tournament, enabled, bluePts, onClose, onSaved }
             </div>
 
             <div>
-              <label style={labelStyle} htmlFor="blue-card-round">Fecha <span style={{ fontWeight: 500, color: '#9ca3af' }}>(opcional)</span></label>
+              <label style={labelStyle} htmlFor="blue-card-round">Fecha</label>
               <div style={{ position: 'relative' }}>
                 <select
                   id="blue-card-round"
                   value={roundId}
-                  onChange={e => setRoundId(e.target.value)}
+                  onChange={e => { setRoundId(e.target.value); setError(''); }}
                   disabled={!selectedTeam}
-                  style={{ ...fieldStyle(false), color: roundId ? '#1c1d21' : '#6f737b', opacity: selectedTeam ? 1 : 0.6, cursor: selectedTeam ? 'pointer' : 'not-allowed' }}
+                  style={{ ...fieldStyle(error && !roundId), color: roundId ? '#1c1d21' : '#6f737b', opacity: selectedTeam ? 1 : 0.6, cursor: selectedTeam ? 'pointer' : 'not-allowed' }}
                 >
-                  <option value="">Sin fecha asociada</option>
+                  <option value="">Seleccionar fecha...</option>
                   {roundOptions.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
                 </select>
                 <ChevronDown size={15} color="#6f737b" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
@@ -529,7 +569,7 @@ export function TeamFairPlayHistoryModal({ tournamentId, team, canEdit, onClose,
       ));
 
   return createPortal(
-    <div style={{ ...overlayStyle, zIndex: 999999 }} onClick={onClose}>
+    <div style={{ ...overlayStyle, zIndex: 999999 }}>
       <div
         className="animate-fade-in anthropic-theme fp-history-modal"
         onClick={e => e.stopPropagation()}
@@ -888,8 +928,8 @@ export function TeamFairPlayHistoryModal({ tournamentId, team, canEdit, onClose,
 
       {/* Confirmación de borrado */}
       {confirmDeleteId && (
-        <div style={{ ...overlayStyle, zIndex: 1000001 }} onClick={e => { e.stopPropagation(); setConfirmDeleteId(null); }}>
-          <div className="animate-fade-in anthropic-theme" onClick={e => e.stopPropagation()} style={{
+        <div style={{ ...overlayStyle, zIndex: 1000001 }}>
+          <div className="animate-fade-in anthropic-theme" style={{
             background: '#ffffff', borderRadius: '16px', width: '100%', maxWidth: '360px', padding: '24px',
             boxShadow: '0 12px 32px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid #e4e4e7',
           }}>

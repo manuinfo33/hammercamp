@@ -315,8 +315,7 @@ const CategoriasView = () => {
           left: 0,
           width: '100vw',
           height: '100vh',
-          background: 'rgba(0, 0, 0, 0.6)',
-          backdropFilter: 'blur(3px)',
+          background: 'rgba(0, 0, 0, 0.55)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -362,7 +361,7 @@ const CategoriasView = () => {
               color: '#721c24',
               lineHeight: '1.4'
             }}>
-              <strong>Advertencia de seguridad:</strong> Al eliminar esta categoría, los Equipos y Torneos asociados continuarán existiendo en la base de datos, pero con Categoria: Sin Asignar. Para confirmar esta acción, ingresá la contraseña del usuario actual.
+              <strong>Advertencia de seguridad:</strong> Al eliminar esta categoría, los Equipos asociados continuarán existiendo en el sistema pero pasarán a figurar con <strong>Categoría: Sin Asignar</strong>. (No se puede eliminar si hay un torneo con equipos cargados de esta categoría). Para confirmar esta acción, ingresá tu contraseña de usuario.
             </div>
 
             <form onSubmit={handleConfirmDelete} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>

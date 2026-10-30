@@ -35,7 +35,7 @@ function EditSaldoModal({ show, onClose, onSave, item }) {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(3px)', zIndex: 9500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.55)', zIndex: 9500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
       <div className="form-container" style={{ width: '100%', maxWidth: '440px', margin: 0, maxHeight: '100%', overflowY: 'auto', borderRadius: '18px', boxShadow: '0 24px 60px rgba(0,0,0,0.3)', animation: 'fadeIn 0.25s ease-out' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h2 style={{ fontSize: '1.1rem', fontWeight: 700, textTransform: 'uppercase' }}>Editar Saldo — {item.delegate_nombre}</h2>

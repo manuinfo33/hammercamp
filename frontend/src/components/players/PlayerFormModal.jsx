@@ -1243,7 +1243,7 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0, 0, 0, 0.6)',
+        background: 'rgba(0, 0, 0, 0.55)',
         zIndex: 100020,
         display: 'flex',
         alignItems: 'center',
@@ -1251,7 +1251,6 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
         padding: '16px'
       }}
       className="animate-fade-in"
-      onClick={() => triggerCloseConfirm(false)}
     >
       <div 
         style={{
@@ -1358,7 +1357,7 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
             style={{
               position: 'fixed',
               inset: 0,
-              background: 'rgba(0, 0, 0, 0.6)',
+              background: 'rgba(0, 0, 0, 0.55)',
               zIndex: 10005,
               display: 'flex',
               alignItems: 'center',
@@ -1367,7 +1366,6 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
               overflowY: 'auto'
             }}
             className="animate-fade-in anthropic-theme"
-            onClick={onClose}
           >
             <div 
               style={{
@@ -1512,14 +1510,13 @@ const PlayerFormModal = ({ player, onClose, onSuccess }) => {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            backgroundColor: 'rgba(0, 0, 0, 0.55)',
             zIndex: 100060,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             padding: '16px'
           }}
-          onClick={() => setShowDniConfirmModal(false)}
         >
           <div 
             style={{

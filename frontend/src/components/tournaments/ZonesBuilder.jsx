@@ -43,7 +43,10 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
       const filtered = categoryId
         ? res.data.filter(t => t.category === parseInt(categoryId))
         : res.data;
-      setAvailableTeams(filtered);
+      const sorted = [...filtered].sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+      );
+      setAvailableTeams(sorted);
     } catch (e) {
       console.error("Error fetching available teams:", e);
     }
@@ -466,9 +469,7 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(8, 7, 6, 0.82)',
-            backdropFilter: 'blur(5px)',
-            WebkitBackdropFilter: 'blur(5px)',
+            background: 'rgba(0, 0, 0, 0.55)',
             zIndex: 100000,
             display: 'flex',
             alignItems: 'center',
@@ -476,7 +477,6 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
             padding: '20px'
           }}
           className="animate-fade-in"
-          onClick={() => setCustomAlert(null)}
         >
           <div 
             style={{

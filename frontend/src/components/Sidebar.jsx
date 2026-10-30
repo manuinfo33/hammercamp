@@ -16,7 +16,8 @@ import {
   Bell,
   ArrowLeft,
   ChevronRight,
-  Wallet
+  Wallet,
+  Plus
 } from 'lucide-react';
 import { useHeaderInfo } from '../context/HeaderContext';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
@@ -55,6 +56,7 @@ const Sidebar = () => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [dataMenuOpen, setDataMenuOpen] = useState(false);
   const [dataSheetOpen, setDataSheetOpen] = useState(false);
+  const [moreSheetOpen, setMoreSheetOpen] = useState(false);
   const [helpModalOpen, setHelpModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
 
@@ -66,6 +68,7 @@ const Sidebar = () => {
   useEffect(() => {
     setDataMenuOpen(false);
     setDataSheetOpen(false);
+    setMoreSheetOpen(false);
     setUserDropdownOpen(false);
     setNotificationsOpen(false);
   }, [location.pathname]);
@@ -417,19 +420,30 @@ const Sidebar = () => {
           <div className="gx-sheet-backdrop" onClick={() => setDataSheetOpen(false)} />
           <div className="gx-sheet" role="menu">
             {DATA_LINKS.map(({ to, label, icon: Icon }) => (
-              <NavLink key={to} to={to} className={({ isActive }) => (isActive ? 'active' : '')}>
+              <NavLink key={to} to={to} className={({ isActive }) => (isActive ? 'active' : '')} onClick={() => setDataSheetOpen(false)}>
                 <Icon size={18} /><span>{label}</span>
               </NavLink>
             ))}
-            <NavLink to="/finanzas" className={({ isActive }) => (isActive ? 'active' : '')} onClick={() => setDataSheetOpen(false)}>
-              <Wallet size={18} /><span>Finanzas</span>
+          </div>
+        </>
+      )}
+
+      {moreSheetOpen && isAdmin && (
+        <>
+          <div className="gx-sheet-backdrop" onClick={() => setMoreSheetOpen(false)} />
+          <div className="gx-sheet" role="menu">
+            <NavLink to="/categorias" className={({ isActive }) => (isActive ? 'active' : '')} onClick={() => setMoreSheetOpen(false)}>
+              <Award size={18} /><span>Categorías</span>
+            </NavLink>
+            <NavLink to="/configuracion" className={({ isActive }) => (isActive ? 'active' : '')} onClick={() => setMoreSheetOpen(false)}>
+              <Settings size={18} /><span>Configuración WEB</span>
             </NavLink>
           </div>
         </>
       )}
 
       <nav className="gx-bottomnav" aria-label="Navegación móvil">
-        <NavLink to="/" end className={({ isActive }) => `gx-bottomnav-btn ${!dataSheetOpen && isActive ? 'active' : ''}`} onClick={() => setDataSheetOpen(false)}>
+        <NavLink to="/" end className={({ isActive }) => `gx-bottomnav-btn ${!dataSheetOpen && !moreSheetOpen && isActive ? 'active' : ''}`} onClick={() => { setDataSheetOpen(false); setMoreSheetOpen(false); }}>
           <LayoutDashboard size={20} /><span className="lbl">Inicio</span>
         </NavLink>
 
@@ -438,19 +452,29 @@ const Sidebar = () => {
             <button
               type="button"
               className={`gx-bottomnav-btn ${dataSheetOpen || isDbActive ? 'active' : ''}`}
-              onClick={() => setDataSheetOpen(!dataSheetOpen)}
+              onClick={() => {
+                setMoreSheetOpen(false);
+                setDataSheetOpen(!dataSheetOpen);
+              }}
             >
               <Database size={20} /><span className="lbl">Datos</span>
             </button>
-            <NavLink to="/torneos" className={({ isActive }) => `gx-bottomnav-btn ${!dataSheetOpen && isActive ? 'active' : ''}`} onClick={() => setDataSheetOpen(false)}>
+            <NavLink to="/torneos" className={({ isActive }) => `gx-bottomnav-btn ${!dataSheetOpen && !moreSheetOpen && isActive ? 'active' : ''}`} onClick={() => { setDataSheetOpen(false); setMoreSheetOpen(false); }}>
               <Trophy size={20} /><span className="lbl">Torneos</span>
             </NavLink>
-            <NavLink to="/categorias" className={({ isActive }) => `gx-bottomnav-btn ${!dataSheetOpen && isActive ? 'active' : ''}`} onClick={() => setDataSheetOpen(false)}>
-              <Award size={20} /><span className="lbl">Categorías</span>
+            <NavLink to="/finanzas" className={({ isActive }) => `gx-bottomnav-btn ${!dataSheetOpen && !moreSheetOpen && isActive ? 'active' : ''}`} onClick={() => { setDataSheetOpen(false); setMoreSheetOpen(false); }}>
+              <Wallet size={20} /><span className="lbl">Finanzas</span>
             </NavLink>
-            <NavLink to="/configuracion" className={({ isActive }) => `gx-bottomnav-btn ${!dataSheetOpen && isActive ? 'active' : ''}`} onClick={() => setDataSheetOpen(false)}>
-              <Settings size={20} /><span className="lbl">Config.</span>
-            </NavLink>
+            <button
+              type="button"
+              className={`gx-bottomnav-btn ${moreSheetOpen || location.pathname.startsWith('/categorias') || location.pathname.startsWith('/configuracion') ? 'active' : ''}`}
+              onClick={() => {
+                setDataSheetOpen(false);
+                setMoreSheetOpen(!moreSheetOpen);
+              }}
+            >
+              <Plus size={20} /><span className="lbl">Más</span>
+            </button>
           </>
         ) : (
           <>
@@ -466,8 +490,8 @@ const Sidebar = () => {
 
       {/* MODAL CENTRO DE AYUDA */}
       {helpModalOpen && (
-        <div className="modal-backdrop-custom" onClick={() => setHelpModalOpen(false)}>
-          <div className="modal-card-custom animate-fade-in" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '460px', borderRadius: '20px' }}>
+        <div className="modal-backdrop-custom">
+          <div className="modal-card-custom animate-fade-in" style={{ maxWidth: '460px', borderRadius: '20px' }}>
             <div className="modal-header-custom" style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-subtle)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(242, 187, 43, 0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#b98a10', flexShrink: 0 }}>
@@ -528,8 +552,8 @@ const Sidebar = () => {
 
       {/* MODAL MI PERFIL */}
       {profileModalOpen && (
-        <div className="modal-backdrop-custom" onClick={() => setProfileModalOpen(false)}>
-          <div className="modal-card-custom animate-fade-in" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '460px', borderRadius: '20px' }}>
+        <div className="modal-backdrop-custom">
+          <div className="modal-card-custom animate-fade-in" style={{ maxWidth: '460px', borderRadius: '20px' }}>
             <div className="modal-header-custom" style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-subtle)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(242, 187, 43, 0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#b98a10', flexShrink: 0 }}>

@@ -266,8 +266,15 @@ class MatchRound(models.Model):
         super().save(*args, **kwargs)
         
         if not is_new:
-            if old_date != self.date or old_time != self.time:
-                self.matches.all().update(date=self.date, time=self.time)
+            update_kwargs = {}
+            if old_date != self.date or self.date is not None:
+                update_kwargs['date'] = self.date
+            if self.time is not None:
+                update_kwargs['time'] = self.time
+            elif old_time is not None and self.time is None:
+                update_kwargs['time'] = None
+            if update_kwargs:
+                self.matches.all().update(**update_kwargs)
 
     class Meta:
         verbose_name = "Fecha"

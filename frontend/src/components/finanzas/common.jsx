@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 export const ars = (n) =>
@@ -14,7 +15,7 @@ export const errMsg = (e) => {
 };
 
 export const EXPENSE_METHODS = [['efectivo', 'Efectivo'], ['transferencia', 'Transferencia'], ['socio', 'Puesto por socio']];
-export const CATEGORIES = [['arbitro', 'Árbitro'], ['medico', 'Médico'], ['ambulancia', 'Ambulancia'], ['planillero', 'Planillero'], ['seguridad', 'Seguridad'], ['fotografia', 'Fotografía'], ['otro', 'Otro']];
+export const CATEGORIES = [['arbitro', 'Árbitro'], ['medico', 'Médico'], ['ambulancia', 'Ambulancia'], ['planillero', 'Planillero'], ['seguridad', 'Seguridad'], ['fotografia', 'Fotografía'], ['socio', 'Socio'], ['semana', 'Semana'], ['otro', 'Otro']];
 
 export const Field = ({ label, children, style }) => (
   <label style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', ...style }}>
@@ -32,17 +33,19 @@ export const Stat = ({ label, value, tone, sub }) => (
   </div>
 );
 
-export const Modal = ({ title, onClose, children, width = 480 }) => (
-  <div className="modal-backdrop-custom" onClick={onClose}>
-    <div className="modal-card-custom animate-fade-in" onClick={(e) => e.stopPropagation()} style={{ maxWidth: width, borderRadius: 20 }}>
-      <div className="modal-header-custom" style={{ padding: '18px 22px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800 }}>{title}</h3>
-        <button type="button" className="modal-close-btn" onClick={onClose}><X size={18} /></button>
+export const Modal = ({ title, onClose, children, width = 480 }) =>
+  createPortal(
+    <div className="modal-backdrop-custom">
+      <div className="modal-card-custom animate-fade-in" style={{ maxWidth: width, borderRadius: 20 }}>
+        <div className="modal-header-custom" style={{ padding: '18px 22px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800 }}>{title}</h3>
+          <button type="button" className="modal-close-btn" onClick={onClose} aria-label="Cerrar"><X size={18} /></button>
+        </div>
+        <div className="modal-body-custom" style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>{children}</div>
       </div>
-      <div className="modal-body-custom" style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>{children}</div>
-    </div>
-  </div>
-);
+    </div>,
+    document.body
+  );
 
 export const Empty = ({ children }) => (
   <div style={{ padding: 28, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>{children}</div>

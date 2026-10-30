@@ -327,10 +327,12 @@ export default function TournamentDetailView({ tournament, onBack }) {
   const [importTeamZoneId, setImportTeamZoneId] = useState(null);
   const [allSystemTeams, setAllSystemTeams] = useState([]);
   const [importSearchQuery, setImportSearchQuery] = useState('');
+  const [selectedImportTeamIds, setSelectedImportTeamIds] = useState([]);
 
   // Edit round modal state
   const [showEditRoundModal, setShowEditRoundModal] = useState(false);
   const [editRoundRoundId, setEditRoundRoundId] = useState(null);
+  const [editRoundRoundIds, setEditRoundRoundIds] = useState([]);
   const [editRoundName, setEditRoundName] = useState('');
   const [editRoundDate, setEditRoundDate] = useState('');
   const [editRoundTime, setEditRoundTime] = useState('');
@@ -586,10 +588,13 @@ export default function TournamentDetailView({ tournament, onBack }) {
   const openImportTeamModal = async (zoneId) => {
     try {
       setLoading(true);
-      const res = await api.get('teams/');
+      const categoryId = displayTournament?.category || detailedTournament?.category;
+      const url = categoryId ? `teams/?category=${encodeURIComponent(categoryId)}` : 'teams/';
+      const res = await api.get(url);
       setAllSystemTeams(res.data);
       setImportTeamZoneId(zoneId);
       setImportSearchQuery('');
+      setSelectedImportTeamIds([]);
     } catch (e) {
       console.error(e);
       setCustomAlert({ message: "Error al cargar el listado de equipos.", type: "error" });
@@ -598,16 +603,29 @@ export default function TournamentDetailView({ tournament, onBack }) {
     }
   };
 
-  const handleImportTeam = async (teamId) => {
+  const handleToggleSelectImportTeam = (teamId) => {
+    setSelectedImportTeamIds(prev => 
+      prev.includes(teamId) ? prev.filter(id => id !== teamId) : [...prev, teamId]
+    );
+  };
+
+  const handleImportSelectedTeams = async () => {
+    if (!selectedImportTeamIds.length) return;
     try {
       setLoading(true);
-      await api.post('zone-teams/', [{ zone: importTeamZoneId, team: teamId }]);
-      setCustomAlert({ message: "Equipo importado con éxito.", type: "success" });
+      const payload = selectedImportTeamIds.map(tId => ({ zone: importTeamZoneId, team: tId }));
+      await api.post('zone-teams/', payload);
+      const count = selectedImportTeamIds.length;
+      setCustomAlert({ 
+        message: count === 1 ? "Equipo importado con éxito." : `${count} equipos importados con éxito.`, 
+        type: "success" 
+      });
       setImportTeamZoneId(null);
+      setSelectedImportTeamIds([]);
       await fetchTournamentDetail();
     } catch (e) {
       console.error(e);
-      setCustomAlert({ message: "Error al importar el equipo.", type: "error" });
+      setCustomAlert({ message: "Error al importar los equipos.", type: "error" });
     } finally {
       setLoading(false);
     }
@@ -699,6 +717,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
       }
       setCustomAlert({ message: "¡Fixture generado con éxito!", type: "success" });
       await fetchFixturesForAllZones();
+      await fetchTournamentDetail();
     } catch (e) {
       console.error(e);
       setCustomAlert({ message: "Hubo un error al guardar el fixture en el servidor.", type: "error" });
@@ -738,6 +757,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
       }
       setCustomAlert({ message: "¡Fixture generado con éxito!", type: "success" });
       await fetchFixturesForAllZones();
+      await fetchTournamentDetail();
     } catch (e) {
       console.error(e);
       setCustomAlert({ message: "Hubo un error al guardar el fixture en el servidor.", type: "error" });
@@ -748,16 +768,21 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
   const handleDeleteFixture = async (zoneId) => {
     setCustomConfirm({
-      message: "¿Estás seguro de que deseas eliminar el fixture? Se perderán todas las fechas y partidos creados.",
+      message: "¿Estás seguro de que deseas eliminar el fixture? Se perderán todas las fechas, partidos y resultados creados.",
       onConfirm: async () => {
         try {
           setLoading(true);
-          const rounds = fixturesByZone[zoneId] || [];
-          for (const r of rounds) {
-            await api.delete(`match-rounds/${r.id}/`);
+          try {
+            await api.post(`tournaments/${tournamentId}/clear-fixture/`, { zone_id: zoneId });
+          } catch {
+            const rounds = fixturesByZone[zoneId] || [];
+            for (const r of rounds) {
+              await api.delete(`match-rounds/${r.id}/`);
+            }
           }
           setCustomAlert({ message: "Fixture eliminado correctamente.", type: "success" });
           await fetchFixturesForAllZones();
+          await fetchTournamentDetail();
         } catch (e) {
           console.error(e);
           setCustomAlert({ message: "Hubo un error al eliminar el fixture.", type: "error" });
@@ -770,16 +795,21 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
   const handleDeleteAllFixtures = async () => {
     setCustomConfirm({
-      message: "¿Estás seguro de que deseas eliminar todo el fixture del torneo? Se perderán todas las fechas y partidos creados.",
+      message: "¿Estás seguro de que deseas eliminar todo el fixture del torneo? Se perderán todas las fechas, partidos, resultados y tablas asociadas.",
       onConfirm: async () => {
         try {
           setLoading(true);
-          const allRounds = Object.values(fixturesByZone).flat();
-          for (const r of allRounds) {
-            await api.delete(`match-rounds/${r.id}/`);
+          try {
+            await api.post(`tournaments/${tournamentId}/clear-fixture/`);
+          } catch {
+            const allRounds = Object.values(fixturesByZone).flat();
+            for (const r of allRounds) {
+              await api.delete(`match-rounds/${r.id}/`);
+            }
           }
           setCustomAlert({ message: "Fixture del torneo eliminado correctamente.", type: "success" });
           await fetchFixturesForAllZones();
+          await fetchTournamentDetail();
         } catch (e) {
           console.error(e);
           setCustomAlert({ message: "Hubo un error al eliminar el fixture.", type: "error" });
@@ -822,25 +852,28 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
   // Open Edit Round Modal
   const openEditRoundModal = (r) => {
-    setEditRoundRoundId(r.roundIds?.[0] || r.id);
-    setEditRoundName(r.name);
+    const ids = r.roundIds && r.roundIds.length > 0 ? r.roundIds : [r.id];
+    setEditRoundRoundIds(ids);
+    setEditRoundRoundId(ids[0]);
+    setEditRoundName(r.name || '');
     setEditRoundDate(r.date || '');
     setEditRoundTime(r.time || '');
     setShowEditRoundModal(true);
   };
 
-  const handleUpdateRound = async (roundId) => {
+  const handleUpdateRound = async (roundOrIds) => {
     if (!editRoundName.trim()) {
       setCustomAlert({ message: "El nombre de la fecha no puede estar vacío.", type: "error" });
       return;
     }
+    const ids = Array.isArray(roundOrIds) ? roundOrIds : [roundOrIds];
     try {
       setLoading(true);
-      await api.patch(`match-rounds/${roundId}/`, {
+      await Promise.all(ids.map(id => api.patch(`match-rounds/${id}/`, {
         name: editRoundName,
         date: editRoundDate || null,
         time: editRoundTime || null
-      });
+      })));
       setCustomAlert({ message: "Fecha actualizada correctamente.", type: "success" });
       await fetchFixturesForAllZones();
     } catch (e) {
@@ -854,7 +887,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
   const handleDeleteRound = async (roundOrIds) => {
     const ids = Array.isArray(roundOrIds) ? roundOrIds : [roundOrIds];
     setCustomConfirm({
-      message: "¿Estás seguro de que deseas eliminar esta fecha por completo? Se perderán todos sus partidos programados.",
+      message: "¿Estás seguro de que deseas eliminar esta fecha por completo? Se perderán todos sus partidos programados y resultados asociados.",
       onConfirm: async () => {
         try {
           setLoading(true);
@@ -863,6 +896,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
           }
           setCustomAlert({ message: "Fecha eliminada correctamente.", type: "success" });
           await fetchFixturesForAllZones();
+          await fetchTournamentDetail();
         } catch (e) {
           console.error(e);
           setCustomAlert({ message: "Hubo un error al eliminar la fecha.", type: "error" });
@@ -1035,13 +1069,14 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
   const handleDeleteMatch = async (matchId) => {
     setCustomConfirm({
-      message: "¿Estás seguro de que deseas eliminar este partido?",
+      message: "¿Estás seguro de que deseas eliminar este partido? Se descontarán sus goles, puntos y tarjetas asociadas.",
       onConfirm: async () => {
         try {
           setLoading(true);
           await api.delete(`matches/${matchId}/`);
           setCustomAlert({ message: "Partido de fixture eliminado.", type: "success" });
           await fetchFixturesForZone(activeZoneId);
+          await fetchTournamentDetail();
         } catch (e) {
           console.error(e);
           setCustomAlert({ message: "Hubo un error al eliminar el partido.", type: "error" });
@@ -1730,7 +1765,17 @@ export default function TournamentDetailView({ tournament, onBack }) {
                   <button
                     type="button"
                     id="add-blue-card-btn"
-                    onClick={() => setShowBlueCardModal(true)}
+                    onClick={() => {
+                      const hasRounds = unifiedFixtures && unifiedFixtures.length > 0;
+                      if (!hasRounds) {
+                        setCustomAlert({
+                          message: "No se pudo cargar la tarjeta azul ya que no se registran fechas cargadas en el fixture del torneo.",
+                          type: "error"
+                        });
+                        return;
+                      }
+                      setShowBlueCardModal(true);
+                    }}
                     className="blue-card-btn"
                     style={{
                       display: 'inline-flex',
@@ -2548,8 +2593,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
       {/* EDIT ROUND MODAL */}
       {showEditRoundModal && createPortal(
-        <div className="premium-modal-overlay anthropic-theme" onClick={() => setShowEditRoundModal(false)}>
-          <div className="premium-modal-card" style={{ maxWidth: '460px', padding: isMobile ? '20px 16px' : '28px' }} onClick={e => e.stopPropagation()}>
+        <div className="premium-modal-overlay anthropic-theme">
+          <div className="premium-modal-card" style={{ maxWidth: '460px', padding: isMobile ? '20px 16px' : '28px' }}>
 
             {/* Header */}
             <div className="modal-header">
@@ -2618,7 +2663,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
             <div className="modal-footer">
               <button className="secondary" onClick={() => setShowEditRoundModal(false)}>Cancelar</button>
               <button onClick={() => {
-                handleUpdateRound(editRoundRoundId);
+                handleUpdateRound(editRoundRoundIds.length > 0 ? editRoundRoundIds : [editRoundRoundId]);
                 setShowEditRoundModal(false);
               }}>
                 <Check size={14} /> Guardar Cambios
@@ -2631,8 +2676,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
       {/* NEW MATCH MODAL */}
       {showNewMatchModal && createPortal(
-        <div className="premium-modal-overlay anthropic-theme" onClick={() => setShowNewMatchModal(false)}>
-          <div className="premium-modal-card" style={{ maxWidth: '540px', padding: isMobile ? '20px 16px' : '28px' }} onClick={e => e.stopPropagation()}>
+        <div className="premium-modal-overlay anthropic-theme">
+          <div className="premium-modal-card" style={{ maxWidth: '540px', padding: isMobile ? '20px 16px' : '28px' }}>
 
             {/* Header */}
             <div className="modal-header">
@@ -2761,8 +2806,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
       {/* EDIT MATCH MODAL */}
       {showEditMatchModal && createPortal(
-        <div className="premium-modal-overlay anthropic-theme" onClick={() => setShowEditMatchModal(false)}>
-          <div className="premium-modal-card" style={{ maxWidth: '540px', padding: isMobile ? '20px 16px' : '28px' }} onClick={e => e.stopPropagation()}>
+        <div className="premium-modal-overlay anthropic-theme">
+          <div className="premium-modal-card" style={{ maxWidth: '540px', padding: isMobile ? '20px 16px' : '28px' }}>
 
             {/* Header */}
             <div className="modal-header">
@@ -2913,7 +2958,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
       {loadingTeam && (
         <div style={{
           position: 'fixed', inset: 0,
-          background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(3px)', display: 'flex',
+          background: 'rgba(0,0,0,0.55)', display: 'flex',
           alignItems: 'center', justifyContent: 'center',
           zIndex: 3001
         }}>
@@ -2993,7 +3038,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(3px)',
+            background: 'rgba(0, 0, 0, 0.55)',
             zIndex: 99999,
             display: 'flex',
             alignItems: 'center',
@@ -3001,7 +3046,6 @@ export default function TournamentDetailView({ tournament, onBack }) {
             padding: '16px'
           }}
           className="animate-fade-in"
-          onClick={() => triggerCloseConfirm(false)}
         >
           <div 
             style={{
@@ -3212,7 +3256,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(3px)',
+            background: 'rgba(0, 0, 0, 0.55)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -3220,7 +3264,6 @@ export default function TournamentDetailView({ tournament, onBack }) {
             padding: '16px'
           }} 
           className="animate-fade-in"
-          onClick={() => setImportTeamZoneId(null)}
         >
           <div 
             style={{
@@ -3228,8 +3271,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
               border: '1px solid #d4d4d8',
               borderRadius: '16px',
               width: '100%',
-              maxWidth: '480px',
-              maxHeight: '80vh',
+              maxWidth: '520px',
+              maxHeight: '85vh',
               display: 'flex',
               flexDirection: 'column',
               boxShadow: '0 20px 40px rgba(0,0,0,0.18)'
@@ -3238,13 +3281,22 @@ export default function TournamentDetailView({ tournament, onBack }) {
           >
             {/* Header */}
             <div style={{
-              padding: '16px',
+              padding: '16px 20px',
               borderBottom: '1px solid #e4e4e7',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center'
             }}>
-              <span style={{ fontWeight: '850', fontSize: '1.05rem', color: '#3f4249' }}>Importar Equipo</span>
+              <div>
+                <span style={{ fontWeight: '850', fontSize: '1.08rem', color: '#1c1d21', display: 'block' }}>
+                  Importar Equipos
+                </span>
+                {displayTournament?.category_name && (
+                  <span style={{ fontSize: '12px', color: '#6f737b', fontWeight: '600' }}>
+                    Categoría: {displayTournament.category_name}
+                  </span>
+                )}
+              </div>
               <button 
                 onClick={() => setImportTeamZoneId(null)}
                 style={{ background: 'none', border: 'none', color: '#6f737b', padding: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
@@ -3253,8 +3305,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
               </button>
             </div>
             
-            {/* Search Box */}
-            <div style={{ padding: '12px 16px', borderBottom: '1px solid #e4e4e7' }}>
+            {/* Search Box & Quick Selection Bar */}
+            <div style={{ padding: '12px 20px', borderBottom: '1px solid #e4e4e7', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <input 
                 type="text" 
                 placeholder="Buscar equipo por nombre..."
@@ -3272,65 +3324,174 @@ export default function TournamentDetailView({ tournament, onBack }) {
                   outline: 'none'
                 }}
               />
-            </div>
-            
-            {/* List */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
               {(() => {
                 const currentZone = detailedTournament?.zones?.find(z => z.id === importTeamZoneId);
                 const currentTeamIds = new Set(currentZone?.zone_teams?.map(zt => zt.team) || []);
+                const tournamentCatId = displayTournament?.category || detailedTournament?.category;
                 
-                const filtered = allSystemTeams.filter(t => 
-                  !currentTeamIds.has(t.id) &&
-                  t.name.toLowerCase().includes(importSearchQuery.toLowerCase())
+                const available = allSystemTeams.filter(t => {
+                  if (currentTeamIds.has(t.id)) return false;
+                  if (tournamentCatId && t.category && String(t.category) !== String(tournamentCatId)) return false;
+                  return t.name.toLowerCase().includes(importSearchQuery.toLowerCase());
+                });
+
+                if (!available.length) return null;
+
+                const allSelected = available.length > 0 && available.every(t => selectedImportTeamIds.includes(t.id));
+
+                return (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#6f737b', padding: '2px 0' }}>
+                    <span>
+                      {selectedImportTeamIds.length} seleccionado{selectedImportTeamIds.length === 1 ? '' : 's'} de {available.length}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (allSelected) {
+                          setSelectedImportTeamIds(prev => prev.filter(id => !available.some(a => a.id === id)));
+                        } else {
+                          const toAdd = available.map(a => a.id);
+                          setSelectedImportTeamIds(prev => Array.from(new Set([...prev, ...toAdd])));
+                        }
+                      }}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--gx-primary-hover, #b98a10)',
+                        fontWeight: '700',
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        padding: 0
+                      }}
+                    >
+                      {allSelected ? 'Deseleccionar todos' : 'Seleccionar todos'}
+                    </button>
+                  </div>
                 );
+              })()}
+            </div>
+            
+            {/* List */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
+              {(() => {
+                const currentZone = detailedTournament?.zones?.find(z => z.id === importTeamZoneId);
+                const currentTeamIds = new Set(currentZone?.zone_teams?.map(zt => zt.team) || []);
+                const tournamentCatId = displayTournament?.category || detailedTournament?.category;
+                
+                const filtered = allSystemTeams.filter(t => {
+                  if (currentTeamIds.has(t.id)) return false;
+                  if (tournamentCatId && t.category && String(t.category) !== String(tournamentCatId)) return false;
+                  return t.name.toLowerCase().includes(importSearchQuery.toLowerCase());
+                });
                 
                 if (filtered.length === 0) {
                   return (
-                    <div style={{ padding: '24px', textAlign: 'center', color: '#6f737b', fontSize: '13px' }}>
-                      No se encontraron equipos disponibles para importar.
+                    <div style={{ padding: '36px 20px', textAlign: 'center', color: '#6f737b', fontSize: '13px' }}>
+                      No se encontraron equipos disponibles con la categoría del torneo para importar.
                     </div>
                   );
                 }
                 
-                return filtered.map((t, idx) => (
-                  <div 
-                    key={t.id}
-                    onClick={() => handleImportTeam(t.id)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '12px 16px',
-                      borderBottom: idx === filtered.length - 1 ? 'none' : '1px solid #f0eae1',
-                      background: idx % 2 === 0 ? '#fafafb' : '#ffffff',
-                      cursor: 'pointer'
-                    }}
-                    className="table-row-hover"
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '6px',
-                        background: '#e4e4e7',
-                        overflow: 'hidden',
+                return filtered.map((t, idx) => {
+                  const isSelected = selectedImportTeamIds.includes(t.id);
+                  return (
+                    <div 
+                      key={t.id}
+                      onClick={() => handleToggleSelectImportTeam(t.id)}
+                      style={{
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        {t.logo ? (
-                          <img src={t.logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                        ) : (
-                          <Users size={16} color="#cc7a5c" />
-                        )}
+                        justifyContent: 'space-between',
+                        padding: '10px 20px',
+                        borderBottom: idx === filtered.length - 1 ? 'none' : '1px solid #f0eae1',
+                        background: isSelected ? 'rgba(242, 187, 43, 0.12)' : (idx % 2 === 0 ? '#fafafb' : '#ffffff'),
+                        cursor: 'pointer',
+                        transition: 'background 0.15s ease'
+                      }}
+                      className="table-row-hover"
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {}}
+                          style={{
+                            width: '18px',
+                            height: '18px',
+                            cursor: 'pointer',
+                            accentColor: 'var(--gx-primary, #f2bb2b)'
+                          }}
+                          onClick={e => e.stopPropagation()}
+                        />
+                        <div style={{
+                          width: '34px',
+                          height: '34px',
+                          borderRadius: '8px',
+                          background: '#e4e4e7',
+                          overflow: 'hidden',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}>
+                          {t.logo ? (
+                            <img src={t.logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                          ) : (
+                            <Users size={16} color="#cc7a5c" />
+                          )}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <span style={{ fontSize: '13.5px', fontWeight: '700', color: '#1c1d21', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {t.name}
+                          </span>
+                          {t.category_name && (
+                            <span style={{ fontSize: '11px', color: '#6f737b', fontWeight: '500' }}>
+                              {t.category_name}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <span style={{ fontSize: '14px', fontWeight: '700', color: '#3f4249' }}>{t.name}</span>
+                      
+                      <span style={{
+                        fontSize: '11.5px',
+                        fontWeight: '700',
+                        color: isSelected ? 'var(--gx-primary-hover, #b98a10)' : '#a1a1aa'
+                      }}>
+                        {isSelected ? 'Seleccionado' : 'Elegir'}
+                      </span>
                     </div>
-                    <Plus size={16} color="#cc7a5c" style={{ flexShrink: 0 }} />
-                  </div>
-                ));
+                  );
+                });
               })()}
+            </div>
+
+            {/* Footer with action button */}
+            <div style={{
+              padding: '14px 20px',
+              borderTop: '1px solid #e4e4e7',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '10px',
+              background: '#fafafb',
+              borderBottomLeftRadius: '16px',
+              borderBottomRightRadius: '16px'
+            }}>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => setImportTeamZoneId(null)}
+                style={{ height: '38px', fontSize: '13px' }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={selectedImportTeamIds.length === 0}
+                onClick={handleImportSelectedTeams}
+                style={{ height: '38px', fontSize: '13px', minWidth: '150px' }}
+              >
+                <Plus size={16} /> Importar {selectedImportTeamIds.length > 0 ? `(${selectedImportTeamIds.length})` : ''}
+              </button>
             </div>
           </div>
         </div>,
@@ -3343,7 +3504,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(3px)',
+            background: 'rgba(0, 0, 0, 0.55)',
             zIndex: 99999,
             display: 'flex',
             alignItems: 'center',
@@ -3351,7 +3512,6 @@ export default function TournamentDetailView({ tournament, onBack }) {
             padding: '16px'
           }}
           className="animate-fade-in"
-          onClick={() => setShowNewTeamModal(false)}
         >
           <div 
             style={{
@@ -3429,14 +3589,13 @@ export default function TournamentDetailView({ tournament, onBack }) {
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            backgroundColor: 'rgba(0, 0, 0, 0.55)',
             zIndex: 100050,
             display: 'flex',
             alignItems: isMobile ? 'flex-end' : 'center',
             justifyContent: 'center',
             padding: isMobile ? 0 : '20px'
           }}
-          onClick={() => setShowDuplicateModal(false)}
         >
           <div 
             style={{

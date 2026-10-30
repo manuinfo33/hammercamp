@@ -8,6 +8,8 @@ import '../../styles/data.css';
 
 const EquiposView = () => {
   const [teams, setTeams] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -18,12 +20,17 @@ const EquiposView = () => {
   const [activeTeamErrorModal, setActiveTeamErrorModal] = useState(null);
 
   useEffect(() => {
+    api.get('categories/').then(res => setCategories(res.data)).catch(err => console.error(err));
+  }, []);
+
+  useEffect(() => {
     fetchTeams();
-  }, [search]);
+  }, [search, selectedCategory]);
 
   const fetchTeams = async () => {
     try {
-      const response = await api.get(`teams/?search=${search}`);
+      const catParam = selectedCategory ? `&category=${encodeURIComponent(selectedCategory)}` : '';
+      const response = await api.get(`teams/?search=${search}${catParam}`);
       console.log("DEBUG: Teams fetched from API:", response.data);
       const sorted = response.data.sort((a, b) => 
         a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
@@ -140,10 +147,42 @@ const EquiposView = () => {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <button className="secondary" style={{ minWidth: '100px', fontSize: '14px' }}>
-              <Filter size={18} />
-              Filtrar
-            </button>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                style={{
+                  height: '42px',
+                  minWidth: '200px',
+                  padding: '0 34px 0 38px',
+                  borderRadius: '12px',
+                  border: selectedCategory ? '1.5px solid var(--gx-primary)' : '1px solid var(--border-medium)',
+                  background: '#ffffff',
+                  color: 'var(--text-primary)',
+                  fontSize: '13.5px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                }}
+              >
+                <option value="">Todas las categorías</option>
+                <option value="sin_asignar">Sin Asignar</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <Filter
+                size={16}
+                style={{
+                  position: 'absolute',
+                  left: '14px',
+                  pointerEvents: 'none',
+                  color: selectedCategory ? 'var(--gx-primary)' : 'var(--text-muted)',
+                }}
+              />
+            </div>
           </div>
 
           {/* Teams Table */}
@@ -251,8 +290,7 @@ const EquiposView = () => {
           left: 0,
           width: '100vw',
           height: '100vh',
-          background: 'rgba(0, 0, 0, 0.6)',
-          backdropFilter: 'blur(3px)',
+          background: 'rgba(0, 0, 0, 0.55)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

@@ -15,6 +15,8 @@ class Partner(models.Model):
 
     class Meta:
         ordering = ['name']
+        verbose_name = 'Socio'
+        verbose_name_plural = 'Socios'
 
     def __str__(self):
         return self.name
@@ -24,7 +26,8 @@ class StaffRate(models.Model):
     CATEGORIES = [
         ('arbitro', 'Árbitro'), ('medico', 'Médico'), ('ambulancia', 'Ambulancia'),
         ('planillero', 'Planillero'), ('seguridad', 'Seguridad'),
-        ('fotografia', 'Fotografía'), ('otro', 'Otro'),
+        ('fotografia', 'Fotografía'), ('socio', 'Socio'), ('semana', 'Semana'),
+        ('otro', 'Otro'),
     ]
     UNITS = [('jornada', 'Por jornada'), ('partido', 'Por partido')]
 
@@ -37,14 +40,23 @@ class StaffRate(models.Model):
 
     class Meta:
         ordering = ['category', 'name']
+        verbose_name = 'Tarifa de personal / servicio'
+        verbose_name_plural = 'Tarifas de personal y servicios'
 
     def __str__(self):
-        return self.name
+        return f"{self.name} (${self.amount})"
 
 
 class TournamentFee(models.Model):
     tournament = models.OneToOneField('base.Tournament', on_delete=models.CASCADE, related_name='fee')
     amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    class Meta:
+        verbose_name = 'Arancel de torneo'
+        verbose_name_plural = 'Aranceles de torneos'
+
+    def __str__(self):
+        return f"{self.tournament.name}: ${self.amount}"
 
 
 class RateChange(models.Model):
@@ -62,6 +74,12 @@ class RateChange(models.Model):
 
     class Meta:
         ordering = ['-effective_from', '-created_at']
+        verbose_name = 'Historial de aumento'
+        verbose_name_plural = 'Historial de aumentos'
+
+    def __str__(self):
+        target = self.tournament.name if self.tournament else (self.staff_rate.name if self.staff_rate else '—')
+        return f"{self.effective_from} - {target}: ${self.old_amount} -> ${self.new_amount}"
 
 
 class FinancialDay(models.Model):
@@ -76,6 +94,12 @@ class FinancialDay(models.Model):
 
     class Meta:
         ordering = ['-date']
+        verbose_name = 'Caja de Fecha'
+        verbose_name_plural = 'Cajas de Fecha'
+
+    def __str__(self):
+        label = self.name or self.date.strftime('%d/%m/%Y')
+        return f"Caja {label} ({self.status})"
 
 
 class DayIncome(models.Model):
@@ -93,6 +117,12 @@ class DayIncome(models.Model):
 
     class Meta:
         ordering = ['id']
+        verbose_name = 'Ingreso de fecha'
+        verbose_name_plural = 'Ingresos de fecha'
+
+    def __str__(self):
+        desc = self.team.name if self.team else (self.concept or self.kind)
+        return f"{self.day.date} - {desc}: ${self.cash + self.transfer}"
 
 
 class DayExpense(models.Model):
@@ -108,16 +138,25 @@ class DayExpense(models.Model):
 
     class Meta:
         ordering = ['id']
+        verbose_name = 'Egreso de fecha'
+        verbose_name_plural = 'Egresos de fecha'
+
+    def __str__(self):
+        return f"{self.day.date} - {self.concept}: ${self.amount} ({self.method})"
 
 
 class GeneralMovement(models.Model):
-    """Movimientos fuera de fecha: compras, alquileres, cobro de deudas, reintegros a socios."""
+    """Movimientos fuera de fecha o automáticos de cierre: compras, alquileres, cobro de deudas, caja de fecha, reintegros."""
     TYPES = [('ingreso', 'Ingreso'), ('egreso', 'Egreso')]
     CATEGORIES = [
+        ('caja_fecha', 'Caja de Fecha'),
         ('alquiler', 'Alquiler de cancha'), ('cobro_deuda', 'Cobro de deuda de equipo'),
         ('compra', 'Compra / mantenimiento'), ('reintegro_socio', 'Reintegro a socio'),
         ('inversion', 'Inversión'), ('otro', 'Otro'),
     ]
+    financial_day = models.OneToOneField(
+        'FinancialDay', null=True, blank=True, on_delete=models.CASCADE, related_name='general_movement'
+    )
     type = models.CharField(max_length=10, choices=TYPES)
     category = models.CharField(max_length=20, choices=CATEGORIES, default='otro')
     method = models.CharField(max_length=15, choices=EXPENSE_METHODS, default='efectivo')
@@ -130,3 +169,9 @@ class GeneralMovement(models.Model):
 
     class Meta:
         ordering = ['-date', '-id']
+        verbose_name = 'Movimiento de Caja General'
+        verbose_name_plural = 'Movimientos de Caja General'
+
+    def __str__(self):
+        sign = '+' if self.type == 'ingreso' else '-'
+        return f"{self.date} - {self.concept}: {sign}${self.amount} ({self.method})"

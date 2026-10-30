@@ -7,6 +7,28 @@ import TournamentForm from './TournamentForm';
 import PageHeader from '../ui/PageHeader';
 import '../../styles/tournaments.css';
 
+const TOURNAMENT_BANNERS = [
+  { bg: '#7cb2f4', stroke: '#132a4a' }, // Azul suave
+  { bg: '#e89d7c', stroke: '#3b1d11' }, // Terracota / Coral cálido
+  { bg: '#c8ded3', stroke: '#1f3a2e' }, // Verde salvia
+  { bg: '#dcd8ea', stroke: '#2c2545' }, // Lavanda / Violeta pastel
+  { bg: '#f5dd90', stroke: '#4d3d0d' }, // Mostaza suave / Ocre cálido
+  { bg: '#eeece6', stroke: '#3d3929' }, // Arena / Gris cálido
+];
+
+const tagPill = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '4px',
+  fontSize: '12px',
+  padding: '4px 10px',
+  borderRadius: '6px',
+  background: '#f1f0ec',
+  color: '#52514e',
+  border: 'none',
+  lineHeight: 1.3,
+};
+
 const TorneosView = () => {
   const navigate = useNavigate();
   const [tournaments, setTournaments] = useState([]);
@@ -185,10 +207,12 @@ const TorneosView = () => {
               <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>No hay torneos registrados.</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 340px), 1fr))', gap: '20px' }}>
-              {tournaments.map((t) => {
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 310px), 1fr))', gap: '18px' }}>
+              {tournaments.map((t, idx) => {
                 const totalTeams = t.zones?.reduce((acc, z) => acc + (z.zone_teams?.length || 0), 0) || 0;
                 const totalZones = t.zones?.length || 0;
+                const banner = TOURNAMENT_BANNERS[idx % TOURNAMENT_BANNERS.length];
+                const isActive = t.is_active !== false;
 
                 return (
                   <div
@@ -196,299 +220,214 @@ const TorneosView = () => {
                     onClick={() => navigate(`/torneos/${t.id}`)}
                     style={{
                       background: '#ffffff',
-                      border: '1px solid #e4e4e7',
-                      borderRadius: '16px',
-                      padding: '20px 22px',
+                      border: '1px solid #e5e4df',
+                      borderRadius: '14px',
+                      padding: '8px',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
-                      gap: '18px',
-                      boxShadow: '0 1px 2px rgba(24, 24, 27, 0.05)',
+                      boxShadow: '0 1px 2px rgba(20, 20, 19, 0.03)',
                       transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
                       cursor: 'pointer',
-                      position: 'relative'
+                      position: 'relative',
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#f2bb2b';
+                      e.currentTarget.style.borderColor = '#c7c5bd';
                       e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 8px 24px rgba(24, 24, 27, 0.1)';
+                      e.currentTarget.style.boxShadow = '0 8px 22px rgba(20, 20, 19, 0.08)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = '#e4e4e7';
+                      e.currentTarget.style.borderColor = '#e5e4df';
                       e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 1px 2px rgba(24, 24, 27, 0.05)';
+                      e.currentTarget.style.boxShadow = '0 1px 2px rgba(20, 20, 19, 0.03)';
                     }}
                   >
-                    <div>
-                      {/* Main Tournament Title & Click indicator */}
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                    {/* Cabecera pastel con ícono centrado */}
+                    <div
+                      style={{
+                        height: '92px',
+                        borderRadius: '10px',
+                        background: banner.bg,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        position: 'relative',
+                      }}
+                    >
+                      <Trophy size={32} strokeWidth={1.6} style={{ color: banner.stroke }} />
+                    </div>
+
+                    {/* Cuerpo de la tarjeta */}
+                    <div
+                      style={{
+                        padding: '14px 12px 8px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px',
+                        flex: 1,
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {/* Fila 1: Nombre del Torneo + Píldora de estado (Vigente / Inactivo) */}
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            justifyContent: 'space-between',
+                            gap: '10px',
+                          }}
+                        >
                           <h3
                             style={{
                               margin: 0,
-                              fontFamily: "var(--font-display)",
-                              fontSize: '20px',
-                              fontWeight: '800',
-                              color: '#1c1d21',
-                              letterSpacing: '0',
+                              fontSize: '16px',
+                              fontWeight: '700',
+                              color: '#141413',
                               lineHeight: 1.3,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis'
                             }}
                             title={t.name}
                           >
                             {t.name}
                           </h3>
+
+                          <button
+                            type="button"
+                            onClick={(e) => handleToggleActive(t, e)}
+                            title={`Hacé clic para cambiar a ${isActive ? 'Inactivo' : 'Activo'}`}
+                            style={{
+                              height: '24px',
+                              minHeight: '24px',
+                              minWidth: 0,
+                              padding: '0 9px',
+                              borderRadius: '6px',
+                              fontSize: '11.5px',
+                              fontWeight: '600',
+                              background: isActive ? '#dbeafe' : '#fee2e2',
+                              color: isActive ? '#1d4ed8' : '#991b1b',
+                              border: 'none',
+                              boxShadow: 'none',
+                              textTransform: 'none',
+                              letterSpacing: 0,
+                              cursor: 'pointer',
+                              flexShrink: 0,
+                            }}
+                          >
+                            {isActive ? 'Vigente' : 'Inactivo'}
+                          </button>
                         </div>
 
-                        <div
-                          style={{
-                            width: '28px',
-                            height: '28px',
-                            borderRadius: '50%',
-                            background: '#fafafb',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#6f737b',
-                            flexShrink: 0
-                          }}
-                        >
-                          <ChevronRight size={16} />
-                        </div>
-                      </div>
-
-                      {/* Recuadro de Información (Zonas, Equipos, Categoría, Fecha Inicio, Estado) */}
-                      <div style={{
-                        marginTop: '16px',
-                        padding: '14px 16px',
-                        background: '#fafafb',
-                        borderRadius: '12px',
-                        border: '1px solid #ececef',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '14px'
-                      }}>
-                        {/* Grid de Métricas */}
-                        <div style={{
-                          display: 'grid',
-                          gridTemplateColumns: 'repeat(2, 1fr)',
-                          gap: '12px 14px'
-                        }}>
-                          {/* Zonas */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <div style={{
-                              width: '32px',
-                              height: '32px',
-                              borderRadius: '10px',
-                              background: 'rgba(242, 187, 43, 0.14)',
-                              border: 'none',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: '#b98a10',
-                              flexShrink: 0
-                            }}>
-                              <Layers size={15} />
-                            </div>
-                            <div>
-                              <div style={{ fontSize: '10.5px', color: '#6f737b', fontWeight: '500', textTransform: 'uppercase' }}>Zonas</div>
-                              <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#1c1d21' }}>{totalZones} {totalZones === 1 ? 'Zona' : 'Zonas'}</div>
-                            </div>
-                          </div>
-
-                          {/* Equipos */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <div style={{
-                              width: '32px',
-                              height: '32px',
-                              borderRadius: '10px',
-                              background: 'rgba(242, 187, 43, 0.14)',
-                              border: 'none',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: '#b98a10',
-                              flexShrink: 0
-                            }}>
-                              <Users size={15} />
-                            </div>
-                            <div>
-                              <div style={{ fontSize: '10.5px', color: '#6f737b', fontWeight: '500', textTransform: 'uppercase' }}>Equipos</div>
-                              <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#1c1d21' }}>{totalTeams} {totalTeams === 1 ? 'Equipo' : 'Equipos'}</div>
-                            </div>
-                          </div>
-
-                          {/* Categoría */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <div style={{
-                              width: '32px',
-                              height: '32px',
-                              borderRadius: '10px',
-                              background: 'rgba(242, 187, 43, 0.14)',
-                              border: 'none',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: '#b98a10',
-                              flexShrink: 0
-                            }}>
-                              <Award size={15} />
-                            </div>
-                            <div style={{ minWidth: 0, overflow: 'hidden' }}>
-                              <div style={{ fontSize: '10.5px', color: '#6f737b', fontWeight: '500', textTransform: 'uppercase' }}>Categoría</div>
-                              <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#1c1d21', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={t.category_name || 'Sin Categoría'}>
-                                {t.category_name || 'Sin Categoría'}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Fecha de Inicio */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <div style={{
-                              width: '32px',
-                              height: '32px',
-                              borderRadius: '10px',
-                              background: 'rgba(242, 187, 43, 0.14)',
-                              border: 'none',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: '#b98a10',
-                              flexShrink: 0
-                            }}>
-                              <Calendar size={15} />
-                            </div>
-                            <div>
-                              <div style={{ fontSize: '10.5px', color: '#6f737b', fontWeight: '500', textTransform: 'uppercase' }}>Fecha de Inicio</div>
-                              <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#1c1d21' }}>
-                                {t.start_date ? formatDate(t.start_date) : 'Sin fecha'}
-                              </div>
-                            </div>
-                          </div>
+                        {/* Fila 2: Píldoras grises con los detalles del torneo (Título en negrita, valor sin negrita) */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          <span style={tagPill}>
+                            <strong style={{ fontWeight: '700', color: '#141413' }}>Categoría:</strong>{' '}
+                            <span style={{ fontWeight: '400' }}>{t.category_name || 'Sin categoría'}</span>
+                          </span>
+                          <span style={tagPill}>
+                            <strong style={{ fontWeight: '700', color: '#141413' }}>Zonas:</strong>{' '}
+                            <span style={{ fontWeight: '400' }}>{totalZones}</span>
+                          </span>
+                          <span style={tagPill}>
+                            <strong style={{ fontWeight: '700', color: '#141413' }}>Equipos:</strong>{' '}
+                            <span style={{ fontWeight: '400' }}>{totalTeams}</span>
+                          </span>
+                          <span style={tagPill}>
+                            <strong style={{ fontWeight: '700', color: '#141413' }}>Inicio:</strong>{' '}
+                            <span style={{ fontWeight: '400' }}>
+                              {t.start_date ? formatDate(t.start_date) : 'Sin fecha'}
+                            </span>
+                          </span>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Bottom Action Footer: Activo/Inactivo a la izquierda, Editar y Eliminar a la derecha */}
-                    <div
-                      onClick={(e) => e.stopPropagation()}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        paddingTop: '12px',
-                        borderTop: '1px solid #f0f0f2',
-                        gap: '8px'
-                      }}
-                    >
-                      {/* Botón de estado Activo/Inactivo (mismo alto 32px que los botones de acción) */}
-                      <button
-                        type="button"
-                        onClick={(e) => handleToggleActive(t, e)}
+                      {/* Fila inferior separada por línea sutil: Botón Ver torneo + Editar / Eliminar */}
+                      <div
+                        onClick={(e) => e.stopPropagation()}
                         style={{
-                          display: 'inline-flex',
+                          display: 'flex',
                           alignItems: 'center',
-                          gap: '6px',
-                          padding: '0 12px',
-                          height: '32px',
-                          minHeight: '32px',
-                          borderRadius: '9999px',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          border: t.is_active !== false ? '1px solid #bbf7d0' : '1px solid #fecaca',
-                          background: t.is_active !== false ? '#f0fdf4' : '#fef2f2',
-                          color: t.is_active !== false ? '#15803d' : '#b91c1c',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease',
-                          outline: 'none',
-                          boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
-                        }}
-                        title={`Hacé clic para cambiar a ${t.is_active !== false ? 'Inactivo' : 'Activo'}`}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'scale(1.03)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'scale(1)';
+                          justifyContent: 'space-between',
+                          gap: '8px',
+                          paddingTop: '12px',
+                          marginTop: '4px',
+                          borderTop: '1px solid #f1f0ec',
                         }}
                       >
-                        <span
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/torneos/${t.id}`)}
                           style={{
-                            width: '7px',
-                            height: '7px',
-                            borderRadius: '50%',
-                            background: t.is_active !== false ? '#22c55e' : '#ef4444',
-                            display: 'inline-block'
+                            flex: 1,
+                            height: '34px',
+                            padding: '0 12px',
+                            borderRadius: '8px',
+                            fontSize: '12.5px',
+                            fontWeight: '600',
+                            background: '#faf9f6',
+                            color: '#141413',
+                            border: '1px solid #e5e4df',
+                            boxShadow: 'none',
+                            textTransform: 'none',
+                            letterSpacing: 0,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            cursor: 'pointer',
                           }}
-                        />
-                        {t.is_active !== false ? 'Activo' : 'Inactivo'}
-                      </button>
+                        >
+                          <span>Ver zonas y posiciones</span>
+                          <ChevronRight size={14} style={{ color: '#787772' }} />
+                        </button>
 
-                      {/* Botones de acción a la derecha */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <button
-                          onClick={() => { setEditingTournament(t); setShowForm(true); }}
-                          type="button"
-                          className="secondary icon-only"
-                          style={{
-                            width: '32px',
-                            height: '32px',
-                            minWidth: '32px',
-                            padding: 0,
-                            borderRadius: '10px',
-                            border: '1px solid #d4d4d8',
-                            background: '#ffffff',
-                            color: '#3f4249',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'all 0.15s ease'
-                          }}
-                          title="Editar información del torneo"
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = '#1c1d21';
-                            e.currentTarget.style.color = '#1c1d21';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = '#d4d4d8';
-                            e.currentTarget.style.color = '#3f4249';
-                          }}
-                        >
-                          <Edit2 size={13} />
-                        </button>
-                        <button
-                          onClick={() => handleOpenDeleteModal(t)}
-                          type="button"
-                          className="secondary icon-only"
-                          style={{
-                            width: '32px',
-                            height: '32px',
-                            minWidth: '32px',
-                            padding: 0,
-                            borderRadius: '10px',
-                            border: '1px solid #f3d4d4',
-                            background: '#ffffff',
-                            color: '#c62828',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'all 0.15s ease'
-                          }}
-                          title="Eliminar torneo"
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = '#fef2f2';
-                            e.currentTarget.style.borderColor = '#e07070';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = '#ffffff';
-                            e.currentTarget.style.borderColor = '#f3d4d4';
-                          }}
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <button
+                            onClick={() => {
+                              setEditingTournament(t);
+                              setShowForm(true);
+                            }}
+                            type="button"
+                            className="secondary icon-only"
+                            style={{
+                              width: '34px',
+                              height: '34px',
+                              minWidth: '34px',
+                              padding: 0,
+                              borderRadius: '8px',
+                              border: '1px solid #d4d3ce',
+                              background: '#ffffff',
+                              color: '#3f4249',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                            title="Editar información del torneo"
+                          >
+                            <Edit2 size={13} />
+                          </button>
+                          <button
+                            onClick={() => handleOpenDeleteModal(t)}
+                            type="button"
+                            className="secondary icon-only"
+                            style={{
+                              width: '34px',
+                              height: '34px',
+                              minWidth: '34px',
+                              padding: 0,
+                              borderRadius: '8px',
+                              border: '1px solid #f3d4d4',
+                              background: '#ffffff',
+                              color: '#c62828',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                            title="Eliminar torneo"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -507,8 +446,7 @@ const TorneosView = () => {
           left: 0,
           width: '100vw',
           height: '100vh',
-          background: 'rgba(0, 0, 0, 0.6)',
-          backdropFilter: 'blur(3px)',
+          background: 'rgba(0, 0, 0, 0.55)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
