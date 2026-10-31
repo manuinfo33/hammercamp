@@ -21,7 +21,10 @@ from .serializers import (CategorySerializer, TeamSerializer, UserSerializer, De
                           MatchRoundSerializer, MatchSerializer,
                           GoleadorSerializer, VallaMenosVencidaSerializer, SancionadoSerializer,
                           PlayerSerializer, GoodFaithListSerializer, ReclamoSerializer)
-from docx2pdf import convert as convert_docx_to_pdf
+try:
+    from docx2pdf import convert as convert_docx_to_pdf
+except ImportError:
+    convert_docx_to_pdf = None
 
 @api_view(['GET'])
 def get_user_info(request):
@@ -817,7 +820,12 @@ def docx_to_pdf_bytes(docx_file):
     Converts an in-memory DOCX file to PDF bytes using Microsoft Word (docx2pdf)
     to perfectly preserve logos, images, tables, and exact layouts.
     """
-    import pythoncom
+    if not convert_docx_to_pdf:
+        return None
+    try:
+        import pythoncom
+    except ImportError:
+        return None
     try:
         pythoncom.CoInitialize()
         with tempfile.TemporaryDirectory() as temp_dir:
