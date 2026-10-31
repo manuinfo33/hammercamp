@@ -135,7 +135,7 @@ function Page() {
         // Try refreshing token
         const storedRefresh = localStorage.getItem("refresh");
         if (storedRefresh) {
-          const rRes = await fetch(`${API_URL}/token/refresh/", {
+          const rRes = await fetch(`${API_URL}/token/refresh/`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ refresh: storedRefresh }),
@@ -210,7 +210,7 @@ function Page() {
         const storedRefresh = localStorage.getItem("refresh");
         if (!storedRefresh) return null;
         try {
-          const rRes = await fetch(`${API_URL}/token/refresh/", {
+          const rRes = await fetch(`${API_URL}/token/refresh/`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ refresh: storedRefresh }),
@@ -230,7 +230,7 @@ function Page() {
       const loadData = async () => {
         let currentToken = storedToken;
         try {
-          let userRes = await fetch(`${API_URL}/user-info/", {
+          let userRes = await fetch(`${API_URL}/user-info/`, {
             headers: { Authorization: `Bearer ${currentToken}` },
           });
 
@@ -239,7 +239,7 @@ function Page() {
             const newToken = await refreshAccessToken();
             if (newToken) {
               currentToken = newToken;
-              userRes = await fetch(`${API_URL}/user-info/", {
+              userRes = await fetch(`${API_URL}/user-info/`, {
                 headers: { Authorization: `Bearer ${newToken}` },
               });
             } else {
@@ -410,7 +410,7 @@ function Page() {
         if (birthDateInput) playerFd.append("birth_date", birthDateInput);
         if (photoFileInput) playerFd.append("photo", photoFileInput);
 
-        const playerRes = await fetch(`${API_URL}/players/", {
+        const playerRes = await fetch(`${API_URL}/players/`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
           body: playerFd,
@@ -439,7 +439,7 @@ function Page() {
         gflPayload.shirt_number = parseInt(shirtNumberInput.trim(), 10);
       }
 
-      const gflRes = await fetch(`${API_URL}/good-faith-lists/", {
+      const gflRes = await fetch(`${API_URL}/good-faith-lists/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -524,7 +524,7 @@ function Page() {
         descripcion: claimDescripcion.trim(),
       };
 
-      const res = await fetch(`${API_URL}/reclamos/", {
+      const res = await fetch(`${API_URL}/reclamos/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

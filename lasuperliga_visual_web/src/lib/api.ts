@@ -15,3 +15,4 @@ export const getMediaUrl = (path: string | null | undefined): string => {
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
   return `${BACKEND_URL}${path.startsWith("/") ? "" : "/"}${path}`;
 };
+

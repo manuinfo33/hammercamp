@@ -15,7 +15,7 @@ function Page() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${API_URL}/categories/")
+    fetch(`${API_URL}/categories/`)
       .then((res) => res.json())
       .then((data) => {
         setCategories(data);

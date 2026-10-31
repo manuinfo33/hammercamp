@@ -50,7 +50,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
   const onSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_URL}/token/", {
+      const response = await fetch(`${API_URL}/token/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -69,7 +69,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
       localStorage.setItem("refresh", data.refresh);
 
       // También necesitamos la info del usuario
-      const userResponse = await fetch(`${API_URL}/user-info/", {
+      const userResponse = await fetch(`${API_URL}/user-info/`, {
         headers: {
           Authorization: `Bearer ${data.access}`,
         },

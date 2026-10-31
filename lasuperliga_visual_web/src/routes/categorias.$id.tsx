@@ -11,7 +11,7 @@ export const Route = createFileRoute("/categorias/$id")({
   head: () => ({ meta: [{ title: "Categoría — La Superliga" }] }),
 });
 
-const API = `${API_URL}";
+const API = API_URL;
 
 /* ---------- tiny helpers ---------- */
 function fmtDate(d: string | null) {

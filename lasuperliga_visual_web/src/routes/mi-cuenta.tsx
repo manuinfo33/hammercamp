@@ -39,7 +39,7 @@ function Page() {
       const parsed = JSON.parse(storedUser);
       setUser(parsed);
 
-      fetch(`${API_URL}/user-info/", {
+      fetch(`${API_URL}/user-info/`, {
         headers: { Authorization: `Bearer ${storedToken}` },
       })
         .then((res) => res.json())

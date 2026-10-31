@@ -79,7 +79,7 @@ export function Header() {
   };
 
   useEffect(() => {
-    fetch(`${API_URL}/categories/")
+    fetch(`${API_URL}/categories/`)
       .then((res) => res.json())
       .then((data) => setCategories(data))
       .catch(console.error);
