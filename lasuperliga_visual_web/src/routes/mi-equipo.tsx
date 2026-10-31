@@ -19,13 +19,7 @@ export const Route = createFileRoute("/mi-equipo")({
   head: () => ({ meta: [{ title: "Mi Equipo — La Superliga" }] }),
 });
 
-const getMediaUrl = (url?: string | null) => {
-  if (!url) return "";
-  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("blob:") || url.startsWith("data:")) {
-    return url;
-  }
-  return getMediaUrl(url);
-};
+
 
 function Page() {
   const navigate = useNavigate();

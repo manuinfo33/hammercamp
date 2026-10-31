@@ -12,7 +12,13 @@ export const API_URL = `${BACKEND_URL}/api`;
 
 export const getMediaUrl = (path: string | null | undefined): string => {
   if (!path) return "";
-  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  if (
+    path.startsWith("http://") ||
+    path.startsWith("https://") ||
+    path.startsWith("blob:") ||
+    path.startsWith("data:")
+  ) {
+    return path;
+  }
   return `${BACKEND_URL}${path.startsWith("/") ? "" : "/"}${path}`;
 };
-
