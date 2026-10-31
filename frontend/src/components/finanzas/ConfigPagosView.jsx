@@ -34,7 +34,7 @@ const QUICK_PCTS = [10, 15, 20, 25, 30];
 
 /* Paleta de cabeceras pastel editorial (estilo Anthropic / Claude Console) */
 const CATEGORY_BANNER = {
-  arbitro: { bg: '#eeece6', stroke: '#3d3929', Icon: ClipboardCheck },
+  arbitro: { bg: '#eeece6', stroke: '#3d3929', Icon:ClipboardCheck },
   medico: { bg: '#c8ded3', stroke: '#1f3a2e', Icon: Stethoscope },
   ambulancia: { bg: '#e89d7c', stroke: '#3b1d11', Icon: Ambulance },
   planillero: { bg: '#7cb2f4', stroke: '#132a4a', Icon: ClipboardCheck },
@@ -512,6 +512,7 @@ export default function ConfigPagosView() {
 
   // Estados de Aranceles de Torneos
   const [feeDraft, setFeeDraft] = useState({});
+  const [regFeeDraft, setRegFeeDraft] = useState({});
   const [savingFeeId, setSavingFeeId] = useState(null);
   const [aumentoFeeTarget, setAumentoFeeTarget] = useState(null);
   const [bulkFeesOpen, setBulkFeesOpen] = useState(false);
@@ -557,10 +558,19 @@ export default function ConfigPagosView() {
   const saveFeeDirect = async (row, customAmount, effective_from = today(), note = '') => {
     setSavingFeeId(row.tournament);
     try {
-      const amount = customAmount ?? feeDraft[row.tournament];
+      const amount =
+        customAmount ??
+        (feeDraft[row.tournament] !== undefined ? feeDraft[row.tournament] : row.amount);
+      const regFee =
+        regFeeDraft[row.tournament] !== undefined
+          ? regFeeDraft[row.tournament]
+          : customAmount !== undefined && num(row.registration_fee) === num(row.amount)
+            ? customAmount
+            : row.registration_fee;
       await api.post('finances/tournament-fees/', {
         tournament: row.tournament,
-        amount,
+        amount: num(amount),
+        registration_fee: num(regFee),
         effective_from,
         note,
       });
@@ -569,7 +579,14 @@ export default function ConfigPagosView() {
         delete n[row.tournament];
         return n;
       });
-      notify(`Arancel de "${row.tournament_name}" actualizado a ${ars(amount)}.`);
+      setRegFeeDraft((d) => {
+        const n = { ...d };
+        delete n[row.tournament];
+        return n;
+      });
+      notify(
+        `Valores de "${row.tournament_name}" actualizados (Partido: ${ars(amount)} · Inscripción: ${ars(regFee)}).`,
+      );
       loadAll();
     } finally {
       setSavingFeeId(null);
@@ -1109,8 +1126,12 @@ export default function ConfigPagosView() {
             {fees.map((r, idx) => {
               const banner = TOURNAMENT_BANNERS[idx % TOURNAMENT_BANNERS.length];
               const currentVal = num(r.amount);
+              const currentRegVal = num(r.registration_fee);
               const draftVal = feeDraft[r.tournament];
-              const isEditing = draftVal !== undefined && num(draftVal) !== currentVal;
+              const draftRegVal = regFeeDraft[r.tournament];
+              const isEditing =
+                (draftVal !== undefined && num(draftVal) !== currentVal) ||
+                (draftRegVal !== undefined && num(draftRegVal) !== currentRegVal);
 
               return (
                 <div
@@ -1128,7 +1149,7 @@ export default function ConfigPagosView() {
                   {/* Cabecera pastel estilo "Modelos" de la imagen */}
                   <div
                     style={{
-                      height: 82,
+                      height: 76,
                       borderRadius: 8,
                       background: banner.bg,
                       display: 'flex',
@@ -1137,7 +1158,7 @@ export default function ConfigPagosView() {
                       position: 'relative',
                     }}
                   >
-                    <Trophy size={30} strokeWidth={1.6} style={{ color: banner.stroke }} />
+                    <Trophy size={28} strokeWidth={1.6} style={{ color: banner.stroke }} />
                   </div>
 
                   {/* Cuerpo de la tarjeta */}
@@ -1150,74 +1171,120 @@ export default function ConfigPagosView() {
                     </div>
 
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                      <span style={tagPill}>{ars(currentVal)}</span>
-                      <span style={tagPill}>Por equipo</span>
-                      <span style={tagPill}>Por fecha</span>
+                      <span style={tagPill}>Partido: {ars(currentVal)}</span>
+                      <span style={tagPill}>Insc.: {ars(currentRegVal)}</span>
                     </div>
 
-                    {/* Edición rápida o ajuste por % */}
+                    {/* Edición rápida de Arancel por Partido e Inscripción */}
                     <div
                       style={{
                         display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        marginTop: 4,
+                        flexDirection: 'column',
+                        gap: 8,
+                        marginTop: 2,
                         paddingTop: 10,
                         borderTop: '1px solid #f1f0ec',
                       }}
                     >
-                      <div style={{ position: 'relative', flex: 1 }}>
-                        <span
-                          style={{
-                            position: 'absolute',
-                            left: 9,
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            fontSize: 12,
-                            color: '#787772',
-                            fontWeight: 600,
-                          }}
-                        >
-                          $
-                        </span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="500"
-                          value={draftVal ?? r.amount}
-                          onChange={(e) => setFeeDraft({ ...feeDraft, [r.tournament]: e.target.value })}
-                          style={{
-                            height: 32,
-                            paddingLeft: 22,
-                            paddingRight: 8,
-                            fontSize: 12.5,
-                            fontWeight: 600,
-                            borderRadius: 8,
-                            background: '#faf9f6',
-                            border: '1px solid #e5e4df',
-                          }}
-                        />
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                        <div>
+                          <div style={{ fontSize: 10.5, fontWeight: 600, color: '#787772', marginBottom: 4 }}>
+                            Partido / fecha
+                          </div>
+                          <div style={{ position: 'relative' }}>
+                            <span
+                              style={{
+                                position: 'absolute',
+                                left: 8,
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                fontSize: 11.5,
+                                color: '#787772',
+                                fontWeight: 600,
+                              }}
+                            >
+                              $
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="500"
+                              value={draftVal ?? Math.round(currentVal)}
+                              onChange={(e) => setFeeDraft({ ...feeDraft, [r.tournament]: e.target.value })}
+                              style={{
+                                height: 32,
+                                paddingLeft: 20,
+                                paddingRight: 6,
+                                fontSize: 12.5,
+                                fontWeight: 600,
+                                borderRadius: 8,
+                                background: '#faf9f6',
+                                border: '1px solid #e5e4df',
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <div style={{ fontSize: 10.5, fontWeight: 600, color: '#787772', marginBottom: 4 }}>
+                            Inscripción base
+                          </div>
+                          <div style={{ position: 'relative' }}>
+                            <span
+                              style={{
+                                position: 'absolute',
+                                left: 8,
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                fontSize: 11.5,
+                                color: '#787772',
+                                fontWeight: 600,
+                              }}
+                            >
+                              $
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="500"
+                              value={draftRegVal ?? Math.round(currentRegVal)}
+                              onChange={(e) => setRegFeeDraft({ ...regFeeDraft, [r.tournament]: e.target.value })}
+                              style={{
+                                height: 32,
+                                paddingLeft: 20,
+                                paddingRight: 6,
+                                fontSize: 12.5,
+                                fontWeight: 600,
+                                borderRadius: 8,
+                                background: '#faf9f6',
+                                border: '1px solid #e5e4df',
+                              }}
+                            />
+                          </div>
+                        </div>
                       </div>
 
-                      {isEditing ? (
-                        <button
-                          type="button"
-                          style={{ ...btnDark, height: 32, padding: '0 10px' }}
-                          disabled={savingFeeId === r.tournament}
-                          onClick={() => saveFeeDirect(r)}
-                        >
-                          <Save size={13} /> Guardar
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          style={btnOutline}
-                          title="Ajustar por porcentaje"
-                          onClick={() => setAumentoFeeTarget(r)}
-                        >
-                          <TrendingUp size={13} /> Ajustar %
-                        </button>
-                      )}
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                        {isEditing ? (
+                          <button
+                            type="button"
+                            style={{ ...btnDark, height: 30, padding: '0 12px', width: '100%', justifyContent: 'center' }}
+                            disabled={savingFeeId === r.tournament}
+                            onClick={() => saveFeeDirect(r)}
+                          >
+                            <Save size={13} /> {savingFeeId === r.tournament ? 'Guardando…' : 'Guardar cambios'}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            style={{ ...btnOutline, height: 30, width: '100%', justifyContent: 'center' }}
+                            title="Ajustar por porcentaje"
+                            onClick={() => setAumentoFeeTarget(r)}
+                          >
+                            <TrendingUp size={13} /> Ajustar por %
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

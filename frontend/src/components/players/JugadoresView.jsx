@@ -1,9 +1,80 @@
-import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../../api';
-import { Plus, Search, UserCheck, Trash2, Edit, Eye, Mail, Phone, Calendar, X, Check } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  UserCheck,
+  Trash2,
+  Pencil,
+  X,
+  CheckCircle2,
+} from 'lucide-react';
 import PlayerFormModal from './PlayerFormModal';
 import PageHeader from '../ui/PageHeader';
+import '../../styles/data.css';
+
+const AVATAR_BANNERS = [
+  { bg: '#7cb2f4', stroke: '#132a4a' },
+  { bg: '#e89d7c', stroke: '#3b1d11' },
+  { bg: '#c8ded3', stroke: '#1f3a2e' },
+  { bg: '#dcd8ea', stroke: '#2c2545' },
+  { bg: '#f5dd90', stroke: '#4d3d0d' },
+  { bg: '#eeece6', stroke: '#3d3929' },
+];
+
+const btnOutline = {
+  height: 34,
+  padding: '0 12px',
+  borderRadius: 8,
+  fontSize: 12.5,
+  fontWeight: 500,
+  background: '#ffffff',
+  color: '#18181b',
+  border: '1px solid #d4d3ce',
+  boxShadow: 'none',
+  textTransform: 'none',
+  letterSpacing: 0,
+  gap: 6,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+};
+
+const btnDark = {
+  height: 34,
+  padding: '0 14px',
+  borderRadius: 8,
+  fontSize: 12.5,
+  fontWeight: 600,
+  background: '#141413',
+  color: '#ffffff',
+  border: '1px solid #141413',
+  boxShadow: 'none',
+  textTransform: 'none',
+  letterSpacing: 0,
+  gap: 6,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+};
+
+const iconBtn = {
+  width: 28,
+  height: 28,
+  minWidth: 28,
+  padding: 0,
+  borderRadius: 6,
+  background: '#ffffff',
+  color: '#52514e',
+  border: '1px solid #e5e4df',
+  boxShadow: 'none',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+};
 
 const JugadoresView = () => {
   const [players, setPlayers] = useState([]);
@@ -12,323 +83,614 @@ const JugadoresView = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
-  const [selectedDniImage, setSelectedDniImage] = useState(null); // to show full DNI in modal overlay
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
+  const [toastMsg, setToastMsg] = useState('');
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth <= 768 : false,
+  );
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const notify = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(''), 3000);
+  };
 
   useEffect(() => {
     fetchPlayers();
-  }, [search]);
+  }, []);
 
   const fetchPlayers = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`players/?search=${search}`);
-      const sorted = response.data.sort((a, b) => {
-        const lastCompare = a.last_name.localeCompare(b.last_name, undefined, { sensitivity: 'base' });
+      const response = await api.get('players/');
+      const sorted = (response.data || []).sort((a, b) => {
+        const lastCompare = (a.last_name || '').localeCompare(b.last_name || '', undefined, {
+          sensitivity: 'base',
+        });
         if (lastCompare !== 0) return lastCompare;
-        return a.first_name.localeCompare(b.first_name, undefined, { sensitivity: 'base' });
+        return (a.first_name || '').localeCompare(b.first_name || '', undefined, {
+          sensitivity: 'base',
+        });
       });
       setPlayers(sorted);
     } catch (error) {
-      console.error("Error fetching players:", error);
+      console.error('Error fetching players:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const filteredPlayers = useMemo(() => {
+    return players.filter((p) => {
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        const full = `${p.last_name || ''} ${p.first_name || ''} ${p.last_name || ''}`.toLowerCase();
+        const dni = String(p.dni || '').toLowerCase();
+        const phone = String(p.phone || '').toLowerCase();
+        if (!full.includes(q) && !dni.includes(q) && !phone.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [players, search]);
+
   const handleDelete = async (id) => {
     try {
       await api.delete(`players/${id}/`);
       fetchPlayers();
-      setToastMessage('Jugador eliminado con éxito');
-      setShowToast(true);
-      setTimeout(() => {
-        setShowToast(false);
-      }, 3000);
+      notify('Jugador eliminado con éxito');
     } catch (error) {
-      console.error("Error deleting player:", error);
+      console.error('Error deleting player:', error);
     } finally {
       setDeletingId(null);
     }
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }} className="anthropic-theme players-container animate-fade-in">
-      
-      {/* Header Section */}
+    <div
+      className="anthropic-theme players-container animate-fade-in"
+      style={{
+        maxWidth: 1200,
+        margin: '0 auto',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: isMobile ? 12 : 16,
+        paddingBottom: 32,
+      }}
+    >
       <PageHeader
         icon={UserCheck}
         title={showForm ? (editingPlayer ? 'Editar Jugador' : 'Nuevo Jugador') : 'Jugadores'}
-        subtitle={showForm ? 'Completa la información del jugador para la base de datos' : 'Base de datos central y documentación de todos los jugadores'}
-        actions={showForm ? (
-          <button
-            type="button"
-            onClick={() => setShowForm(false)}
-            className="secondary icon-only"
-          >
-            <X size={18} />
-          </button>
-        ) : (
-          <button onClick={() => { setEditingPlayer(null); setShowForm(true); }}>
-            <Plus size={18} /> Nuevo Jugador
-          </button>
-        )}
+        subtitle={
+          showForm
+            ? 'Datos personales y documentación del jugador'
+            : 'Padrón general de jugadores'
+        }
+        actions={
+          showForm ? (
+            <button
+              type="button"
+              style={{
+                ...btnOutline,
+                width: isMobile ? '100%' : 'auto',
+                height: isMobile ? 38 : 34,
+              }}
+              onClick={() => {
+                setShowForm(false);
+                setEditingPlayer(null);
+              }}
+            >
+              <X size={15} /> Volver
+            </button>
+          ) : (
+            <button
+              type="button"
+              style={{
+                ...btnDark,
+                width: isMobile ? '100%' : 'auto',
+                height: isMobile ? 38 : 34,
+              }}
+              onClick={() => {
+                setEditingPlayer(null);
+                setShowForm(true);
+              }}
+            >
+              <Plus size={15} /> Nuevo jugador
+            </button>
+          )
+        }
       />
 
-      {showForm && (
-        <PlayerFormModal 
-          player={editingPlayer} 
-          onClose={() => setShowForm(false)} 
+      {toastMsg && (
+        <div
+          style={{
+            padding: '10px 14px',
+            borderRadius: 10,
+            background: '#ffffff',
+            border: '1px solid #d4d3ce',
+            color: '#141413',
+            fontSize: 13,
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          <CheckCircle2 size={15} style={{ color: '#166534', flexShrink: 0 }} />
+          <span>{toastMsg}</span>
+        </div>
+      )}
+
+      {showForm ? (
+        <PlayerFormModal
+          inline
+          player={editingPlayer}
+          onClose={() => {
+            setShowForm(false);
+            setEditingPlayer(null);
+          }}
           onSuccess={() => {
             const isNew = !editingPlayer;
             setShowForm(false);
+            setEditingPlayer(null);
             fetchPlayers();
-            if (isNew) {
-              setToastMessage('Jugador creado con éxito');
-              setShowToast(true);
-              setTimeout(() => {
-                setShowToast(false);
-              }, 3000);
-            }
-          }} 
+            notify(isNew ? 'Jugador creado con éxito' : 'Jugador actualizado');
+          }}
         />
-      )}
-
-      {/* Content Section — hidden while form is open */}
-      {!showForm && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          
-          {/* Toolbar */}
-          <div className="search-filter-bar">
-            <div style={{ position: 'relative', flex: 1 }}>
-              <Search 
-                size={18} 
-                style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} 
-              />
-              <input 
-                type="text" 
-                placeholder="Buscar jugador por nombre, apellido o DNI..." 
-                style={{ paddingLeft: '42px' }}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Table */}
-          <div className="table-container mobile-cards" style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '800px' }}>
-              <thead>
-                <tr>
-                  <th>Jugador</th>
-                  <th>DNI</th>
-                  <th>Contacto</th>
-                  <th>Documentación</th>
-                  <th style={{ textAlign: 'right' }}>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Cargando...</td></tr>
-                ) : players.length === 0 ? (
-                  <tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No hay jugadores registrados</td></tr>
-                ) : (
-                  players.map((player) => (
-                    <tr key={player.id} className="table-row-hover">
-                      <td className="mc-title" data-label="">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{ 
-                            width: '40px', 
-                            height: '40px', 
-                            borderRadius: '10px', flexShrink: 0, background: 'var(--gx-primary-soft)', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center', 
-                            color: 'var(--gx-primary-ink)',
-                            overflow: 'hidden',
-                            border: '1px solid var(--border-subtle)'
-                          }}>
-                            {player.photo ? (
-                              <img src={player.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            ) : (
-                              <UserCheck size={20} />
-                            )}
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text-primary)' }}>
-                              {player.last_name}, {player.first_name}
-                            </div>
-                            {player.birth_date && (
-                              <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                                <Calendar size={12} /> {new Date(player.birth_date).toLocaleDateString()}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td data-label="DNI" style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '700' }}>
-                        {player.dni}
-                      </td>
-                      <td data-label="Contacto">
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-end' }}>
-                          {player.phone && (
-                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <Phone size={12} /> {player.phone}
-                            </span>
-                          )}
-                          {player.email && (
-                            <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <Mail size={12} /> {player.email}
-                            </span>
-                          )}
-                          {!player.phone && !player.email && <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>-</span>}
-                        </div>
-                      </td>
-                      <td data-label="Documentación">
-                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                          {player.dni_front ? (
-                            <button 
-                              type="button" 
-                              onClick={() => setSelectedDniImage(player.dni_front)}
-                              className="secondary" 
-                              style={{ padding: '4px 8px', height: '26px', minWidth: 'auto', fontSize: '10px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                            >
-                              <Eye size={10} /> Frente DNI
-                            </button>
-                          ) : (
-                            <span style={{ fontSize: '10px', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)', padding: '3px 6px', borderRadius: '6px' }}>Sin Frente</span>
-                          )}
-                          {player.dni_back ? (
-                            <button 
-                              type="button" 
-                              onClick={() => setSelectedDniImage(player.dni_back)}
-                              className="secondary" 
-                              style={{ padding: '4px 8px', height: '26px', minWidth: 'auto', fontSize: '10px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                            >
-                              <Eye size={10} /> Dorso DNI
-                            </button>
-                          ) : (
-                            <span style={{ fontSize: '10px', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)', padding: '3px 6px', borderRadius: '6px' }}>Sin Dorso</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="mc-actions" data-label="" style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                          {deletingId === player.id ? (
-                            <div style={{ display: 'flex', gap: '4px', alignItems: 'center', animation: 'fadeIn 0.2s ease' }}>
-                              <span style={{ fontSize: '10px', color: '#dc2626', fontWeight: 'bold', marginRight: '4px' }}>¿Eliminar?</span>
-                              <button 
-                                type="button"
-                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(player.id); }} 
-                                className="danger" 
-                                style={{ minWidth: 'auto', height: '28px', padding: '0 8px', fontSize: '11px' }}
-                              >
-                                Sí
-                              </button>
-                              <button 
-                                type="button"
-                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeletingId(null); }} 
-                                className="secondary" 
-                                style={{ minWidth: 'auto', height: '28px', padding: '0 8px', fontSize: '11px' }}
-                              >
-                                No
-                              </button>
-                            </div>
-                          ) : (
-                            <>
-                              <button 
-                                type="button"
-                                onClick={() => { setEditingPlayer(player); setShowForm(true); }} 
-                                className="secondary icon-only" 
-                              >
-                                <Edit size={16} />
-                              </button>
-                              <button 
-                                type="button"
-                                onClick={() => setDeletingId(player.id)} 
-                                className="danger icon-only" 
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* DNI Image Modal overlay */}
-      {selectedDniImage && (
-        <div 
-          onClick={() => setSelectedDniImage(null)}
+      ) : (
+        <div
           style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.85)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            cursor: 'zoom-out',
-            padding: '20px'
+            background: '#ffffff',
+            border: '1px solid #e5e4df',
+            borderRadius: 12,
+            overflow: 'hidden',
           }}
         >
-          <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%' }}>
-            <img src={selectedDniImage} alt="DNI" style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain', border: '2px solid var(--border-subtle)', borderRadius: '12px' }} />
-            <div style={{ color: '#fff', textAlign: 'center', marginTop: '12px', fontSize: '14px', fontWeight: 'bold' }}>Hacé click en cualquier lugar para cerrar</div>
-          </div>
-        </div>
-      )}
-
-      {/* Toast Notificación centro inferior */}
-      {showToast && createPortal(
-        <div className="toast-pill-container">
-          <div style={{
-            width: '22px',
-            height: '22px',
-            borderRadius: '50%',
-            background: '#2e7d32',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
-          }}>
-            <Check size={14} color="#ffffff" strokeWidth={3} />
-          </div>
-          <span style={{
-            fontSize: '13px',
-            fontWeight: '600',
-            color: '#f5ede4',
-            whiteSpace: 'nowrap'
-          }}>
-            {toastMessage}
-          </span>
-          <button
-            type="button"
-            onClick={() => setShowToast(false)}
+          {/* Barra superior limpia */}
+          <div
             style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: '#a8957e',
+              padding: isMobile ? '12px 14px' : '14px 20px',
+              borderBottom: '1px solid #efeee9',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              padding: '2px',
-              marginLeft: '4px'
+              justifyContent: 'space-between',
+              gap: 12,
             }}
           >
-            <X size={14} />
-          </button>
-        </div>,
-        document.body
+            <div style={{ position: 'relative', flex: 1, maxWidth: isMobile ? '100%' : 360 }}>
+              <Search
+                size={13.5}
+                style={{
+                  position: 'absolute',
+                  left: 10,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#787772',
+                }}
+              />
+              <input
+                type="text"
+                placeholder="Buscar por nombre, apellido o DNI…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{
+                  height: isMobile ? 36 : 34,
+                  paddingLeft: 30,
+                  paddingRight: 10,
+                  fontSize: 12.5,
+                  borderRadius: 8,
+                  background: '#faf9f6',
+                  border: '1px solid #e5e4df',
+                  margin: 0,
+                  width: '100%',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+            {!isMobile && (
+              <span style={{ fontSize: 12, color: '#787772' }}>
+                Total: <strong>{players.length}</strong>
+              </span>
+            )}
+          </div>
+
+          {/* Listado */}
+          {loading ? (
+            <div style={{ padding: 36, textAlign: 'center', color: '#787772', fontSize: 13 }}>
+              Cargando…
+            </div>
+          ) : filteredPlayers.length === 0 ? (
+            <div style={{ padding: 36, textAlign: 'center', color: '#787772', fontSize: 13 }}>
+              No hay jugadores registrados.
+            </div>
+          ) : isMobile ? (
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {filteredPlayers.map((player, idx) => {
+                const avatar = AVATAR_BANNERS[idx % AVATAR_BANNERS.length];
+                const initials =
+                  `${(player.last_name || '')[0] || ''}${(player.first_name || '')[0] || ''}`.toUpperCase() ||
+                  'J';
+
+                return (
+                  <div
+                    key={player.id}
+                    style={{
+                      padding: '12px 14px',
+                      borderBottom: '1px solid #f1f0ec',
+                      background: '#ffffff',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 6,
+                    }}
+                  >
+                    {/* Fila principal: Avatar + Nombre + DNI y Botones */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 10,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          minWidth: 0,
+                          flex: 1,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 38,
+                            height: 38,
+                            borderRadius: 8,
+                            background: player.photo ? '#faf9f6' : avatar.bg,
+                            color: avatar.stroke,
+                            border: player.photo ? '1px solid #e5e4df' : 'none',
+                            fontSize: 12,
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            overflow: 'hidden',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {player.photo ? (
+                            <img
+                              src={player.photo}
+                              alt=""
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          ) : (
+                            initials
+                          )}
+                        </div>
+
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div
+                            style={{
+                              fontSize: 13.5,
+                              fontWeight: 600,
+                              color: '#141413',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {player.last_name}, {player.first_name}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 11.5,
+                              color: '#787772',
+                              marginTop: 1,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            DNI {player.dni || '—'}
+                            {player.birth_date
+                              ? ` · ${new Date(player.birth_date).toLocaleDateString('es-AR')}`
+                              : ''}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Acciones */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                        {deletingId === player.id ? (
+                          <div style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDelete(player.id);
+                              }}
+                              style={{
+                                ...btnDark,
+                                height: 28,
+                                padding: '0 10px',
+                                fontSize: 11,
+                                background: '#dc2626',
+                                borderColor: '#dc2626',
+                              }}
+                            >
+                              Sí
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setDeletingId(null);
+                              }}
+                              style={{
+                                ...btnOutline,
+                                height: 28,
+                                padding: '0 10px',
+                                fontSize: 11,
+                              }}
+                            >
+                              No
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingPlayer(player);
+                                setShowForm(true);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                              style={{ ...iconBtn, width: 30, height: 30 }}
+                              title="Editar"
+                            >
+                              <Pencil size={13.5} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeletingId(player.id)}
+                              style={{ ...iconBtn, width: 30, height: 30, color: '#787772' }}
+                              title="Eliminar"
+                            >
+                              <Trash2 size={13.5} />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Subfila contacto en móvil (si tiene) */}
+                    {(player.phone || player.email) && (
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          paddingLeft: 48,
+                          fontSize: 11.5,
+                          color: '#787772',
+                        }}
+                      >
+                        {player.phone && <span>{player.phone}</span>}
+                        {player.phone && player.email && <span>·</span>}
+                        {player.email && <span>{player.email}</span>}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                  <tr
+                    style={{
+                      background: '#faf9f6',
+                      borderBottom: '1px solid #e5e4df',
+                      textAlign: 'left',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: '#787772',
+                    }}
+                  >
+                    <th style={{ padding: '10px 20px' }}>Jugador</th>
+                    <th style={{ padding: '10px 14px' }}>DNI</th>
+                    <th style={{ padding: '10px 14px' }}>Contacto</th>
+                    <th style={{ padding: '10px 20px', textAlign: 'right' }}>Acciones</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {filteredPlayers.map((player, idx) => {
+                    const avatar = AVATAR_BANNERS[idx % AVATAR_BANNERS.length];
+                    const initials =
+                      `${(player.last_name || '')[0] || ''}${(player.first_name || '')[0] || ''}`.toUpperCase() ||
+                      'J';
+
+                    return (
+                      <tr
+                        key={player.id}
+                        style={{
+                          borderBottom: '1px solid #f1f0ec',
+                          background: '#ffffff',
+                        }}
+                      >
+                        <td style={{ padding: '10px 20px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div
+                              style={{
+                                width: 34,
+                                height: 34,
+                                borderRadius: 8,
+                                background: player.photo ? '#faf9f6' : avatar.bg,
+                                color: avatar.stroke,
+                                border: player.photo ? '1px solid #e5e4df' : 'none',
+                                fontSize: 11.5,
+                                fontWeight: 700,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                overflow: 'hidden',
+                                flexShrink: 0,
+                              }}
+                            >
+                              {player.photo ? (
+                                <img
+                                  src={player.photo}
+                                  alt=""
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                              ) : (
+                                initials
+                              )}
+                            </div>
+
+                            <div>
+                              <strong style={{ fontSize: 13.5, fontWeight: 600, color: '#141413' }}>
+                                {player.last_name}, {player.first_name}
+                              </strong>
+                              {player.birth_date && (
+                                <div style={{ fontSize: 11.5, color: '#787772' }}>
+                                  {new Date(player.birth_date).toLocaleDateString('es-AR')}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+
+                        <td
+                          style={{
+                            padding: '10px 14px',
+                            color: '#52514e',
+                            fontWeight: 500,
+                            fontVariantNumeric: 'tabular-nums',
+                          }}
+                        >
+                          {player.dni || '—'}
+                        </td>
+
+                        <td style={{ padding: '10px 14px' }}>
+                          {player.phone || player.email ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                              {player.phone && (
+                                <span style={{ fontSize: 12.5, color: '#52514e' }}>
+                                  {player.phone}
+                                </span>
+                              )}
+                              {player.email && (
+                                <span style={{ fontSize: 11.5, color: '#787772' }}>
+                                  {player.email}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span style={{ color: '#a1a09a', fontSize: 12 }}>—</span>
+                          )}
+                        </td>
+
+                        <td style={{ padding: '10px 20px', textAlign: 'right' }}>
+                          <div
+                            style={{
+                              display: 'inline-flex',
+                              justifyContent: 'flex-end',
+                              alignItems: 'center',
+                              gap: 6,
+                            }}
+                          >
+                            {deletingId === player.id ? (
+                              <div style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}>
+                                <span
+                                  style={{
+                                    fontSize: 11,
+                                    color: '#dc2626',
+                                    fontWeight: 600,
+                                    marginRight: 2,
+                                  }}
+                                >
+                                  ¿Eliminar?
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleDelete(player.id);
+                                  }}
+                                  style={{
+                                    ...btnDark,
+                                    height: 26,
+                                    padding: '0 8px',
+                                    fontSize: 11,
+                                    background: '#dc2626',
+                                    borderColor: '#dc2626',
+                                  }}
+                                >
+                                  Sí
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setDeletingId(null);
+                                  }}
+                                  style={{
+                                    ...btnOutline,
+                                    height: 26,
+                                    padding: '0 8px',
+                                    fontSize: 11,
+                                  }}
+                                >
+                                  No
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingPlayer(player);
+                                    setShowForm(true);
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                  }}
+                                  style={iconBtn}
+                                  title="Editar"
+                                >
+                                  <Pencil size={13} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setDeletingId(player.id)}
+                                  style={{ ...iconBtn, color: '#787772' }}
+                                  title="Eliminar"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

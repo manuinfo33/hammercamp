@@ -1,9 +1,46 @@
 from decimal import Decimal
+from django.db.models import Sum, F
 from rest_framework import serializers
-from .models import (Partner, StaffRate, TournamentFee, RateChange, FinancialDay,
-                     DayIncome, DayExpense, GeneralMovement)
+from .models import (
+    Partner, StaffRate, TournamentFee, TeamRegistration, TeamAccountAdjustment,
+    RateChange, FinancialDay, DayIncome, DayExpense, GeneralMovement
+)
 
 ZERO = Decimal('0')
+
+
+def get_team_total_debt_map(team_ids=None):
+    """Calcula el saldo total de cuenta corriente (deuda > 0, a favor < 0) para los equipos indicados."""
+    from collections import defaultdict
+    totals = defaultdict(lambda: ZERO)
+
+    adj_qs = TeamAccountAdjustment.objects.all()
+    reg_qs = TeamRegistration.objects.exclude(status__in=['bonificada', 'baja'])
+    inc_qs = DayIncome.objects.filter(kind='cancha', team__isnull=False)
+    mov_qs = GeneralMovement.objects.filter(category='cobro_deuda', team__isnull=False)
+
+    if team_ids is not None:
+        adj_qs = adj_qs.filter(team_id__in=team_ids)
+        reg_qs = reg_qs.filter(team_id__in=team_ids)
+        inc_qs = inc_qs.filter(team_id__in=team_ids)
+        mov_qs = mov_qs.filter(team_id__in=team_ids)
+
+    for adj in adj_qs:
+        totals[adj.team_id] += adj.initial_debt
+
+    for reg in reg_qs:
+        totals[reg.team_id] += reg.net_amount
+
+    for inc in inc_qs:
+        totals[inc.team_id] += (inc.amount_due - inc.cash - inc.transfer)
+
+    for mov in mov_qs:
+        if mov.type == 'ingreso':
+            totals[mov.team_id] -= mov.amount
+        else:
+            totals[mov.team_id] += mov.amount
+
+    return totals
 
 
 class PartnerSerializer(serializers.ModelSerializer):
@@ -16,6 +53,31 @@ class StaffRateSerializer(serializers.ModelSerializer):
     class Meta:
         model = StaffRate
         fields = '__all__'
+
+
+class TeamRegistrationSerializer(serializers.ModelSerializer):
+    team_name = serializers.CharField(source='team.name', read_only=True, default=None)
+    tournament_name = serializers.CharField(source='tournament.name', read_only=True, default=None)
+    net_amount = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TeamRegistration
+        fields = [
+            'id', 'team', 'team_name', 'tournament', 'tournament_name',
+            'base_amount', 'discount', 'custom_base', 'status', 'note',
+            'net_amount', 'created_at', 'updated_at',
+        ]
+
+    def get_net_amount(self, obj):
+        return obj.net_amount
+
+
+class TeamAccountAdjustmentSerializer(serializers.ModelSerializer):
+    team_name = serializers.CharField(source='team.name', read_only=True, default=None)
+
+    class Meta:
+        model = TeamAccountAdjustment
+        fields = ['id', 'team', 'team_name', 'initial_debt', 'note', 'updated_at']
 
 
 class RateChangeSerializer(serializers.ModelSerializer):
@@ -32,6 +94,7 @@ class DayIncomeSerializer(serializers.ModelSerializer):
     team_name = serializers.CharField(source='team.name', read_only=True, default=None)
     tournament_name = serializers.CharField(source='tournament.name', read_only=True, default=None)
     debt = serializers.SerializerMethodField()
+    prior_debt = serializers.SerializerMethodField()
 
     class Meta:
         model = DayIncome
@@ -39,6 +102,17 @@ class DayIncomeSerializer(serializers.ModelSerializer):
 
     def get_debt(self, obj):
         return (obj.amount_due - obj.cash - obj.transfer) if obj.kind == 'cancha' else ZERO
+
+    def get_prior_debt(self, obj):
+        if obj.kind != 'cancha' or not obj.team_id:
+            return ZERO
+        debt_map = self.context.get('team_debt_map')
+        if debt_map is not None:
+            total_debt = debt_map.get(obj.team_id, ZERO)
+        else:
+            total_debt = get_team_total_debt_map([obj.team_id]).get(obj.team_id, ZERO)
+        row_diff = obj.amount_due - obj.cash - obj.transfer
+        return total_debt - row_diff
 
 
 class DayExpenseSerializer(serializers.ModelSerializer):
@@ -104,8 +178,15 @@ class FinancialDaySerializer(serializers.ModelSerializer):
 
 
 class FinancialDayDetailSerializer(FinancialDaySerializer):
-    incomes = DayIncomeSerializer(many=True, read_only=True)
+    incomes = serializers.SerializerMethodField()
     expenses = DayExpenseSerializer(many=True, read_only=True)
 
     class Meta(FinancialDaySerializer.Meta):
         fields = FinancialDaySerializer.Meta.fields + ['incomes', 'expenses']
+
+    def get_incomes(self, obj):
+        incomes_list = list(obj.incomes.all())
+        team_ids = [i.team_id for i in incomes_list if i.team_id]
+        debt_map = get_team_total_debt_map(team_ids) if team_ids else {}
+        ctx = {**self.context, 'team_debt_map': debt_map}
+        return DayIncomeSerializer(incomes_list, many=True, context=ctx).data
