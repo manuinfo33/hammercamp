@@ -1,3 +1,4 @@
+import { API_URL, BACKEND_URL, getMediaUrl } from "@/lib/api";
 import { Link } from "@tanstack/react-router";
 import {
   Facebook,
@@ -78,7 +79,7 @@ export function Header() {
   };
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/categories/")
+    fetch(`${API_URL}/categories/")
       .then((res) => res.json())
       .then((data) => setCategories(data))
       .catch(console.error);

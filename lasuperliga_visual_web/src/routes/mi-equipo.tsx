@@ -1,3 +1,4 @@
+import { API_URL, BACKEND_URL, getMediaUrl } from "@/lib/api";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
 import { 
@@ -23,7 +24,7 @@ const getMediaUrl = (url?: string | null) => {
   if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("blob:") || url.startsWith("data:")) {
     return url;
   }
-  return `http://127.0.0.1:8000${url.startsWith("/") ? "" : "/"}${url}`;
+  return getMediaUrl(url);
 };
 
 function Page() {
@@ -126,7 +127,7 @@ function Page() {
       let activeToken = authToken;
 
       // 1. Fetch Delegate Dashboard Data
-      let dashRes = await fetch(`http://127.0.0.1:8000/api/teams/${teamId}/delegate-dashboard/`, {
+      let dashRes = await fetch(`${API_URL}/teams/${teamId}/delegate-dashboard/`, {
         headers: { Authorization: `Bearer ${activeToken}` },
       });
 
@@ -134,7 +135,7 @@ function Page() {
         // Try refreshing token
         const storedRefresh = localStorage.getItem("refresh");
         if (storedRefresh) {
-          const rRes = await fetch("http://127.0.0.1:8000/api/token/refresh/", {
+          const rRes = await fetch(`${API_URL}/token/refresh/", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ refresh: storedRefresh }),
@@ -144,7 +145,7 @@ function Page() {
             localStorage.setItem("token", rData.access);
             setToken(rData.access);
             activeToken = rData.access;
-            dashRes = await fetch(`http://127.0.0.1:8000/api/teams/${teamId}/delegate-dashboard/`, {
+            dashRes = await fetch(`${API_URL}/teams/${teamId}/delegate-dashboard/`, {
               headers: { Authorization: `Bearer ${activeToken}` },
             });
           }
@@ -163,8 +164,8 @@ function Page() {
 
       // 2. Fetch Good Faith List (LBF)
       const url = currentTournId
-        ? `http://127.0.0.1:8000/api/good-faith-lists/?team=${teamId}&tournament=${currentTournId}`
-        : `http://127.0.0.1:8000/api/good-faith-lists/?team=${teamId}`;
+        ? `${API_URL}/good-faith-lists/?team=${teamId}&tournament=${currentTournId}`
+        : `${API_URL}/good-faith-lists/?team=${teamId}`;
       const lbfRes = await fetch(url, {
         headers: { Authorization: `Bearer ${activeToken}` },
       });
@@ -209,7 +210,7 @@ function Page() {
         const storedRefresh = localStorage.getItem("refresh");
         if (!storedRefresh) return null;
         try {
-          const rRes = await fetch("http://127.0.0.1:8000/api/token/refresh/", {
+          const rRes = await fetch(`${API_URL}/token/refresh/", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ refresh: storedRefresh }),
@@ -229,7 +230,7 @@ function Page() {
       const loadData = async () => {
         let currentToken = storedToken;
         try {
-          let userRes = await fetch("http://127.0.0.1:8000/api/user-info/", {
+          let userRes = await fetch(`${API_URL}/user-info/", {
             headers: { Authorization: `Bearer ${currentToken}` },
           });
 
@@ -238,7 +239,7 @@ function Page() {
             const newToken = await refreshAccessToken();
             if (newToken) {
               currentToken = newToken;
-              userRes = await fetch("http://127.0.0.1:8000/api/user-info/", {
+              userRes = await fetch(`${API_URL}/user-info/", {
                 headers: { Authorization: `Bearer ${newToken}` },
               });
             } else {
@@ -290,7 +291,7 @@ function Page() {
       setSavingMedia(true);
       const fd = new FormData();
       fd.append("logo", file);
-      const res = await fetch(`http://127.0.0.1:8000/api/teams/${team.id}/`, {
+      const res = await fetch(`${API_URL}/teams/${team.id}/`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}` },
         body: fd,
@@ -320,7 +321,7 @@ function Page() {
       setSavingMedia(true);
       const fd = new FormData();
       fd.append("team_photo", file);
-      const res = await fetch(`http://127.0.0.1:8000/api/teams/${team.id}/`, {
+      const res = await fetch(`${API_URL}/teams/${team.id}/`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}` },
         body: fd,
@@ -348,7 +349,7 @@ function Page() {
     try {
       setSearchingDni(true);
       setModalError(null);
-      const res = await fetch(`http://127.0.0.1:8000/api/players/?search=${encodeURIComponent(cleanDni)}`, {
+      const res = await fetch(`${API_URL}/players/?search=${encodeURIComponent(cleanDni)}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -409,7 +410,7 @@ function Page() {
         if (birthDateInput) playerFd.append("birth_date", birthDateInput);
         if (photoFileInput) playerFd.append("photo", photoFileInput);
 
-        const playerRes = await fetch("http://127.0.0.1:8000/api/players/", {
+        const playerRes = await fetch(`${API_URL}/players/", {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
           body: playerFd,
@@ -438,7 +439,7 @@ function Page() {
         gflPayload.shirt_number = parseInt(shirtNumberInput.trim(), 10);
       }
 
-      const gflRes = await fetch("http://127.0.0.1:8000/api/good-faith-lists/", {
+      const gflRes = await fetch(`${API_URL}/good-faith-lists/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -485,7 +486,7 @@ function Page() {
     if (!playerToRemove) return;
     try {
       setRemovingPlayer(true);
-      const res = await fetch(`http://127.0.0.1:8000/api/good-faith-lists/${playerToRemove.id}/`, {
+      const res = await fetch(`${API_URL}/good-faith-lists/${playerToRemove.id}/`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -523,7 +524,7 @@ function Page() {
         descripcion: claimDescripcion.trim(),
       };
 
-      const res = await fetch("http://127.0.0.1:8000/api/reclamos/", {
+      const res = await fetch(`${API_URL}/reclamos/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

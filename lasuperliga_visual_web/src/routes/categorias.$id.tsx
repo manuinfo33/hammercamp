@@ -1,3 +1,4 @@
+import { API_URL, BACKEND_URL, getMediaUrl } from "@/lib/api";
 import { createFileRoute } from "@tanstack/react-router";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
@@ -10,7 +11,7 @@ export const Route = createFileRoute("/categorias/$id")({
   head: () => ({ meta: [{ title: "Categoría — La Superliga" }] }),
 });
 
-const API = "http://127.0.0.1:8000/api";
+const API = `${API_URL}";
 
 /* ---------- tiny helpers ---------- */
 function fmtDate(d: string | null) {

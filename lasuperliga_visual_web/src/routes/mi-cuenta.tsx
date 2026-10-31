@@ -1,3 +1,4 @@
+import { API_URL, BACKEND_URL, getMediaUrl } from "@/lib/api";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
@@ -38,7 +39,7 @@ function Page() {
       const parsed = JSON.parse(storedUser);
       setUser(parsed);
 
-      fetch("http://127.0.0.1:8000/api/user-info/", {
+      fetch(`${API_URL}/user-info/", {
         headers: { Authorization: `Bearer ${storedToken}` },
       })
         .then((res) => res.json())

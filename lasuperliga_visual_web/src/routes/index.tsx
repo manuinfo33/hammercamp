@@ -1,3 +1,4 @@
+import { API_URL, BACKEND_URL, getMediaUrl } from "@/lib/api";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
@@ -24,7 +25,7 @@ function Index() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/carousel-images/?is_active=true")
+    fetch(`${API_URL}/carousel-images/?is_active=true")
       .then((res) => res.json())
       .then((data) => {
         setCarouselImages(data);
@@ -35,12 +36,12 @@ function Index() {
         setLoading(false);
       });
 
-    fetch("http://127.0.0.1:8000/api/news/")
+    fetch(`${API_URL}/news/")
       .then((res) => res.json())
       .then((data) => setNewsList(data))
       .catch((err) => console.error("Error fetching news:", err));
 
-    fetch("http://127.0.0.1:8000/api/categories/")
+    fetch(`${API_URL}/categories/")
       .then((res) => res.json())
       .then((data) => setCategories(data))
       .catch((err) => console.error("Error fetching categories:", err));

@@ -1,3 +1,4 @@
+import { API_URL, BACKEND_URL, getMediaUrl } from "@/lib/api";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -49,7 +50,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
   const onSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/token/", {
+      const response = await fetch(`${API_URL}/token/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -68,7 +69,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
       localStorage.setItem("refresh", data.refresh);
 
       // También necesitamos la info del usuario
-      const userResponse = await fetch("http://127.0.0.1:8000/api/user-info/", {
+      const userResponse = await fetch(`${API_URL}/user-info/", {
         headers: {
           Authorization: `Bearer ${data.access}`,
         },
