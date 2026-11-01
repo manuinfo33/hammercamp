@@ -878,13 +878,19 @@ class ZoneTeamViewSet(viewsets.ModelViewSet):
 
             zone_team.save()
 
-            # 5. Inscribir al nuevo equipo en finanzas con monto 0 para este torneo
+            # 5. Inscribir al nuevo equipo en finanzas con monto configurado para este torneo
+            raw_reg_fee = request.data.get('registration_fee', 0)
+            try:
+                reg_fee_dec = Decimal(str(raw_reg_fee)) if raw_reg_fee is not None and raw_reg_fee != '' else Decimal('0')
+            except Exception:
+                reg_fee_dec = Decimal('0')
+
             from finances.models import TeamRegistration
-            TeamRegistration.objects.get_or_create(
+            TeamRegistration.objects.update_or_create(
                 team=new_team,
                 tournament=tournament,
                 defaults={
-                    'base_amount': Decimal('0'),
+                    'base_amount': reg_fee_dec,
                     'discount': Decimal('0'),
                     'custom_base': True,
                     'status': 'activa',
