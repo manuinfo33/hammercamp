@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Category, Team, Delegate, Transaccion, SaldoSocio, Tournament, TournamentZone, ZoneTeam, CarouselImage, MatchRound, Match, MatchPlayerStat, Goleador, VallaMenosVencida, Sancionado, Player, GoodFaithList, Reclamo
+from .models import Category, Team, Delegate, Transaccion, SaldoSocio, Tournament, TournamentZone, ZoneTeam, CarouselImage, MatchRound, Match, MatchPlayerStat, Goleador, VallaMenosVencida, Sancionado, Player, GoodFaithList, Reclamo, TeamReplacementHistory
 
 class UserSerializer(serializers.ModelSerializer):
     role = serializers.SerializerMethodField()
@@ -140,12 +140,14 @@ class SaldoSocioSerializer(serializers.ModelSerializer):
 class ZoneTeamSerializer(serializers.ModelSerializer):
     team_name = serializers.ReadOnlyField(source='team.name')
     team_logo = serializers.SerializerMethodField()
+    replaces_team_name = serializers.ReadOnlyField(source='replaces_team.name')
 
     class Meta:
         model = ZoneTeam
         fields = ['id', 'zone', 'team', 'team_name', 'team_logo',
                   'points', 'played', 'won', 'drawn', 'lost', 'goals_for', 'goals_against',
-                  'yellow_cards', 'red_cards', 'blue_cards', 'wo_count', 'indumentaria', 'fair_play']
+                  'yellow_cards', 'red_cards', 'blue_cards', 'wo_count', 'indumentaria', 'fair_play',
+                  'replaces_team', 'replaces_team_name', 'inherit_points', 'replacement_reason', 'replacement_note', 'replaced_at']
 
     def get_team_logo(self, obj):
         request = self.context.get('request')
@@ -398,6 +400,20 @@ class GoodFaithListSerializer(serializers.ModelSerializer):
         model = GoodFaithList
         fields = ['id', 'tournament', 'team', 'team_name', 'player', 'player_name', 'full_name', 'first_name', 'last_name', 'player_dni', 'player_photo', 'shirt_number', 'is_active', 'created_at']
 
+    def create(self, validated_data):
+        tournament = validated_data.get('tournament')
+        team = validated_data.get('team')
+        player = validated_data.get('player')
+        shirt_number = validated_data.get('shirt_number')
+        existing = GoodFaithList.objects.filter(tournament=tournament, team=team, player=player).first()
+        if existing:
+            existing.is_active = True
+            if shirt_number is not None:
+                existing.shirt_number = shirt_number
+            existing.save()
+            return existing
+        return super().create(validated_data)
+
     def get_player_name(self, obj):
         return f"{obj.player.last_name}, {obj.player.first_name}"
 
@@ -419,7 +435,7 @@ class GoodFaithListSerializer(serializers.ModelSerializer):
 
         # Check if creating (no self.instance)
         if not self.instance and team and player:
-            dup_query = GoodFaithList.objects.filter(team=team, player=player)
+            dup_query = GoodFaithList.objects.filter(team=team, player=player, is_active=True)
             if tournament:
                 dup_query = dup_query.filter(tournament=tournament)
             else:
@@ -448,7 +464,8 @@ class GoodFaithListSerializer(serializers.ModelSerializer):
                 # Buscar si el jugador ya está inscripto en otro equipo que comparta alguna de estas zonas
                 conflicting_gfl = GoodFaithList.objects.filter(
                     tournament=tournament,
-                    player=player
+                    player=player,
+                    is_active=True
                 ).exclude(team=team).select_related('team').first()
 
                 if conflicting_gfl:
@@ -465,6 +482,19 @@ class GoodFaithListSerializer(serializers.ModelSerializer):
                             {"player": f"El jugador/a {player_name} (DNI: {player.dni}) ya se encuentra inscripto en '{other_team.name}' en la misma {shared_zone.name}. Por reglamento, no puede participar en dos equipos dentro de la misma zona."}
                         )
         return attrs
+
+
+class TeamReplacementHistorySerializer(serializers.ModelSerializer):
+    outgoing_team_name = serializers.ReadOnlyField(source='outgoing_team.name')
+    incoming_team_name = serializers.ReadOnlyField(source='incoming_team.name')
+    tournament_name = serializers.ReadOnlyField(source='tournament.name')
+    zone_name = serializers.ReadOnlyField(source='zone.name')
+
+    class Meta:
+        model = TeamReplacementHistory
+        fields = ['id', 'tournament', 'tournament_name', 'zone', 'zone_name',
+                  'outgoing_team', 'outgoing_team_name', 'incoming_team', 'incoming_team_name',
+                  'inherit_points', 'reason', 'note', 'created_at']
 
 
 class ReclamoSerializer(serializers.ModelSerializer):

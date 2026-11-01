@@ -196,6 +196,11 @@ class ZoneTeam(models.Model):
     wo_count = models.IntegerField(default=0, verbose_name="Walkovers (WO)")
     indumentaria = models.IntegerField(default=0, verbose_name="Indumentaria")
     fair_play = models.IntegerField(default=0, verbose_name="Fair Play")
+    replaces_team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True, related_name='replaced_in_zones', verbose_name="Reemplaza a")
+    inherit_points = models.BooleanField(default=False, verbose_name="Hereda Puntos")
+    replacement_reason = models.CharField(max_length=150, blank=True, null=True, verbose_name="Motivo de Reemplazo")
+    replacement_note = models.TextField(blank=True, null=True, verbose_name="Nota de Reemplazo")
+    replaced_at = models.DateTimeField(blank=True, null=True, verbose_name="Fecha de Reemplazo")
 
     def __str__(self):
         return f"{self.zone} - {self.team.name}"
@@ -203,7 +208,26 @@ class ZoneTeam(models.Model):
     class Meta:
         verbose_name = "Equipo en Zona"
         verbose_name_plural = "Equipos en Zona"
-        unique_together = ('zone', 'team')
+        unique_together = ('zone', 'team')
+
+class TeamReplacementHistory(models.Model):
+    tournament = models.ForeignKey('Tournament', on_delete=models.CASCADE, related_name='replacement_history', verbose_name="Torneo")
+    zone = models.ForeignKey('TournamentZone', on_delete=models.CASCADE, related_name='replacement_history', verbose_name="Zona")
+    outgoing_team = models.ForeignKey('Team', on_delete=models.CASCADE, related_name='replacement_exits', verbose_name="Equipo Saliente")
+    incoming_team = models.ForeignKey('Team', on_delete=models.CASCADE, related_name='replacement_entries', verbose_name="Equipo Entrante")
+    inherit_points = models.BooleanField(default=False, verbose_name="Hereda Puntos")
+    reason = models.CharField(max_length=150, verbose_name="Motivo")
+    note = models.TextField(blank=True, null=True, verbose_name="Observaciones")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha")
+
+    def __str__(self):
+        return f"{self.incoming_team.name} reemplazó a {self.outgoing_team.name} ({self.zone.name})"
+
+    class Meta:
+        verbose_name = "Historial de Reemplazo"
+        verbose_name_plural = "Historial de Reemplazos"
+        ordering = ['-created_at']
+
 
 
 class CarouselImage(models.Model):

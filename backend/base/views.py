@@ -13,14 +13,14 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from pypdf import PdfWriter, PdfReader, Transformation
-from .models import Category, Team, Delegate, Transaccion, SaldoSocio, Tournament, TournamentZone, ZoneTeam, CarouselImage, MatchRound, Match, MatchPlayerStat, Goleador, VallaMenosVencida, Sancionado, Player, GoodFaithList, BlueCard, Reclamo
+from .models import Category, Team, Delegate, Transaccion, SaldoSocio, Tournament, TournamentZone, ZoneTeam, CarouselImage, MatchRound, Match, MatchPlayerStat, Goleador, VallaMenosVencida, Sancionado, Player, GoodFaithList, BlueCard, Reclamo, TeamReplacementHistory
 from .serializers import (CategorySerializer, TeamSerializer, UserSerializer, DelegateSerializer,
                           TransaccionSerializer, SaldoSocioSerializer,
                           TournamentSerializer, TournamentCreateSerializer,
                           TournamentZoneSerializer, ZoneTeamSerializer, CarouselImageSerializer,
                           MatchRoundSerializer, MatchSerializer,
                           GoleadorSerializer, VallaMenosVencidaSerializer, SancionadoSerializer,
-                          PlayerSerializer, GoodFaithListSerializer, ReclamoSerializer)
+                          PlayerSerializer, GoodFaithListSerializer, ReclamoSerializer, TeamReplacementHistorySerializer)
 try:
     from docx2pdf import convert as convert_docx_to_pdf
 except ImportError:
@@ -782,9 +782,125 @@ class ZoneTeamViewSet(viewsets.ModelViewSet):
         
         if has_matches:
             from rest_framework import serializers
-            raise serializers.ValidationError({"detail": "No se puede eliminar el equipo de esta zona, ya que tiene partidos cargados en la misma."})
+            raise serializers.ValidationError({"detail": "No se puede eliminar el equipo de esta zona, ya que tiene partidos cargados en la misma. Si desea cambiarlo por otro equipo, utilice la opción de Reemplazar Equipo."})
             
         return super().destroy(request, *args, **kwargs)
+
+    @action(detail=True, methods=['post'], url_path='replace-team')
+    def replace_team(self, request, pk=None):
+        from decimal import Decimal
+        from django.utils import timezone
+        zone_team = self.get_object()
+        zone = zone_team.zone
+        tournament = zone.tournament
+        old_team = zone_team.team
+
+        new_team_id = request.data.get('new_team_id')
+        inherit_points = bool(request.data.get('inherit_points', False))
+        reason = request.data.get('reason', 'Otro')
+        note = request.data.get('note', '')
+
+        if not new_team_id:
+            return Response({'error': 'Debe seleccionar un equipo nuevo.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            new_team = Team.objects.get(pk=new_team_id)
+        except Team.DoesNotExist:
+            return Response({'error': 'El equipo seleccionado no existe.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if new_team.id == old_team.id:
+            return Response({'error': 'El equipo nuevo debe ser diferente al equipo actual.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if ZoneTeam.objects.filter(zone=zone, team=new_team).exists():
+            return Response({'error': f'El equipo {new_team.name} ya forma parte de esta zona.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            # 1. Registrar historial del reemplazo
+            TeamReplacementHistory.objects.create(
+                tournament=tournament,
+                zone=zone,
+                outgoing_team=old_team,
+                incoming_team=new_team,
+                inherit_points=inherit_points,
+                reason=reason,
+                note=note
+            )
+
+            # 2. Reasignar partidos no jugados (fechas futuras y partidos sin resultado)
+            unplayed_matches = Match.objects.filter(
+                models.Q(impact_zone=zone) | (models.Q(impact_zone__isnull=True) & models.Q(match_round__tournament_zone=zone))
+            ).filter(
+                models.Q(local_team=old_team) | models.Q(visitor_team=old_team)
+            ).filter(
+                played=False,
+                local_score__isnull=True,
+                visitor_score__isnull=True
+            )
+
+            matches_updated_count = 0
+            for m in unplayed_matches:
+                updated = False
+                if m.local_team_id == old_team.id:
+                    m.local_team = new_team
+                    updated = True
+                if m.visitor_team_id == old_team.id:
+                    m.visitor_team = new_team
+                    updated = True
+                if updated:
+                    m.save()
+                    matches_updated_count += 1
+
+            # 3. Liberar jugadores del equipo saliente en la lista de buena fe de este torneo
+            GoodFaithList.objects.filter(tournament=tournament, team=old_team).update(is_active=False)
+
+            # 4. Actualizar el registro en ZoneTeam
+            zone_team.team = new_team
+            zone_team.replaces_team = old_team
+            zone_team.inherit_points = inherit_points
+            zone_team.replacement_reason = reason
+            zone_team.replacement_note = note
+            zone_team.replaced_at = timezone.now()
+
+            if not inherit_points:
+                zone_team.points = 0
+                zone_team.played = 0
+                zone_team.won = 0
+                zone_team.drawn = 0
+                zone_team.lost = 0
+                zone_team.goals_for = 0
+                zone_team.goals_against = 0
+                zone_team.yellow_cards = 0
+                zone_team.red_cards = 0
+                zone_team.blue_cards = 0
+                zone_team.wo_count = 0
+                zone_team.indumentaria = 0
+                zone_team.fair_play = 0
+
+            zone_team.save()
+
+            # 5. Inscribir al nuevo equipo en finanzas con monto 0 para este torneo
+            from finances.models import TeamRegistration
+            TeamRegistration.objects.get_or_create(
+                team=new_team,
+                tournament=tournament,
+                defaults={
+                    'base_amount': Decimal('0'),
+                    'discount': Decimal('0'),
+                    'custom_base': True,
+                    'status': 'activa',
+                    'note': f"Ingreso por reemplazo de {old_team.name}"
+                }
+            )
+
+            # 6. Recalcular tabla de posiciones y estadísticas del torneo
+            recalculate_tournament_standings_and_stats(tournament)
+
+        serializer = self.get_serializer(zone_team)
+        return Response({
+            'detail': f'Equipo {old_team.name} reemplazado con éxito por {new_team.name}.',
+            'matches_updated': matches_updated_count,
+            'zone_team': serializer.data
+        }, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -1124,10 +1240,14 @@ def recalculate_tournament_standings_and_stats(tournament):
     for zone in tournament.zones.all():
         for zt in zone.zone_teams.all():
             team = zt.team
+            team_ids = [team.id]
+            if zt.inherit_points and zt.replaces_team_id:
+                team_ids.append(zt.replaces_team_id)
+
             matches = Match.objects.filter(
                 models.Q(impact_zone=zone) | (models.Q(impact_zone__isnull=True) & models.Q(match_round__tournament_zone=zone))
             ).filter(
-                models.Q(local_team=team) | models.Q(visitor_team=team)
+                models.Q(local_team_id__in=team_ids) | models.Q(visitor_team_id__in=team_ids)
             ).filter(played=True)
 
             played_count = 0
@@ -1140,11 +1260,11 @@ def recalculate_tournament_standings_and_stats(tournament):
 
             for m in matches:
                 played_count += 1
-                is_local = (m.local_team_id == team.id)
+                is_local = (m.local_team_id in team_ids)
                 
                 # Check for walkover / points awarded
                 if m.points_awarded_to_id:
-                    if m.points_awarded_to_id == team.id:
+                    if m.points_awarded_to_id in team_ids:
                         won += 1
                     else:
                         lost += 1
@@ -1166,12 +1286,12 @@ def recalculate_tournament_standings_and_stats(tournament):
             
             stats = MatchPlayerStat.objects.filter(
                 match__in=matches,
-                team=team
+                team_id__in=team_ids
             )
             yellow_count = stats.filter(yellow_card=True).count()
             red_count = stats.filter(red_card=True).count()
             # Tarjetas azules: se cargan manualmente por equipo a nivel torneo.
-            blue_count = BlueCard.objects.filter(tournament=tournament, team=team).count()
+            blue_count = BlueCard.objects.filter(tournament=tournament, team_id__in=team_ids).count()
             fp = (yellow_count * tournament.fp_yellow_pts) + (red_count * tournament.fp_red_pts)
             if tournament.fp_blue_card_enabled:
                 fp += blue_count * tournament.fp_blue_pts
@@ -1478,3 +1598,24 @@ class ReclamoViewSet(viewsets.ModelViewSet):
         user = self.request.user
         serializer.save(creado_por=user if user.is_authenticated else None)
 
+
+
+class TeamReplacementHistoryViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = TeamReplacementHistory.objects.select_related('tournament', 'zone', 'outgoing_team', 'incoming_team').all()
+    serializer_class = TeamReplacementHistorySerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['outgoing_team__name', 'incoming_team__name', 'tournament__name']
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        tournament_id = self.request.query_params.get('tournament')
+        if tournament_id:
+            qs = qs.filter(tournament_id=tournament_id)
+        zone_id = self.request.query_params.get('zone')
+        if zone_id:
+            qs = qs.filter(zone_id=zone_id)
+        team_id = self.request.query_params.get('team')
+        if team_id:
+            qs = qs.filter(models.Q(outgoing_team_id=team_id) | models.Q(incoming_team_id=team_id))
+        return qs

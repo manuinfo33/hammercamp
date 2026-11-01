@@ -3,11 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Trophy, Users, Edit, Check, X, Calendar, Clock, Plus, Trash2, Shield, 
   AlertTriangle, MoreVertical, FileSpreadsheet, FileText, MapPin, UserCheck, UserPlus,
-  User, Menu, LogOut, ChevronDown, ThumbsUp
+  User, Menu, LogOut, ChevronDown, ThumbsUp, ArrowLeftRight
 } from 'lucide-react';
 import api from '../../api';
 import { createPortal } from 'react-dom';
 import TeamForm from '../teams/TeamForm';
+import ReplaceTeamModal from './ReplaceTeamModal';
 import PlayerFormModal from '../players/PlayerFormModal';
 import MatchResultModal from './MatchResultModal';
 import { BlueCardModal, TeamFairPlayHistoryModal, CardIcon } from './FairPlayModals';
@@ -320,6 +321,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
   // New team modal state
   const [showNewTeamModal, setShowNewTeamModal] = useState(false);
   const [newTeamZoneId, setNewTeamZoneId] = useState(null);
+  const [replaceModalData, setReplaceModalData] = useState(null);
 
   // Dropdown menu state
   const [openDropdownRoundId, setOpenDropdownRoundId] = useState(null);
@@ -1630,7 +1632,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                   <th style={{ width: '60px', textAlign: 'center' }}>PP</th>
                                   <th style={{ width: '60px', textAlign: 'center' }}>+/-</th>
                                   <th style={{ width: '50px', textAlign: 'center' }}>FP</th>
-                                  <th className="hide-on-mobile" style={{ width: '80px', textAlign: 'right' }}>Acciones</th>
+                                  <th className="hide-on-mobile" style={{ width: '120px', textAlign: 'right' }}>Acciones</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -1662,25 +1664,32 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                               <Users size={16} color="var(--brand-beige)" />
                                             )}
                                           </div>
-                                          <button
-                                            type="button"
-                                            onClick={() => handleEditTeamClick(zt.team)}
-                                            style={{
-                                              background: 'none',
-                                              border: 'none',
-                                              padding: 0,
-                                              font: 'inherit',
-                                              cursor: 'pointer',
-                                              color: '#1c1d21',
-                                              fontWeight: 'normal',
-                                              textAlign: 'left',
-                                              outline: 'none',
-                                              transition: 'color 0.15s'
-                                            }}
-                                            className="team-link-hover"
-                                          >
-                                            {zt.team_name}
-                                          </button>
+                                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleEditTeamClick(zt.team)}
+                                              style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                padding: 0,
+                                                font: 'inherit',
+                                                cursor: 'pointer',
+                                                color: '#1c1d21',
+                                                fontWeight: '500',
+                                                textAlign: 'left',
+                                                outline: 'none',
+                                                transition: 'color 0.15s'
+                                              }}
+                                              className="team-link-hover"
+                                            >
+                                              {zt.team_name}
+                                            </button>
+                                            {zt.replaces_team_name && (
+                                              <span style={{ fontSize: '11px', color: '#787772', lineHeight: 1.2 }}>
+                                                (Reemplaza a {zt.replaces_team_name})
+                                              </span>
+                                            )}
+                                          </div>
                                         </div>
                                       </td>
                                       <td style={{ textAlign: 'center', fontWeight: '800', color: 'var(--text-primary)', fontSize: '15px' }}>
@@ -1695,48 +1704,75 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                       </td>
                                       <td style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>{zt.fair_play || 0}</td>
                                       <td className="hide-on-mobile" style={{ textAlign: 'right' }}>
-                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', alignItems: 'center' }}>
                                           <button
                                             type="button"
                                             onClick={() => handleEditTeamClick(zt.team)}
-                                            className="secondary"
                                             style={{
-                                              minWidth: 'auto',
-                                              height: '34px',
-                                              width: '34px',
+                                              width: 30,
+                                              height: 30,
+                                              minWidth: 30,
                                               padding: 0,
-                                              borderRadius: '8px',
-                                              display: 'flex',
+                                              borderRadius: 7,
+                                              background: '#ffffff',
+                                              color: '#52514e',
+                                              border: '1px solid #e5e4df',
+                                              boxShadow: 'none',
+                                              display: 'inline-flex',
                                               alignItems: 'center',
                                               justifyContent: 'center',
-                                              background: '#f4f4f5',
-                                              border: '1px solid #e4e4e7',
-                                              color: '#3f3f46'
+                                              cursor: 'pointer',
+                                              transition: 'all 0.15s ease'
                                             }}
                                             title="Editar equipo"
                                           >
-                                            <Edit size={16} />
+                                            <Edit size={13.5} />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => setReplaceModalData({ zoneTeam: zt, zone })}
+                                            style={{
+                                              width: 30,
+                                              height: 30,
+                                              minWidth: 30,
+                                              padding: 0,
+                                              borderRadius: 7,
+                                              background: '#ffffff',
+                                              color: '#52514e',
+                                              border: '1px solid #e5e4df',
+                                              boxShadow: 'none',
+                                              display: 'inline-flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              cursor: 'pointer',
+                                              transition: 'all 0.15s ease'
+                                            }}
+                                            title="Reemplazar equipo en esta zona"
+                                          >
+                                            <ArrowLeftRight size={13.5} />
                                           </button>
                                           <button
                                             type="button"
                                             onClick={() => handleDeleteTeamClick(zt)}
-                                            className="secondary"
                                             style={{
-                                              minWidth: 'auto',
-                                              height: '34px',
-                                              width: '34px',
+                                              width: 30,
+                                              height: 30,
+                                              minWidth: 30,
                                               padding: 0,
-                                              borderRadius: '8px',
-                                              display: 'flex',
+                                              borderRadius: 7,
+                                              background: '#ffffff',
+                                              color: '#787772',
+                                              border: '1px solid #e5e4df',
+                                              boxShadow: 'none',
+                                              display: 'inline-flex',
                                               alignItems: 'center',
                                               justifyContent: 'center',
-                                              background: '#fef2f2',
-                                              border: '1px solid #fee2e2',
-                                              color: '#dc2626'
+                                              cursor: 'pointer',
+                                              transition: 'all 0.15s ease'
                                             }}
-                                            title="Eliminar equipo del torneo"
+                                            title="Eliminar equipo de la zona"
                                           >
-                                            <Trash2 size={16} />
+                                            <Trash2 size={13.5} />
                                           </button>
                                         </div>
                                       </td>
@@ -3581,6 +3617,24 @@ export default function TournamentDetailView({ tournament, onBack }) {
           </div>
         </div>,
         document.body
+      )}
+
+      {/* MODAL REEMPLAZAR EQUIPO */}
+      {replaceModalData && (
+        <ReplaceTeamModal
+          zoneTeam={replaceModalData.zoneTeam}
+          zone={replaceModalData.zone}
+          categoryId={detailedTournament?.category}
+          tournamentId={detailedTournament?.id}
+          onClose={() => setReplaceModalData(null)}
+          onSuccess={async (data) => {
+            setCustomAlert({
+              message: data?.detail || 'Equipo reemplazado con éxito.',
+              type: 'success'
+            });
+            await fetchTournamentDetail();
+          }}
+        />
       )}
 
       {/* MODAL JUGADORES DUPLICADOS */}
