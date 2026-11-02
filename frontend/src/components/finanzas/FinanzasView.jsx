@@ -275,7 +275,7 @@ function GeneralTab({ summary, teams, partners, reload }) {
               {ars(summary.total)}
             </div>
             <div style={{ fontSize: 12, color: '#787772' }}>
-              Efectivo + Banco / MP (fechas cerradas + movimientos)
+              Efectivo + Transferencia (fechas cerradas + movimientos)
             </div>
           </div>
 
@@ -315,7 +315,7 @@ function GeneralTab({ summary, teams, partners, reload }) {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 13, color: '#6b6a65', fontWeight: 500 }}>
-                Banco / Mercado Pago
+                Banco Disponible
               </span>
               <span style={tagPill}>Transferencias</span>
             </div>

@@ -13,6 +13,8 @@ import {
   Check,
   Calendar,
   Search,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
@@ -476,6 +478,8 @@ function DaySheet({ dayId, partners, onChanged, onDeleted }) {
   const [counted, setCounted] = useState('');
   const [msg, setMsg] = useState('');
   const [incomeSearch, setIncomeSearch] = useState('');
+  const [incomesOpen, setIncomesOpen] = useState(true);
+  const [expensesOpen, setExpensesOpen] = useState(true);
 
   const [savingCount, setSavingCount] = useState(0);
   const [lastSavedAt, setLastSavedAt] = useState(null);
@@ -963,7 +967,7 @@ function DaySheet({ dayId, partners, onChanged, onDeleted }) {
             style={{
               fontSize: '1.45rem',
               fontWeight: 700,
-              color: t.net < 0 ? '#dc2626' : '#141413',
+              color: num(t.net) > 0 ? '#16a34a' : num(t.net) < 0 ? '#dc2626' : '#141413',
               lineHeight: 1.1,
             }}
           >
@@ -1021,7 +1025,7 @@ function DaySheet({ dayId, partners, onChanged, onDeleted }) {
         <div
           style={{
             padding: '14px 20px',
-            borderBottom: '1px solid #efeee9',
+            borderBottom: incomesOpen ? '1px solid #efeee9' : 'none',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -1029,9 +1033,34 @@ function DaySheet({ dayId, partners, onChanged, onDeleted }) {
             gap: 12,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <h3 style={{ margin: 0, fontSize: 14.5, fontWeight: 700, color: '#141413' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              cursor: 'pointer',
+              userSelect: 'none',
+            }}
+            onClick={() => setIncomesOpen((v) => !v)}
+            title={incomesOpen ? 'Colapsar ingresos' : 'Desplegar ingresos'}
+          >
+            <h3
+              style={{
+                margin: 0,
+                fontSize: 14.5,
+                fontWeight: 700,
+                color: '#141413',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
               Ingresos — Cobros de equipos y buffet
+              {incomesOpen ? (
+                <ChevronUp size={16} color="#787772" />
+              ) : (
+                <ChevronDown size={16} color="#787772" />
+              )}
             </h3>
             <span style={tagPill}>{filteredIncomes.length}</span>
           </div>
@@ -1073,7 +1102,8 @@ function DaySheet({ dayId, partners, onChanged, onDeleted }) {
           </div>
         </div>
 
-        {day.incomes.length === 0 ? (
+        {incomesOpen && (
+          day.incomes.length === 0 ? (
           <Empty>Sin ingresos. Usá “Precargar fixture” o agregá uno.</Empty>
         ) : (
           <div style={{ overflowX: 'auto' }}>
@@ -1252,7 +1282,7 @@ function DaySheet({ dayId, partners, onChanged, onDeleted }) {
               </tbody>
             </table>
           </div>
-        )}
+        ))}
       </section>
 
       {/* ====================================================================
@@ -1269,16 +1299,42 @@ function DaySheet({ dayId, partners, onChanged, onDeleted }) {
         <div
           style={{
             padding: '14px 20px',
-            borderBottom: '1px solid #efeee9',
+            borderBottom: expensesOpen ? '1px solid #efeee9' : 'none',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             gap: 12,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <h3 style={{ margin: 0, fontSize: 14.5, fontWeight: 700, color: '#141413' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              flexWrap: 'wrap',
+              cursor: 'pointer',
+              userSelect: 'none',
+            }}
+            onClick={() => setExpensesOpen((v) => !v)}
+            title={expensesOpen ? 'Colapsar egresos' : 'Desplegar egresos'}
+          >
+            <h3
+              style={{
+                margin: 0,
+                fontSize: 14.5,
+                fontWeight: 700,
+                color: '#141413',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
               Egresos — Staff, servicios y gastos
+              {expensesOpen ? (
+                <ChevronUp size={16} color="#787772" />
+              ) : (
+                <ChevronDown size={16} color="#787772" />
+              )}
             </h3>
             <span style={tagPill}>{day.expenses.length}</span>
             {day.expenses.length > 0 && (
@@ -1300,7 +1356,8 @@ function DaySheet({ dayId, partners, onChanged, onDeleted }) {
           )}
         </div>
 
-        {day.expenses.length === 0 ? (
+        {expensesOpen && (
+          day.expenses.length === 0 ? (
           <Empty>Sin gastos cargados.</Empty>
         ) : (
           <div style={{ overflowX: 'auto' }}>
@@ -1336,8 +1393,9 @@ function DaySheet({ dayId, partners, onChanged, onDeleted }) {
                     <tr
                       key={e.id}
                       style={{
-                        borderBottom: '1px solid #f1f0ec',
-                        background: isPaid ? '#fafdf9' : '#ffffff',
+                        borderBottom: isPaid ? '1px solid #c7eed3' : '1px solid #f1f0ec',
+                        background: isPaid ? '#e2f7e9' : '#ffffff',
+                        transition: 'background 0.15s ease',
                       }}
                     >
                       <td style={{ padding: '10px 20px' }}>
@@ -1354,7 +1412,7 @@ function DaySheet({ dayId, partners, onChanged, onDeleted }) {
                           step="0.5"
                           value={e.units}
                           disabled={closed}
-                          style={{ ...cellInputStyle, width: 72 }}
+                          style={{ ...cellInputStyle, width: 72, background: isPaid ? '#ffffff' : '#faf9f6' }}
                           onChange={(ev) => updateExpenseField(e, { units: ev.target.value })}
                           onBlur={() => flushExpense(e.id)}
                         />
@@ -1367,7 +1425,7 @@ function DaySheet({ dayId, partners, onChanged, onDeleted }) {
                           step="1"
                           value={toIntStr(e.unit_amount)}
                           disabled={closed}
-                          style={cellInputStyle}
+                          style={{ ...cellInputStyle, background: isPaid ? '#ffffff' : '#faf9f6' }}
                           onChange={(ev) =>
                             updateExpenseField(e, { unit_amount: ev.target.value })
                           }
@@ -1398,7 +1456,7 @@ function DaySheet({ dayId, partners, onChanged, onDeleted }) {
                               padding: '0 28px 0 10px',
                               fontSize: 12.5,
                               borderRadius: 8,
-                              background: '#faf9f6',
+                              background: isPaid ? '#ffffff' : '#faf9f6',
                               border: '1px solid #e5e4df',
                             }}
                             onChange={(ev) => {
@@ -1497,7 +1555,7 @@ function DaySheet({ dayId, partners, onChanged, onDeleted }) {
               </tbody>
             </table>
           </div>
-        )}
+        ))}
       </section>
 
       {/* ====================================================================
@@ -1856,7 +1914,7 @@ export default function JornadaView({ onDayChanged }) {
                       style={{
                         fontSize: '1.3rem',
                         fontWeight: 700,
-                        color: '#141413',
+                        color: num(d.totals.net) > 0 ? '#16a34a' : num(d.totals.net) < 0 ? '#dc2626' : '#141413',
                         marginTop: 2,
                       }}
                     >
