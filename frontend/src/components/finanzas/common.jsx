@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
@@ -33,19 +33,68 @@ export const Stat = ({ label, value, tone, sub }) => (
   </div>
 );
 
-export const Modal = ({ title, onClose, children, width = 480 }) =>
-  createPortal(
-    <div className="modal-backdrop-custom">
-      <div className="modal-card-custom animate-fade-in" style={{ maxWidth: width, borderRadius: 20 }}>
-        <div className="modal-header-custom" style={{ padding: '18px 22px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800 }}>{title}</h3>
+export const Modal = ({ title, onClose, children, width = 480 }) => {
+  useEffect(() => {
+    const origOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = origOverflow;
+    };
+  }, []);
+
+  return createPortal(
+    <div
+      className="modal-backdrop-custom"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose?.();
+      }}
+    >
+      <div
+        className="modal-card-custom animate-fade-in"
+        style={{
+          maxWidth: width,
+          borderRadius: 16,
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight: '92vh',
+          overflow: 'hidden'
+        }}
+      >
+        <div
+          className="modal-header-custom"
+          style={{
+            padding: '14px 18px',
+            borderBottom: '1px solid var(--border-subtle)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexShrink: 0
+          }}
+        >
+          <h3 style={{ margin: 0, fontSize: '1.02rem', fontWeight: 800 }}>{title}</h3>
           <button type="button" className="modal-close-btn" onClick={onClose} aria-label="Cerrar"><X size={18} /></button>
         </div>
-        <div className="modal-body-custom" style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>{children}</div>
+        <div
+          className="modal-body-custom"
+          style={{
+            padding: '16px 18px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+            flex: '1 1 auto',
+            minHeight: 0,
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehavior: 'contain'
+          }}
+        >
+          {children}
+        </div>
       </div>
     </div>,
     document.body
   );
+};
 
 export const Empty = ({ children }) => (
   <div style={{ padding: 28, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>{children}</div>

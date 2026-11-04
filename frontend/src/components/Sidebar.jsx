@@ -107,7 +107,7 @@ const Sidebar = () => {
           ============================================ */}
       <header className="gx-header">
         <div className="gx-header-inner">
-          <div className="gx-header-left">
+          <div className="gx-header-left" style={{ flex: isTournamentDetail ? 1 : 'none', minWidth: 0 }}>
             {/* En celular dentro del torneo muestra botón volver y título del torneo */}
             {headerInfo && (
               <>
@@ -118,14 +118,15 @@ const Sidebar = () => {
                     onClick={() => navigate('/torneos')}
                     aria-label="Volver a Torneos"
                     title="Volver a Torneos"
+                    style={{ flexShrink: 0 }}
                   >
                     <ArrowLeft size={18} />
                   </button>
                 )}
-                <div className="gx-logo-link gx-mobile-only" onClick={() => navigate('/torneos')} title="Torneos">
+                <div className="gx-logo-link gx-mobile-only" onClick={() => navigate('/torneos')} title="Torneos" style={{ flexShrink: 0 }}>
                   <span className="gx-trophy-badge"><Trophy size={22} /></span>
                 </div>
-                <div className="gx-header-context gx-mobile-only">
+                <div className="gx-header-context gx-mobile-only" style={{ flex: 1, minWidth: 0 }}>
                   <span className="gx-hc-title">{headerInfo.title}</span>
                   {headerInfo.subtitle && <span className="gx-hc-sub">{headerInfo.subtitle}</span>}
                 </div>
@@ -157,7 +158,7 @@ const Sidebar = () => {
             </button>
 
             {/* Notificaciones */}
-            <div className="gx-popover-wrap" ref={notificationsRef}>
+            <div className={`gx-popover-wrap ${isTournamentDetail ? 'desktop-only' : ''}`} ref={notificationsRef}>
               <button
                 type="button"
                 className={`gx-icon-btn ${notificationsOpen ? 'active' : ''}`}
@@ -238,7 +239,7 @@ const Sidebar = () => {
               <User size={20} />
             </button>
 
-            <div className="gx-popover-wrap gx-mobile-only" ref={userDropdownRef}>
+            <div className={`gx-popover-wrap gx-mobile-only ${isTournamentDetail ? 'hide-on-mobile' : ''}`} ref={userDropdownRef}>
               <button
                 type="button"
                 className={`gx-icon-btn ${userDropdownOpen ? 'active' : ''}`}

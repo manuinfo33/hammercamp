@@ -1,33 +1,47 @@
-import { API_URL, BACKEND_URL, getMediaUrl } from "@/lib/api";
-import { createFileRoute } from "@tanstack/react-router";
+import { API_URL } from "@/lib/api";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
-import { useState, useEffect } from "react";
-import grassBg from "@/assets/football-grass.png";
-import superligaLogo from "@/assets/logo-superliga.png";
+import { useState, useEffect, useMemo } from "react";
+import {
+  Trophy,
+  Calendar,
+  Award,
+  ThumbsUp,
+  AlertTriangle,
+  ArrowLeft,
+  Users,
+} from "lucide-react";
 
 export const Route = createFileRoute("/categorias/$id")({
   component: CategoryDetailPage,
-  head: () => ({ meta: [{ title: "Categoría — La Superliga" }] }),
+  head: () => ({ meta: [{ title: "Torneo — La Superliga" }] }),
 });
 
 const API = API_URL;
 
-/* ---------- tiny helpers ---------- */
+type TabId = "posiciones" | "fixture" | "goleadores" | "fair_play" | "sancionados";
+
+const TABS: { id: TabId; label: string; mobileLabel: string; icon: any }[] = [
+  { id: "posiciones", label: "Posiciones", mobileLabel: "Posiciones", icon: Trophy },
+  { id: "fixture", label: "Fixture", mobileLabel: "Fixture", icon: Calendar },
+  { id: "goleadores", label: "Goleadores", mobileLabel: "Goleadores", icon: Award },
+  { id: "fair_play", label: "Fair Play", mobileLabel: "Fair Play", icon: ThumbsUp },
+  { id: "sancionados", label: "Sancionados", mobileLabel: "Sanciones", icon: AlertTriangle },
+];
+
 function fmtDate(d: string | null) {
   if (!d) return "";
-  const [y, m, day] = d.split("-");
+  const parts = d.split("-");
+  if (parts.length !== 3) return d;
+  const [y, m, day] = parts;
   return `${day}/${m}/${y}`;
 }
-function fmtTime(t: string | null) {
-  if (!t) return "";
-  return t.slice(0, 5);
-}
 
-/* ---------- component ---------- */
 function CategoryDetailPage() {
   const { id } = Route.useParams();
 
+  const [activeTab, setActiveTab] = useState<TabId>("posiciones");
   const [category, setCategory] = useState<any>(null);
   const [tournament, setTournament] = useState<any>(null);
   const [fixtures, setFixtures] = useState<Record<number, any[]>>({});
@@ -37,22 +51,20 @@ function CategoryDetailPage() {
   const [fairPlay, setFairPlay] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  /* --- Fetch everything --- */
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
+      setLoading(true);
       try {
-        /* 1. Categories → find this one */
         const catRes = await fetch(`${API}/categories/`);
         const cats = await catRes.json();
-        const cat = cats.find((c: any) => c.id.toString() === id);
+        const cat = (cats || []).find((c: any) => c.id.toString() === id);
         if (!cancelled) setCategory(cat);
 
-        /* 2. Tournaments → find the one for this category */
         const tRes = await fetch(`${API}/tournaments/`);
         const tournaments = await tRes.json();
-        const t = tournaments.find((t: any) => t.category?.toString() === id);
+        const t = (tournaments || []).find((t: any) => t.category?.toString() === id);
         if (!cancelled) setTournament(t || null);
 
         if (!t) {
@@ -60,7 +72,6 @@ function CategoryDetailPage() {
           return;
         }
 
-        /* 3. Fixtures per zone */
         const zones = t.zones || [];
         const fixMap: Record<number, any[]> = {};
         await Promise.all(
@@ -71,7 +82,6 @@ function CategoryDetailPage() {
         );
         if (!cancelled) setFixtures(fixMap);
 
-        /* 4. Goleadores / Vallas / Sancionados / Fair Play */
         const [gRes, vRes, sRes, fpRes] = await Promise.all([
           fetch(`${API}/goleadores/?tournament=${t.id}`),
           fetch(`${API}/valla-menos-vencida/?tournament=${t.id}`),
@@ -98,687 +108,1150 @@ function CategoryDetailPage() {
     };
   }, [id]);
 
-  /* --- Derived data helpers --- */
   const zones = tournament?.zones || [];
 
-  function standings(zone: any) {
-    return zone.zone_teams || [];
-  }
+  const teamLogoMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    zones.forEach((z: any) => {
+      (z.zone_teams || []).forEach((zt: any) => {
+        if (zt.team_logo) {
+          map[zt.team] = zt.team_logo;
+          map[zt.team_name] = zt.team_logo;
+        }
+      });
+    });
+    return map;
+  }, [zones]);
 
-  function lastAndNext(zoneId: number) {
-    const rounds = fixtures[zoneId] || [];
-    const played = rounds.filter((r: any) => r.matches?.some((m: any) => m.played));
-    const upcoming = rounds.filter(
-      (r: any) => r.matches?.length > 0 && r.matches.every((m: any) => !m.played),
-    );
+  /* Unificar fechas igual que en TournamentDetailView */
+  const unifiedRounds = useMemo(() => {
+    const allRounds: any[] = [];
+    zones.forEach((z: any) => {
+      const zRounds = fixtures[z.id] || [];
+      zRounds.forEach((r: any) => {
+        allRounds.push({
+          ...r,
+          matches: (r.matches || []).map((m: any) => ({
+            ...m,
+            date: m.date || r.date,
+            time: m.time || r.time,
+          })),
+        });
+      });
+    });
 
-    const lastRound = played.length > 0 ? played[played.length - 1] : null;
-    const nextRound = upcoming.length > 0 ? upcoming[0] : null;
-    return { lastRound, nextRound };
-  }
+    if (!allRounds.length) return [];
+
+    const map = new Map<string, any>();
+    allRounds.forEach((r) => {
+      const key = r.name?.trim().toLowerCase() || `order_${r.order}`;
+      if (!map.has(key)) {
+        map.set(key, {
+          ...r,
+          matches: [...(r.matches || [])],
+        });
+      } else {
+        const existing = map.get(key)!;
+        existing.matches.push(...(r.matches || []));
+        const seen = new Set();
+        existing.matches = existing.matches.filter((m: any) => {
+          if (seen.has(m.id)) return false;
+          seen.add(m.id);
+          return true;
+        });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => (a.order || 0) - (b.order || 0));
+  }, [fixtures, zones]);
+
+  const fairPlayRows = useMemo(() => {
+    if (fairPlay?.rows?.length) return fairPlay.rows;
+    if (fairPlay?.standings?.length) return fairPlay.standings;
+    const rows: any[] = [];
+    zones.forEach((z: any) => {
+      (z.zone_teams || []).forEach((zt: any) => {
+        rows.push({
+          team: zt.team,
+          team_name: zt.team_name,
+          team_logo: zt.team_logo,
+          played: zt.matches_played ?? 0,
+          yellow_cards: zt.yellow_cards ?? 0,
+          red_cards: zt.red_cards ?? 0,
+          blue_cards: zt.blue_cards ?? 0,
+          points: zt.fair_play ?? 0,
+        });
+      });
+    });
+    return rows.sort((a, b) => (b.points || 0) - (a.points || 0));
+  }, [fairPlay, zones]);
+
+  const handleTabChange = (tabId: TabId) => {
+    setActiveTab(tabId);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+    <div
+      className="sl-page-root"
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        background: "#faf9f6",
+        fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+        color: "#1c1d21",
+      }}
+    >
+      <Header
+        mobileContext={
+          category
+            ? {
+                title: tournament ? tournament.name : category.name,
+                subtitle: `Categoría: ${category.name}`,
+                backTo: "/categorias",
+              }
+            : undefined
+        }
+      />
 
-      {/* HERO HEADER */}
-      <section
-        className="relative border-b border-border/60 text-white bg-cover bg-center overflow-hidden"
-        style={{ backgroundImage: `url(${grassBg})` }}
-      >
-        <div className="absolute inset-0 bg-black/50 z-0" />
-        <div className="relative z-10 container mx-auto px-4 py-10 sm:py-14 md:px-6 md:py-20 flex flex-col items-center text-center">
-          <p className="text-[11px] md:text-xs uppercase tracking-[0.3em] text-primary font-bold">
-            Información de Categoría
-          </p>
-          <h1 className="font-display text-3xl sm:text-4xl md:text-6xl font-bold uppercase mt-2.5 md:mt-4 mb-1 text-white leading-tight">
-            {loading ? "Cargando..." : category?.name || "Categoría no encontrada"}
-          </h1>
-          {tournament && (
-            <p className="text-neutral-200 mt-1.5 text-xs sm:text-sm font-medium">
-              {tournament.name}
-            </p>
-          )}
-        </div>
-      </section>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+        .sl-page-root h1,
+        .sl-page-root h2,
+        .sl-page-root h3,
+        .sl-page-root h4 {
+          font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+          letter-spacing: -0.01em !important;
+          text-transform: none !important;
+        }
+        .sl-main-container {
+          flex: 1;
+          width: 100%;
+          max-width: 1180px;
+          margin: 0 auto;
+          padding: 24px 16px 56px;
+          box-sizing: border-box;
+        }
+        .sl-page-header {
+          background: #ffffff;
+          border: 1px solid #e4e4e7;
+          border-radius: 14px;
+          padding: 18px 20px;
+          box-shadow: 0 1px 2px rgba(20, 20, 19, 0.03);
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          margin-bottom: 20px;
+        }
+        .sl-tn-tabs {
+          display: flex;
+          align-items: center;
+          gap: 32px;
+          border-bottom: 1px solid #d8cfc0;
+          margin-bottom: 24px;
+          overflow-x: auto;
+          scrollbar-width: none;
+        }
+        .sl-tn-tabs::-webkit-scrollbar { display: none; }
+        .sl-zone-card {
+          background: #ffffff;
+          border: 1px solid #e4e4e7;
+          border-radius: 16px;
+          box-shadow: 0 4px 20px rgba(25, 20, 15, 0.04);
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+        .sl-zone-header {
+          background: #18181b;
+          border-bottom: 1px solid #27272a;
+          padding: 12px 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .sl-zone-header span {
+          font-weight: 800;
+          letter-spacing: 1.5px;
+          font-size: 14px;
+          text-transform: uppercase;
+          color: #ffffff;
+        }
+        .sl-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 0;
+        }
+        .sl-table thead tr {
+          background: #f4f4f5;
+          border-bottom: 1px solid #e4e4e7;
+        }
+        .sl-table th {
+          padding: 11px 10px;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: #52525b;
+          text-align: left;
+        }
+        .sl-table td {
+          padding: 11px 10px;
+          font-size: 13.5px;
+          color: #1c1d21;
+          border-bottom: 1px solid #f0eae1;
+          background: #ffffff;
+        }
+        .sl-table tbody tr:last-child td {
+          border-bottom: none;
+        }
+        .sl-team-badge {
+          width: 30px;
+          height: 30px;
+          border-radius: 6px;
+          background: #f5efe6;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          flex-shrink: 0;
+        }
+        .sl-two-cols {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 24px;
+          align-items: start;
+        }
+        .sl-mobile-bottom-nav {
+          display: none;
+        }
+        @media (max-width: 900px) {
+          .sl-two-cols {
+            grid-template-columns: 1fr;
+          }
+        }
+        @media (max-width: 768px) {
+          .sl-page-root {
+            padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+          }
+          .sl-main-container {
+            padding: 12px 10px 28px;
+          }
+          .sl-page-header {
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            border-radius: 12px;
+            gap: 10px;
+          }
+          .sl-tn-tabs {
+            display: none !important;
+          }
+          .sl-zone-card {
+            border-radius: 12px;
+          }
+          .sl-zone-header {
+            padding: 10px 12px;
+          }
+          .sl-zone-header span {
+            font-size: 13px;
+          }
+          .sl-table th {
+            padding: 7px 3px !important;
+            font-size: 10px !important;
+            letter-spacing: 0.03em;
+          }
+          .sl-table td {
+            padding: 7px 3px !important;
+            font-size: 12.5px !important;
+          }
+          .sl-table td.sl-team-td {
+            padding-left: 4px !important;
+          }
+          .sl-team-badge {
+            width: 24px;
+            height: 24px;
+            border-radius: 5px;
+          }
+          .sl-hide-mobile {
+            display: none !important;
+          }
+          .sl-mobile-bottom-nav {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 60px;
+            z-index: 9000;
+            display: flex;
+            align-items: stretch;
+            justify-content: space-around;
+            background: #ffffff;
+            border-top: 2px solid #cc7a5c;
+            box-shadow: 0 -6px 20px rgba(24, 24, 27, 0.1);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            box-sizing: content-box;
+          }
+        }
+      `}</style>
 
-      {/* MAIN CONTENT */}
-      <main className="container mx-auto px-4 py-8 sm:px-6 sm:py-12 flex-1 space-y-10 md:space-y-16">
-        {loading && (
-          <div className="text-center text-muted-foreground py-16">
-            Cargando información del torneo…
+      <main className="sl-main-container">
+        {loading ? (
+          <div style={{ padding: "60px 20px", textAlign: "center", color: "#71717a", fontSize: 14 }}>
+            Cargando detalles...
           </div>
-        )}
-
-        {!loading && !tournament && (
-          <div className="text-center text-muted-foreground py-16">
-            No hay torneos activos para esta categoría.
+        ) : !category ? (
+          <div style={{ padding: "60px 20px", textAlign: "center", color: "#71717a", fontSize: 14 }}>
+            Categoría no encontrada.
           </div>
-        )}
-
-        {!loading && tournament && (
+        ) : (
           <>
-            {/* ===== STANDINGS — one table per zone ===== */}
-            {zones.map((zone: any) => {
-              const teams = standings(zone);
-              return (
-                <section key={zone.id}>
-                  <div className="flex items-center gap-2.5 mb-4 md:mb-5">
-                    <span className="w-1.5 h-6 bg-primary rounded-full inline-block shrink-0"></span>
-                    <h2 className="font-display text-xl sm:text-2xl font-bold uppercase tracking-wide">
-                      {zones.length > 1
-                        ? `Tabla de Posiciones — ${zone.name}`
-                        : "Tabla de Posiciones"}
-                    </h2>
-                  </div>
+            {/* Header en PC idéntico a TournamentDetailView (en celular va integrado en la barra superior) */}
+            <div className="sl-page-header sl-hide-mobile">
+              <Link
+                to="/categorias"
+                title="Volver a Categorías"
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 10,
+                  background: "#ffffff",
+                  border: "1px solid #d4d4d8",
+                  color: "#1c1d21",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  textDecoration: "none",
+                }}
+              >
+                <ArrowLeft size={16} />
+              </Link>
 
-                  <div className="bg-surface rounded-2xl border border-border/70 shadow-xs overflow-hidden transition-all duration-200 hover:shadow-md">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs sm:text-sm whitespace-nowrap">
-                        <thead className="bg-surface-elevated/70 text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground border-b border-border/70">
-                          <tr>
-                            <th className="px-2 sm:px-4 md:px-6 py-3 md:py-4 font-semibold w-8 sm:w-12 text-center">
-                              #
-                            </th>
-                            <th className="px-2 sm:px-4 md:px-6 py-3 md:py-4 font-semibold min-w-[130px] sm:min-w-[170px] md:min-w-[200px]">
-                              Equipo
-                            </th>
-                            <th className="px-2 sm:px-3 md:px-5 py-3 md:py-4 font-bold text-center">
-                              PS
-                            </th>
-                            <th className="px-1.5 sm:px-3 md:px-5 py-3 md:py-4 font-semibold text-center">
-                              PJ
-                            </th>
-                            <th className="px-1.5 sm:px-3 md:px-5 py-3 md:py-4 font-semibold text-center">
-                              G
-                            </th>
-                            <th className="px-1.5 sm:px-3 md:px-5 py-3 md:py-4 font-semibold text-center">
-                              E
-                            </th>
-                            <th className="px-1.5 sm:px-3 md:px-5 py-3 md:py-4 font-semibold text-center">
-                              P
-                            </th>
-                            <th className="px-1.5 sm:px-3 md:px-5 py-3 md:py-4 font-semibold text-center">
-                              GF
-                            </th>
-                            <th className="px-1.5 sm:px-3 md:px-5 py-3 md:py-4 font-semibold text-center">
-                              GC
-                            </th>
-                            <th className="px-1.5 sm:px-3 md:px-5 py-3 md:py-4 font-semibold text-center">
-                              DG
-                            </th>
-                            <th className="px-2 sm:px-3 md:px-5 py-3 md:py-4 font-semibold text-center">
-                              FP
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border/50">
-                          {teams.length === 0 && (
-                            <tr>
-                              <td
-                                colSpan={11}
-                                className="px-6 py-10 text-center text-muted-foreground"
-                              >
-                                Sin equipos en esta zona
-                              </td>
-                            </tr>
-                          )}
-                          {teams.map((zt: any, idx: number) => {
-                            const diff = zt.goals_for - zt.goals_against;
-                            return (
-                              <tr
-                                key={zt.id}
-                                className="hover:bg-primary/5 transition-colors duration-150"
-                              >
-                                <td className="px-2 sm:px-4 md:px-6 py-2.5 md:py-3.5 font-bold text-center">
-                                  <span
-                                    className={`inline-flex items-center justify-center size-5 sm:size-6 rounded-full text-[11px] sm:text-xs ${
-                                      idx === 0
-                                        ? "bg-primary/20 text-primary font-extrabold"
-                                        : "text-foreground font-semibold"
-                                    }`}
-                                  >
-                                    {idx + 1}
-                                  </span>
-                                </td>
-                                <td className="px-2 sm:px-4 md:px-6 py-2.5 md:py-3.5 font-bold">
-                                  <div className="flex items-center gap-2 sm:gap-3">
-                                    <div className="size-6 sm:size-8 rounded-lg bg-surface-elevated/80 border border-border/40 p-0.5 flex items-center justify-center flex-shrink-0 shadow-xs">
-                                      {zt.team_logo ? (
-                                        <img
-                                          src={zt.team_logo}
-                                          alt=""
-                                          className="size-full object-contain"
-                                        />
-                                      ) : (
-                                        <img
-                                          src={superligaLogo}
-                                          alt=""
-                                          className="size-full object-contain grayscale opacity-35"
-                                        />
-                                      )}
-                                    </div>
-                                    <span className="tracking-tight truncate max-w-[115px] sm:max-w-none">
-                                      {zt.team_name}
-                                    </span>
-                                  </div>
-                                </td>
-                                <td className="px-2 sm:px-3 md:px-5 py-2.5 md:py-3.5 font-extrabold text-primary text-center text-sm sm:text-base">
-                                  {zt.points}
-                                </td>
-                                <td className="px-1.5 sm:px-3 md:px-5 py-2.5 md:py-3.5 text-muted-foreground text-center font-medium">
-                                  {zt.played}
-                                </td>
-                                <td className="px-1.5 sm:px-3 md:px-5 py-2.5 md:py-3.5 text-muted-foreground text-center">
-                                  {zt.won}
-                                </td>
-                                <td className="px-1.5 sm:px-3 md:px-5 py-2.5 md:py-3.5 text-muted-foreground text-center">
-                                  {zt.drawn}
-                                </td>
-                                <td className="px-1.5 sm:px-3 md:px-5 py-2.5 md:py-3.5 text-muted-foreground text-center">
-                                  {zt.lost}
-                                </td>
-                                <td className="px-1.5 sm:px-3 md:px-5 py-2.5 md:py-3.5 text-muted-foreground text-center">
-                                  {zt.goals_for}
-                                </td>
-                                <td className="px-1.5 sm:px-3 md:px-5 py-2.5 md:py-3.5 text-muted-foreground text-center">
-                                  {zt.goals_against}
-                                </td>
-                                <td className="px-1.5 sm:px-3 md:px-5 py-2.5 md:py-3.5 text-center">
-                                  {diff > 0 ? (
-                                    <span className="inline-flex items-center justify-center min-w-[24px] sm:min-w-[28px] px-1.5 sm:px-2 py-0.5 rounded-full text-[11px] sm:text-xs font-bold bg-emerald-500/10 text-emerald-600">
-                                      +{diff}
-                                    </span>
-                                  ) : diff < 0 ? (
-                                    <span className="inline-flex items-center justify-center min-w-[24px] sm:min-w-[28px] px-1.5 sm:px-2 py-0.5 rounded-full text-[11px] sm:text-xs font-bold bg-rose-500/10 text-rose-500">
-                                      {diff}
-                                    </span>
-                                  ) : (
-                                    <span className="text-muted-foreground text-xs font-medium">
-                                      0
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="px-2 sm:px-3 md:px-5 py-2.5 md:py-3.5 text-muted-foreground text-center font-medium">
-                                  {zt.fair_play || 0}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </section>
-              );
-            })}
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 11,
+                  background: "rgba(242, 187, 43, 0.16)",
+                  color: "#9a6b00",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Trophy size={22} />
+              </div>
 
-            {/* ===== TABLA DE FAIR PLAY ===== */}
-            {fairPlay && fairPlay.rows && fairPlay.rows.length > 0 && (
-              <section>
-                <div className="flex items-center justify-between mb-4 md:mb-5">
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-1.5 h-6 bg-primary rounded-full inline-block shrink-0"></span>
-                    <h2 className="font-display text-xl sm:text-2xl font-bold uppercase tracking-wide">
-                      Tabla de Fair Play
-                    </h2>
-                  </div>
-                </div>
+              <div style={{ minWidth: 0 }}>
+                <h1
+                  style={{
+                    margin: 0,
+                    fontSize: "1.25rem",
+                    fontWeight: 800,
+                    color: "#1c1d21",
+                    lineHeight: 1.25,
+                  }}
+                >
+                  {tournament ? tournament.name : category.name}
+                </h1>
+                <p style={{ margin: "3px 0 0", fontSize: 12.5, color: "#71717a" }}>
+                  Categoría: {category.name}
+                </p>
+              </div>
+            </div>
 
-                <div className="bg-surface rounded-2xl border border-border/70 shadow-xs overflow-hidden transition-all duration-200 hover:shadow-md">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs sm:text-sm whitespace-nowrap">
-                      <thead className="bg-surface-elevated/70 text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground border-b border-border/70">
-                        <tr>
-                          <th className="px-2 sm:px-4 md:px-6 py-3 md:py-4 font-semibold w-8 sm:w-12 text-center">
-                            #
-                          </th>
-                          <th className="px-2 sm:px-4 md:px-6 py-3 md:py-4 font-semibold min-w-[130px] sm:min-w-[170px] md:min-w-[200px]">
-                            Equipo
-                          </th>
-                          <th className="px-2 sm:px-3 md:px-5 py-3 md:py-4 font-semibold text-center">
-                            J
-                          </th>
-                          <th
-                            className="px-2 sm:px-3 md:px-5 py-3 md:py-4 font-semibold text-center"
-                            title="Tarjetas Amarillas"
-                          >
-                            <span className="inline-block w-2.5 h-3.5 bg-yellow-400 rounded-[3px] shadow-xs align-middle"></span>
-                          </th>
-                          <th
-                            className="px-2 sm:px-3 md:px-5 py-3 md:py-4 font-semibold text-center"
-                            title="Tarjetas Rojas"
-                          >
-                            <span className="inline-block w-2.5 h-3.5 bg-red-500 rounded-[3px] shadow-xs align-middle"></span>
-                          </th>
-                          {fairPlay.blue_card_enabled && (
-                            <th
-                              className="px-2 sm:px-3 md:px-5 py-3 md:py-4 font-semibold text-center"
-                              title="Tarjetas Azules"
-                            >
-                              <span className="inline-block w-2.5 h-3.5 bg-blue-500 rounded-[3px] shadow-xs align-middle"></span>
-                            </th>
-                          )}
-                          {fairPlay.wo_enabled && (
-                            <th
-                              className="px-2 sm:px-3 md:px-5 py-3 md:py-4 font-semibold text-center"
-                              title="Walkovers (No se presentó)"
-                            >
-                              WO
-                            </th>
-                          )}
-                          <th className="px-2 sm:px-3 md:px-5 py-3 md:py-4 font-bold text-center">
-                            PTS
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/50">
-                        {fairPlay.rows.map((row: any, idx: number) => (
-                          <tr
-                            key={row.team}
-                            className="hover:bg-primary/5 transition-colors duration-150"
-                          >
-                            <td className="px-2 sm:px-4 md:px-6 py-2.5 md:py-3.5 font-bold text-center">
-                              <span
-                                className={`inline-flex items-center justify-center size-5 sm:size-6 rounded-full text-[11px] sm:text-xs ${
-                                  idx === 0
-                                    ? "bg-primary/20 text-primary font-extrabold"
-                                    : "text-foreground font-semibold"
-                                }`}
-                              >
-                                {idx + 1}
-                              </span>
-                            </td>
-                            <td className="px-2 sm:px-4 md:px-6 py-2.5 md:py-3.5 font-normal">
-                              <div className="flex items-center gap-2 sm:gap-3">
-                                <div className="size-6 sm:size-8 rounded-lg bg-surface-elevated/80 border border-border/40 p-0.5 flex items-center justify-center flex-shrink-0 shadow-xs">
-                                  {row.team_logo ? (
-                                    <img
-                                      src={row.team_logo}
-                                      alt=""
-                                      className="size-full object-contain"
-                                    />
-                                  ) : (
-                                    <img
-                                      src={superligaLogo}
-                                      alt=""
-                                      className="size-full object-contain grayscale opacity-35"
-                                    />
-                                  )}
-                                </div>
-                                <span className="tracking-tight truncate max-w-[120px] sm:max-w-none">
-                                  {row.team_name}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-2 sm:px-3 md:px-5 py-2.5 md:py-3.5 text-muted-foreground text-center font-medium">
-                              {row.played}
-                            </td>
-                            <td className="px-2 sm:px-3 md:px-5 py-2.5 md:py-3.5 text-muted-foreground text-center">
-                              {row.yellow_cards || 0}
-                            </td>
-                            <td className="px-2 sm:px-3 md:px-5 py-2.5 md:py-3.5 text-muted-foreground text-center">
-                              {row.red_cards || 0}
-                            </td>
-                            {fairPlay.blue_card_enabled && (
-                              <td className="px-2 sm:px-3 md:px-5 py-2.5 md:py-3.5 text-muted-foreground text-center">
-                                {row.blue_cards || 0}
-                              </td>
-                            )}
-                            {fairPlay.wo_enabled && (
-                              <td className="px-2 sm:px-3 md:px-5 py-2.5 md:py-3.5 text-muted-foreground text-center">
-                                {row.wo_count || 0}
-                              </td>
-                            )}
-                            <td className="px-2 sm:px-3 md:px-5 py-2.5 md:py-3.5 font-extrabold text-primary text-center text-sm sm:text-base">
-                              {row.points}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </section>
+            {/* Submenú de pestañas minimalista (Desktop) */}
+            {tournament && (
+              <div className="sl-tn-tabs">
+                {TABS.map((tab) => {
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => handleTabChange(tab.id)}
+                      style={{
+                        background: "transparent",
+                        color: isActive ? "#cc7a5c" : "#1c1d21",
+                        border: "none",
+                        borderBottom: isActive
+                          ? "4px solid #cc7a5c"
+                          : "4px solid transparent",
+                        borderRadius: 0,
+                        padding: "14px 4px",
+                        fontWeight: isActive ? 700 : 500,
+                        fontSize: "14.5px",
+                        cursor: "pointer",
+                        transition: "all 0.15s ease",
+                        flexShrink: 0,
+                        outline: "none",
+                        marginBottom: "-1px",
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
             )}
 
-            {/* ===== ÚLTIMA FECHA / SIGUIENTE FECHA ===== */}
-            {zones.map((zone: any) => {
-              const { lastRound, nextRound } = lastAndNext(zone.id);
-              if (!lastRound && !nextRound) return null;
-              return (
-                <section key={`fixture-${zone.id}`}>
-                  {zones.length > 1 && (
-                    <div className="flex items-center gap-2.5 mb-4 md:mb-5">
-                      <span className="w-1.5 h-6 bg-primary rounded-full inline-block shrink-0"></span>
-                      <h2 className="font-display text-xl font-bold uppercase tracking-wide">
-                        Fixture — {zone.name}
-                      </h2>
-                    </div>
-                  )}
-                  <div className="grid md:grid-cols-2 gap-5 md:gap-6">
-                    {/* ÚLTIMA FECHA */}
-                    <div className="bg-surface rounded-2xl border border-border/70 shadow-xs overflow-hidden flex flex-col transition-all duration-200 hover:shadow-md">
-                      <div className="border-b border-border/60 bg-surface-elevated/60 px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between">
-                        <h3 className="font-display text-base sm:text-lg font-bold uppercase tracking-wide flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-primary inline-block"></span>
-                          Última Fecha
-                        </h3>
+            {!tournament ? (
+              <div
+                className="sl-zone-card"
+                style={{ padding: "40px 20px", textAlign: "center", color: "#71717a", fontSize: 14 }}
+              >
+                No hay un torneo activo para esta categoría.
+              </div>
+            ) : (
+              <div>
+                {/* ============================================================
+                   1. POSICIONES (Idéntico a Principal en TournamentDetailView)
+                   ============================================================ */}
+                {activeTab === "posiciones" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                    {zones.length === 0 ? (
+                      <div
+                        className="sl-zone-card"
+                        style={{ padding: "40px 20px", textAlign: "center", color: "#71717a", fontSize: 14 }}
+                      >
+                        Este torneo no tiene zonas configuradas.
                       </div>
-                      {lastRound ? (
-                        <>
-                          <div className="text-center py-2 bg-muted/20 border-b border-border/50">
-                            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-muted-foreground px-3 py-0.5 rounded-full bg-surface-elevated/80 border border-border/40 inline-block">
-                              {lastRound.name}
-                            </span>
-                          </div>
-                          <div className="divide-y divide-border/50">
-                            {lastRound.matches?.map((m: any) => (
+                    ) : (
+                      zones.map((zone: any) => {
+                        const sortedZoneTeams = [...(zone.zone_teams || [])].sort(
+                          (a: any, b: any) => {
+                            if ((b.points || 0) !== (a.points || 0))
+                              return (b.points || 0) - (a.points || 0);
+                            const diffA = (a.goals_for || 0) - (a.goals_against || 0);
+                            const diffB = (b.goals_for || 0) - (b.goals_against || 0);
+                            if (diffB !== diffA) return diffB - diffA;
+                            return (b.goals_for || 0) - (a.goals_for || 0);
+                          },
+                        );
+
+                        return (
+                          <div key={zone.id} className="sl-zone-card">
+                            <div className="sl-zone-header">
+                              <span>{zone.name}</span>
+                            </div>
+
+                            {sortedZoneTeams.length === 0 ? (
                               <div
-                                key={m.id}
-                                className="px-3.5 sm:px-6 py-3 sm:py-4 flex flex-col gap-1.5 hover:bg-muted/15 transition-colors"
+                                style={{
+                                  padding: "28px 16px",
+                                  textAlign: "center",
+                                  color: "#71717a",
+                                  fontSize: 13,
+                                }}
                               >
-                                <div className="flex items-center justify-between gap-2 sm:gap-4">
-                                  <span className="font-semibold text-xs sm:text-sm flex-1 text-left leading-snug line-clamp-2 break-words">
-                                    {m.local_team_name}
-                                  </span>
-                                  <div className="flex flex-col items-center shrink-0 min-w-[68px] sm:min-w-[90px]">
-                                    <span className="font-display text-base sm:text-lg font-bold text-primary tracking-wide px-2.5 py-0.5 rounded-lg bg-primary/10">
-                                      {m.played
-                                        ? `${m.local_score} - ${m.visitor_score}`
-                                        : "VS"}
-                                    </span>
-                                  </div>
-                                  <span className="font-semibold text-xs sm:text-sm flex-1 text-right leading-snug line-clamp-2 break-words">
-                                    {m.visitor_team_name}
-                                  </span>
-                                </div>
-                                {(m.date ||
-                                  lastRound.date ||
-                                  m.time ||
-                                  lastRound.time ||
-                                  m.cancha) && (
-                                  <div className="flex flex-wrap items-center justify-center gap-1.5 text-[10px] sm:text-[11px] text-muted-foreground">
-                                    {(m.date || lastRound.date) && (
-                                      <span className="px-2 py-0.5 rounded-md bg-muted/40 font-medium">
-                                        {fmtDate(m.date || lastRound.date)}
-                                      </span>
-                                    )}
-                                    {(m.time || lastRound.time) && (
-                                      <span className="px-2 py-0.5 rounded-md bg-muted/40 font-medium">
-                                        {fmtTime(m.time || lastRound.time)}
-                                      </span>
-                                    )}
-                                    {m.cancha && (
-                                      <span className="px-2 py-0.5 rounded-md bg-muted/40 font-medium">
-                                        {m.cancha}
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
+                                No hay equipos asignados a esta zona.
                               </div>
-                            ))}
+                            ) : (
+                              <div style={{ overflowX: "auto" }}>
+                                <table className="sl-table">
+                                  <thead>
+                                    <tr>
+                                      <th style={{ width: 38, textAlign: "center" }}>#</th>
+                                      <th>Equipo</th>
+                                      <th style={{ width: 52, textAlign: "center" }}>PS</th>
+                                      <th style={{ width: 52, textAlign: "center" }}>PJ</th>
+                                      <th style={{ width: 52, textAlign: "center" }}>PG</th>
+                                      <th style={{ width: 52, textAlign: "center" }}>PE</th>
+                                      <th style={{ width: 52, textAlign: "center" }}>PP</th>
+                                      <th style={{ width: 52, textAlign: "center" }}>+/-</th>
+                                      <th style={{ width: 48, textAlign: "center" }}>FP</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {sortedZoneTeams.map((zt: any, idx: number) => {
+                                      const diff = (zt.goals_for || 0) - (zt.goals_against || 0);
+                                      const diffStr = diff > 0 ? `+${diff}` : `${diff}`;
+
+                                      return (
+                                        <tr key={zt.id || zt.team}>
+                                          <td
+                                            style={{
+                                              textAlign: "center",
+                                              fontWeight: idx === 0 ? 800 : 600,
+                                              color: idx === 0 ? "#cc7a5c" : "#1c1d21",
+                                            }}
+                                          >
+                                            {idx + 1}
+                                          </td>
+                                          <td className="sl-team-td">
+                                            <div
+                                              style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 8,
+                                              }}
+                                            >
+                                              <div className="sl-team-badge">
+                                                {zt.team_logo ? (
+                                                  <img
+                                                    src={zt.team_logo}
+                                                    alt=""
+                                                    style={{
+                                                      width: "100%",
+                                                      height: "100%",
+                                                      objectFit: "contain",
+                                                    }}
+                                                  />
+                                                ) : (
+                                                  <Users size={14} color="#cc7a5c" />
+                                                )}
+                                              </div>
+                                              <span style={{ fontWeight: 500, lineHeight: 1.2 }}>
+                                                {zt.team_name}
+                                              </span>
+                                            </div>
+                                          </td>
+                                          <td style={{ textAlign: "center", fontWeight: 800 }}>
+                                            {zt.points ?? 0}
+                                          </td>
+                                          <td style={{ textAlign: "center", color: "#52525b" }}>
+                                            {zt.matches_played ?? 0}
+                                          </td>
+                                          <td style={{ textAlign: "center", color: "#52525b" }}>
+                                            {zt.matches_won ?? 0}
+                                          </td>
+                                          <td style={{ textAlign: "center", color: "#52525b" }}>
+                                            {zt.matches_tied ?? 0}
+                                          </td>
+                                          <td style={{ textAlign: "center", color: "#52525b" }}>
+                                            {zt.matches_lost ?? 0}
+                                          </td>
+                                          <td
+                                            style={{
+                                              textAlign: "center",
+                                              fontWeight: diff !== 0 ? 600 : 400,
+                                              color:
+                                                diff > 0
+                                                  ? "#10b981"
+                                                  : diff < 0
+                                                    ? "#ef4444"
+                                                    : "#52525b",
+                                            }}
+                                          >
+                                            {diffStr}
+                                          </td>
+                                          <td style={{ textAlign: "center", color: "#52525b" }}>
+                                            {zt.fair_play ?? 0}
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
                           </div>
-                        </>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+
+                {/* ============================================================
+                   2. FIXTURE (Idéntico a las tarjetas de fecha en TournamentDetailView)
+                   ============================================================ */}
+                {activeTab === "fixture" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                    {unifiedRounds.length === 0 ? (
+                      <div
+                        className="sl-zone-card"
+                        style={{ padding: "40px 20px", textAlign: "center", color: "#71717a", fontSize: 14 }}
+                      >
+                        No hay fechas programadas en este torneo.
+                      </div>
+                    ) : (
+                      unifiedRounds.map((r: any) => (
+                        <div key={r.name || r.id} className="sl-zone-card">
+                          <div className="sl-zone-header">
+                            <span>{r.name}</span>
+                          </div>
+
+                          <div>
+                            {!r.matches?.length ? (
+                              <div
+                                style={{
+                                  padding: "24px",
+                                  textAlign: "center",
+                                  color: "#6f737b",
+                                  fontSize: 13,
+                                }}
+                              >
+                                No hay partidos programados en esta fecha.
+                              </div>
+                            ) : (
+                              r.matches.map((m: any, index: number) => {
+                                const isLast = index === r.matches.length - 1;
+                                const localName = m.home_team_name || m.local_team_name || "A confirmar";
+                                const visitorName = m.away_team_name || m.visitor_team_name || "A confirmar";
+                                const localScore = m.home_score ?? m.local_score ?? 0;
+                                const visitorScore = m.away_score ?? m.visitor_score ?? 0;
+
+                                return (
+                                  <div
+                                    key={m.id || index}
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "space-between",
+                                      padding: "10px 16px",
+                                      borderBottom: isLast ? "none" : "1px solid #f0eae1",
+                                      background: index % 2 === 0 ? "#fafafb" : "#ffffff",
+                                      minHeight: 56,
+                                    }}
+                                  >
+                                    {/* Equipo Local */}
+                                    <div
+                                      style={{
+                                        flex: "1 1 0",
+                                        textAlign: "right",
+                                        fontWeight: 500,
+                                        fontSize: "0.85rem",
+                                        color: "#1c1d21",
+                                        paddingRight: 10,
+                                        wordBreak: "break-word",
+                                        lineHeight: 1.25,
+                                      }}
+                                    >
+                                      {localName}
+                                    </div>
+
+                                    {/* Columna Central (idéntica a Gestión) */}
+                                    <div
+                                      style={{
+                                        flex: "0 0 96px",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        textAlign: "center",
+                                        gap: 2,
+                                      }}
+                                    >
+                                      {m.played ? (
+                                        <>
+                                          <span
+                                            style={{
+                                              fontSize: 8,
+                                              fontWeight: 800,
+                                              color: "#1c1d21",
+                                              letterSpacing: "0.8px",
+                                              textTransform: "uppercase",
+                                            }}
+                                          >
+                                            FINALIZADO
+                                          </span>
+                                          <div
+                                            style={{
+                                              display: "flex",
+                                              alignItems: "center",
+                                              justifyContent: "center",
+                                              gap: 18,
+                                              fontSize: 15,
+                                              fontWeight: 800,
+                                              color: "#1c1d21",
+                                              marginTop: 1,
+                                            }}
+                                          >
+                                            <span>{localScore}</span>
+                                            <span>{visitorScore}</span>
+                                          </div>
+                                        </>
+                                      ) : m.date || m.time ? (
+                                        <>
+                                          <span
+                                            style={{
+                                              fontSize: 11,
+                                              fontWeight: 700,
+                                              color: "#1c1d21",
+                                            }}
+                                          >
+                                            {m.date
+                                              ? m.date.split("-").reverse().slice(0, 2).join("/")
+                                              : ""}
+                                          </span>
+                                          {m.time && (
+                                            <span
+                                              style={{
+                                                fontSize: 10,
+                                                fontWeight: 600,
+                                                color: "#6f737b",
+                                              }}
+                                            >
+                                              {m.time.slice(0, 5)} Hs
+                                            </span>
+                                          )}
+                                        </>
+                                      ) : (
+                                        <div
+                                          style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            gap: 20,
+                                            fontSize: 15,
+                                            fontWeight: 700,
+                                            color: "#6f737b",
+                                          }}
+                                        >
+                                          <span>-</span>
+                                          <span>-</span>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Equipo Visitante */}
+                                    <div
+                                      style={{
+                                        flex: "1 1 0",
+                                        textAlign: "left",
+                                        fontWeight: 500,
+                                        fontSize: "0.85rem",
+                                        color: "#1c1d21",
+                                        paddingLeft: 10,
+                                        wordBreak: "break-word",
+                                        lineHeight: 1.25,
+                                      }}
+                                    >
+                                      {visitorName}
+                                    </div>
+                                  </div>
+                                );
+                              })
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+
+                {/* ============================================================
+                   3. GOLEADORES Y VALLA MENOS VENCIDA
+                   ============================================================ */}
+                {activeTab === "goleadores" && (
+                  <div className="sl-two-cols">
+                    {/* Goleadores */}
+                    <div className="sl-zone-card">
+                      <div className="sl-zone-header">
+                        <span>GOLEADORES</span>
+                      </div>
+
+                      {goleadores.length === 0 ? (
+                        <div
+                          style={{
+                            padding: "28px 16px",
+                            textAlign: "center",
+                            color: "#71717a",
+                            fontSize: 13,
+                          }}
+                        >
+                          Sin goles registrados.
+                        </div>
                       ) : (
-                        <div className="px-6 py-10 text-center text-muted-foreground text-sm">
-                          Aún no se jugó ninguna fecha
+                        <div style={{ overflowX: "auto" }}>
+                          <table className="sl-table">
+                            <thead>
+                              <tr>
+                                <th style={{ width: 38, textAlign: "center" }}>#</th>
+                                <th>Jugador</th>
+                                <th>Equipo</th>
+                                <th style={{ width: 64, textAlign: "center" }}>Goles</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {goleadores.map((g: any, idx: number) => (
+                                <tr key={g.player_id || idx}>
+                                  <td
+                                    style={{
+                                      textAlign: "center",
+                                      fontWeight: idx === 0 ? 800 : 600,
+                                      color: idx === 0 ? "#cc7a5c" : "#1c1d21",
+                                    }}
+                                  >
+                                    {idx + 1}
+                                  </td>
+                                  <td style={{ fontWeight: 600 }}>
+                                    {g.player__name} {g.player__last_name}
+                                  </td>
+                                  <td style={{ color: "#52525b" }}>{g.team_name}</td>
+                                  <td
+                                    style={{
+                                      textAlign: "center",
+                                      fontWeight: 800,
+                                      color: idx === 0 ? "#cc7a5c" : "#1c1d21",
+                                    }}
+                                  >
+                                    {g.goals}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
                       )}
                     </div>
 
-                    {/* SIGUIENTE FECHA */}
-                    <div className="bg-surface rounded-2xl border border-border/70 shadow-xs overflow-hidden flex flex-col transition-all duration-200 hover:shadow-md">
-                      <div className="border-b border-border/60 bg-surface-elevated/60 px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between">
-                        <h3 className="font-display text-base sm:text-lg font-bold uppercase tracking-wide flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
-                          Siguiente Fecha
-                        </h3>
+                    {/* Valla Menos Vencida */}
+                    <div className="sl-zone-card">
+                      <div className="sl-zone-header">
+                        <span>VALLA MENOS VENCIDA</span>
                       </div>
-                      {nextRound ? (
-                        <>
-                          <div className="text-center py-2 bg-muted/20 border-b border-border/50">
-                            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-muted-foreground px-3 py-0.5 rounded-full bg-surface-elevated/80 border border-border/40 inline-block">
-                              {nextRound.name}
-                            </span>
-                          </div>
-                          <div className="divide-y divide-border/50">
-                            {nextRound.matches?.map((m: any) => (
-                              <div
-                                key={m.id}
-                                className="px-3.5 sm:px-6 py-3 sm:py-4 flex flex-col gap-1.5 hover:bg-muted/15 transition-colors"
-                              >
-                                <div className="flex items-center justify-between gap-2 sm:gap-4">
-                                  <span className="font-semibold text-xs sm:text-sm flex-1 text-left leading-snug line-clamp-2 break-words">
-                                    {m.local_team_name}
-                                  </span>
-                                  <div className="flex flex-col items-center shrink-0 min-w-[56px] sm:min-w-[80px]">
-                                    <span className="px-2.5 py-0.5 rounded-full bg-primary/12 text-primary font-bold text-xs">
-                                      VS
-                                    </span>
-                                  </div>
-                                  <span className="font-semibold text-xs sm:text-sm flex-1 text-right leading-snug line-clamp-2 break-words">
-                                    {m.visitor_team_name}
-                                  </span>
-                                </div>
-                                {(m.date ||
-                                  nextRound.date ||
-                                  m.time ||
-                                  nextRound.time ||
-                                  m.cancha) && (
-                                  <div className="flex flex-wrap items-center justify-center gap-1.5 text-[10px] sm:text-[11px] text-muted-foreground">
-                                    {(m.date || nextRound.date) && (
-                                      <span className="px-2 py-0.5 rounded-md bg-muted/40 font-medium">
-                                        {fmtDate(m.date || nextRound.date)}
-                                      </span>
-                                    )}
-                                    {(m.time || nextRound.time) && (
-                                      <span className="px-2 py-0.5 rounded-md bg-muted/40 font-medium">
-                                        {fmtTime(m.time || nextRound.time)}
-                                      </span>
-                                    )}
-                                    {m.cancha && (
-                                      <span className="px-2 py-0.5 rounded-md bg-muted/40 font-medium">
-                                        {m.cancha}
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </>
+
+                      {vallas.length === 0 ? (
+                        <div
+                          style={{
+                            padding: "28px 16px",
+                            textAlign: "center",
+                            color: "#71717a",
+                            fontSize: 13,
+                          }}
+                        >
+                          Sin datos registrados.
+                        </div>
                       ) : (
-                        <div className="px-6 py-10 text-center text-muted-foreground text-sm">
-                          No hay próxima fecha programada
+                        <div style={{ overflowX: "auto" }}>
+                          <table className="sl-table">
+                            <thead>
+                              <tr>
+                                <th style={{ width: 38, textAlign: "center" }}>#</th>
+                                <th>Equipo</th>
+                                <th style={{ width: 64, textAlign: "center" }}>GC</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {vallas.map((v: any, idx: number) => (
+                                <tr key={v.id || idx}>
+                                  <td
+                                    style={{
+                                      textAlign: "center",
+                                      fontWeight: idx === 0 ? 800 : 600,
+                                      color: idx === 0 ? "#cc7a5c" : "#1c1d21",
+                                    }}
+                                  >
+                                    {idx + 1}
+                                  </td>
+                                  <td className="sl-team-td">
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 8,
+                                      }}
+                                    >
+                                      <div className="sl-team-badge">
+                                        {teamLogoMap[v.name] ? (
+                                          <img
+                                            src={teamLogoMap[v.name]}
+                                            alt=""
+                                            style={{
+                                              width: "100%",
+                                              height: "100%",
+                                              objectFit: "contain",
+                                            }}
+                                          />
+                                        ) : (
+                                          <Users size={14} color="#cc7a5c" />
+                                        )}
+                                      </div>
+                                      <span style={{ fontWeight: 500 }}>{v.name}</span>
+                                    </div>
+                                  </td>
+                                  <td
+                                    style={{
+                                      textAlign: "center",
+                                      fontWeight: 800,
+                                      color: idx === 0 ? "#cc7a5c" : "#1c1d21",
+                                    }}
+                                  >
+                                    {v.goals_against}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
                       )}
                     </div>
                   </div>
-                </section>
-              );
-            })}
+                )}
 
-            {/* ===== GOLEADORES / VALLA MENOS VENCIDA ===== */}
-            <section className="grid md:grid-cols-2 gap-5 md:gap-6">
-              {/* GOLEADORES */}
-              <div className="bg-surface rounded-2xl border border-border/70 shadow-xs overflow-hidden transition-all duration-200 hover:shadow-md">
-                <div className="border-b border-border/60 bg-surface-elevated/60 px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between">
-                  <h3 className="font-display text-base sm:text-lg font-bold uppercase tracking-wide flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-primary inline-block"></span>
-                    Goleadores
-                  </h3>
-                </div>
-                {goleadores.length === 0 ? (
-                  <div className="px-6 py-10 text-center text-muted-foreground text-sm">
-                    Sin datos de goleadores cargados
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs sm:text-sm">
-                      <thead className="bg-surface-elevated/70 text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground border-b border-border/70">
-                        <tr>
-                          <th className="px-3 sm:px-5 py-3 font-semibold text-center w-10 sm:w-12">
-                            POS
-                          </th>
-                          <th className="px-3 sm:px-5 py-3 font-semibold text-left">
-                            Jugador
-                          </th>
-                          <th className="px-3 sm:px-5 py-3 font-semibold text-left">
-                            Equipo
-                          </th>
-                          <th className="px-3 sm:px-5 py-3 font-semibold text-center">
-                            Goles
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/50">
-                        {goleadores.map((g: any, i: number) => (
-                          <tr
-                            key={g.id}
-                            className="hover:bg-primary/5 transition-colors duration-150"
-                          >
-                            <td className="px-3 sm:px-5 py-2.5 sm:py-3 text-center font-bold">
-                              {i === 0 ? (
-                                <span className="inline-flex items-center justify-center size-5 sm:size-6 rounded-full bg-amber-400/20 text-amber-600 font-extrabold text-[11px] sm:text-xs">
-                                  1
-                                </span>
-                              ) : i === 1 ? (
-                                <span className="inline-flex items-center justify-center size-5 sm:size-6 rounded-full bg-neutral-200 text-neutral-600 font-bold text-[11px] sm:text-xs">
-                                  2
-                                </span>
-                              ) : i === 2 ? (
-                                <span className="inline-flex items-center justify-center size-5 sm:size-6 rounded-full bg-amber-700/15 text-amber-700 font-bold text-[11px] sm:text-xs">
-                                  3
-                                </span>
-                              ) : (
-                                <span className="text-muted-foreground text-xs">
-                                  {i + 1}
-                                </span>
+                {/* ============================================================
+                   4. FAIR PLAY (Idéntico a Fair Play en TournamentDetailView)
+                   ============================================================ */}
+                {activeTab === "fair_play" && (
+                  <div className="sl-zone-card">
+                    <div className="sl-zone-header">
+                      <span>TABLA GENERAL DE FAIR PLAY</span>
+                    </div>
+
+                    {fairPlayRows.length === 0 ? (
+                      <div
+                        style={{
+                          padding: "28px 16px",
+                          textAlign: "center",
+                          color: "#71717a",
+                          fontSize: 13,
+                        }}
+                      >
+                        No hay datos de Fair Play para este torneo.
+                      </div>
+                    ) : (
+                      <div style={{ overflowX: "auto" }}>
+                        <table className="sl-table">
+                          <thead>
+                            <tr>
+                              <th style={{ width: 40, textAlign: "center" }}>#</th>
+                              <th>Equipo</th>
+                              <th style={{ width: 56, textAlign: "center" }}>PJ</th>
+                              <th
+                                style={{ width: 50, textAlign: "center" }}
+                                title="Tarjetas Amarillas"
+                              >
+                                <span
+                                  style={{
+                                    display: "inline-block",
+                                    width: 10,
+                                    height: 14,
+                                    background: "#facc15",
+                                    borderRadius: 2,
+                                    verticalAlign: "middle",
+                                  }}
+                                />
+                              </th>
+                              <th
+                                style={{ width: 50, textAlign: "center" }}
+                                title="Tarjetas Rojas"
+                              >
+                                <span
+                                  style={{
+                                    display: "inline-block",
+                                    width: 10,
+                                    height: 14,
+                                    background: "#ef4444",
+                                    borderRadius: 2,
+                                    verticalAlign: "middle",
+                                  }}
+                                />
+                              </th>
+                              {fairPlay?.blue_card_enabled !== false && (
+                                <th
+                                  style={{ width: 50, textAlign: "center" }}
+                                  title="Tarjetas Azules"
+                                >
+                                  <span
+                                    style={{
+                                      display: "inline-block",
+                                      width: 10,
+                                      height: 14,
+                                      background: "#0284c7",
+                                      borderRadius: 2,
+                                      verticalAlign: "middle",
+                                    }}
+                                  />
+                                </th>
                               )}
-                            </td>
-                            <td className="px-3 sm:px-5 py-2.5 sm:py-3 font-semibold">
-                              {g.player_name}
-                            </td>
-                            <td className="px-3 sm:px-5 py-2.5 sm:py-3 text-muted-foreground">
-                              {g.team_name}
-                            </td>
-                            <td className="px-3 sm:px-5 py-2.5 sm:py-3 text-center font-extrabold text-primary text-sm sm:text-base">
-                              {g.goals}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                              <th style={{ width: 60, textAlign: "center" }}>PTS</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {fairPlayRows.map((row: any, idx: number) => (
+                              <tr key={row.team || row.team_id || idx}>
+                                <td
+                                  style={{
+                                    textAlign: "center",
+                                    fontWeight: idx === 0 ? 800 : 600,
+                                    color: idx === 0 ? "#cc7a5c" : "#1c1d21",
+                                  }}
+                                >
+                                  {idx + 1}
+                                </td>
+                                <td className="sl-team-td">
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 8,
+                                    }}
+                                  >
+                                    <div className="sl-team-badge">
+                                      {row.team_logo || teamLogoMap[row.team_name] ? (
+                                        <img
+                                          src={row.team_logo || teamLogoMap[row.team_name]}
+                                          alt=""
+                                          style={{
+                                            width: "100%",
+                                            height: "100%",
+                                            objectFit: "contain",
+                                          }}
+                                        />
+                                      ) : (
+                                        <Users size={14} color="#cc7a5c" />
+                                      )}
+                                    </div>
+                                    <span style={{ fontWeight: 500 }}>{row.team_name}</span>
+                                  </div>
+                                </td>
+                                <td style={{ textAlign: "center", color: "#52525b" }}>
+                                  {row.played ?? 0}
+                                </td>
+                                <td style={{ textAlign: "center", color: "#52525b" }}>
+                                  {row.yellow_cards || 0}
+                                </td>
+                                <td style={{ textAlign: "center", color: "#52525b" }}>
+                                  {row.red_cards || 0}
+                                </td>
+                                {fairPlay?.blue_card_enabled !== false && (
+                                  <td style={{ textAlign: "center", color: "#52525b" }}>
+                                    {row.blue_cards || 0}
+                                  </td>
+                                )}
+                                <td
+                                  style={{
+                                    textAlign: "center",
+                                    fontWeight: 800,
+                                    color: "#cc7a5c",
+                                  }}
+                                >
+                                  {row.points ?? row.fair_play ?? 0}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
 
-              {/* VALLA MENOS VENCIDA */}
-              <div className="bg-surface rounded-2xl border border-border/70 shadow-xs overflow-hidden transition-all duration-200 hover:shadow-md">
-                <div className="border-b border-border/60 bg-surface-elevated/60 px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between">
-                  <h3 className="font-display text-base sm:text-lg font-bold uppercase tracking-wide flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-primary inline-block"></span>
-                    Valla Menos Vencida
-                  </h3>
-                </div>
-                {vallas.length === 0 ? (
-                  <div className="px-6 py-10 text-center text-muted-foreground text-sm">
-                    Sin datos de valla menos vencida cargados
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs sm:text-sm">
-                      <thead className="bg-surface-elevated/70 text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground border-b border-border/70">
-                        <tr>
-                          <th className="px-4 sm:px-5 py-3 font-semibold text-left">
-                            Equipo
-                          </th>
-                          <th className="px-4 sm:px-5 py-3 font-semibold text-center">
-                            Goles en Contra
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/50">
-                        {vallas.map((v: any) => (
-                          <tr
-                            key={v.id}
-                            className="hover:bg-primary/5 transition-colors duration-150"
-                          >
-                            <td className="px-4 sm:px-5 py-2.5 sm:py-3 font-semibold">
-                              {v.team_name}
-                            </td>
-                            <td className="px-4 sm:px-5 py-2.5 sm:py-3 text-center font-bold text-rose-500 text-sm sm:text-base">
-                              {v.goals_against}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </section>
+                {/* ============================================================
+                   5. SANCIONADOS
+                   ============================================================ */}
+                {activeTab === "sancionados" && (
+                  <div className="sl-zone-card">
+                    <div className="sl-zone-header">
+                      <span>SANCIONADOS</span>
+                    </div>
 
-            {/* ===== SANCIONADOS ===== */}
-            <section>
-              <div className="bg-surface rounded-2xl border border-border/70 shadow-xs overflow-hidden max-w-2xl transition-all duration-200 hover:shadow-md">
-                <div className="border-b border-border/60 bg-surface-elevated/60 px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between">
-                  <h3 className="font-display text-base sm:text-lg font-bold uppercase tracking-wide flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>
-                    Sancionados
-                  </h3>
-                </div>
-                {sancionados.length === 0 ? (
-                  <div className="px-6 py-10 text-center text-muted-foreground text-sm">
-                    Sin jugadores sancionados
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs sm:text-sm">
-                      <thead className="bg-surface-elevated/70 text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground border-b border-border/70">
-                        <tr>
-                          <th className="px-3 sm:px-5 py-3 font-semibold text-left">
-                            Jugador
-                          </th>
-                          <th className="px-3 sm:px-5 py-3 font-semibold text-left">
-                            Equipo
-                          </th>
-                          <th className="px-3 sm:px-5 py-3 font-semibold text-right">
-                            Razón
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/50">
-                        {sancionados.map((s: any) => (
-                          <tr
-                            key={s.id}
-                            className="hover:bg-primary/5 transition-colors duration-150"
-                          >
-                            <td className="px-3 sm:px-5 py-2.5 sm:py-3 font-semibold">
-                              {s.player_name}
-                            </td>
-                            <td className="px-3 sm:px-5 py-2.5 sm:py-3 text-muted-foreground">
-                              {s.team_name}
-                            </td>
-                            <td className="px-3 sm:px-5 py-2.5 sm:py-3 text-right">
-                              <span className="inline-block bg-rose-500/10 text-rose-500 border border-rose-500/20 text-[11px] sm:text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                                {s.reason}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    {sancionados.length === 0 ? (
+                      <div
+                        style={{
+                          padding: "28px 16px",
+                          textAlign: "center",
+                          color: "#71717a",
+                          fontSize: 13,
+                        }}
+                      >
+                        No hay jugadores sancionados en este torneo.
+                      </div>
+                    ) : (
+                      <div style={{ overflowX: "auto" }}>
+                        <table className="sl-table">
+                          <thead>
+                            <tr>
+                              <th>Jugador</th>
+                              <th>Equipo</th>
+                              <th style={{ textAlign: "center" }}>Sanción</th>
+                              <th className="sl-hide-mobile" style={{ textAlign: "center" }}>
+                                Regreso
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sancionados.map((s: any, idx: number) => (
+                              <tr key={s.id || idx}>
+                                <td style={{ fontWeight: 600 }}>{s.player_name}</td>
+                                <td style={{ color: "#52525b" }}>{s.team_name}</td>
+                                <td
+                                  style={{
+                                    textAlign: "center",
+                                    fontWeight: 700,
+                                    color: "#dc2626",
+                                  }}
+                                >
+                                  {s.Observation ||
+                                    (s.dates_remaining
+                                      ? `${s.dates_remaining} fecha(s)`
+                                      : "Suspendido")}
+                                </td>
+                                <td
+                                  className="sl-hide-mobile"
+                                  style={{ textAlign: "center", color: "#52525b" }}
+                                >
+                                  {fmtDate(s.return_date) || "-"}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            </section>
+            )}
           </>
         )}
       </main>
 
-      <Footer />
+      {/* Barra inferior fija para celular (igual a .mobile-bottom-nav de Gestión) */}
+      {tournament && (
+        <nav className="sl-mobile-bottom-nav" aria-label="Navegación del torneo">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => handleTabChange(tab.id)}
+                style={{
+                  flex: 1,
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 3,
+                  background: isActive ? "rgba(204, 122, 92, 0.08)" : "transparent",
+                  border: "none",
+                  borderTop: isActive ? "3px solid #cc7a5c" : "3px solid transparent",
+                  color: isActive ? "#cc7a5c" : "#8a8a93",
+                  padding: 0,
+                  margin: 0,
+                  cursor: "pointer",
+                  outline: "none",
+                }}
+              >
+                <Icon size={18} strokeWidth={isActive ? 2.3 : 1.9} />
+                <span
+                  style={{
+                    fontSize: 9.5,
+                    fontWeight: 700,
+                    letterSpacing: "0.05em",
+                    textTransform: "uppercase",
+                    lineHeight: 1,
+                  }}
+                >
+                  {tab.mobileLabel}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+      )}
+
+      <div className="sl-hide-mobile">
+        <Footer />
+      </div>
     </div>
   );
 }

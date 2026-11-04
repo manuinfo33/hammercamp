@@ -3,12 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Trophy, Users, Edit, Check, X, Calendar, Clock, Plus, Trash2, Shield, 
   AlertTriangle, MoreVertical, FileSpreadsheet, FileText, MapPin, UserCheck, UserPlus,
-  User, Menu, LogOut, ChevronDown, ThumbsUp, ArrowLeftRight
+  User, Menu, LogOut, ChevronDown, ThumbsUp, ArrowLeftRight, ArrowUpDown
 } from 'lucide-react';
 import api from '../../api';
 import { createPortal } from 'react-dom';
 import TeamForm from '../teams/TeamForm';
 import ReplaceTeamModal from './ReplaceTeamModal';
+import { Modal } from '../finanzas/common';
+import ReorderRoundsModal from './ReorderRoundsModal';
 import PlayerFormModal from '../players/PlayerFormModal';
 import MatchResultModal from './MatchResultModal';
 import { BlueCardModal, TeamFairPlayHistoryModal, CardIcon } from './FairPlayModals';
@@ -325,6 +327,8 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
   // Dropdown menu state
   const [openDropdownRoundId, setOpenDropdownRoundId] = useState(null);
+  const [openDropdownFixtureBar, setOpenDropdownFixtureBar] = useState(false);
+  const [showReorderModal, setShowReorderModal] = useState(false);
   const [openDropdownZoneId, setOpenDropdownZoneId] = useState(null);
   const [importTeamZoneId, setImportTeamZoneId] = useState(null);
   const [allSystemTeams, setAllSystemTeams] = useState([]);
@@ -454,6 +458,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
       setOpenDropdownRoundId(null);
       setOpenDropdownMatchId(null);
       setOpenDropdownZoneId(null);
+      setOpenDropdownFixtureBar(false);
     };
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
@@ -1324,15 +1329,23 @@ export default function TournamentDetailView({ tournament, onBack }) {
     if (type === 'round') {
       setOpenDropdownMatchId(null);
       setOpenDropdownZoneId(null);
+      setOpenDropdownFixtureBar(false);
       setOpenDropdownRoundId(openDropdownRoundId === id ? null : id);
     } else if (type === 'match') {
       setOpenDropdownRoundId(null);
       setOpenDropdownZoneId(null);
+      setOpenDropdownFixtureBar(false);
       setOpenDropdownMatchId(openDropdownMatchId === id ? null : id);
     } else if (type === 'zone') {
       setOpenDropdownRoundId(null);
       setOpenDropdownMatchId(null);
+      setOpenDropdownFixtureBar(false);
       setOpenDropdownZoneId(openDropdownZoneId === id ? null : id);
+    } else if (type === 'fixtureBar') {
+      setOpenDropdownRoundId(null);
+      setOpenDropdownMatchId(null);
+      setOpenDropdownZoneId(null);
+      setOpenDropdownFixtureBar(prev => !prev);
     }
   };
 
@@ -1340,7 +1353,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
     position: 'absolute',
     top: isUp ? 'auto' : customTop,
     bottom: isUp ? customBottom : 'auto',
-    right: '12px',
+    right: '16px',
     zIndex: 100,
     background: '#ffffff',
     border: '1px solid #d4d4d8',
@@ -1392,6 +1405,18 @@ export default function TournamentDetailView({ tournament, onBack }) {
         handleDeleteTeamClick={handleDeleteTeamClick}
         detailedTournament={detailedTournament}
         isMobile={isMobile}
+        onOpenReplaceTeam={(teamId) => {
+          const ztWithZone = detailedTournament.zones
+            ?.flatMap(z => (z.zone_teams || []).map(zt => ({ zt, zone: z })))
+            .find(item => item.zt.team === teamId);
+          if (ztWithZone) {
+            setShowTeamForm(false);
+            setSelectedTeam(null);
+            setReplaceModalData({ zoneTeam: ztWithZone.zt, zone: ztWithZone.zone });
+          } else {
+            setCustomAlert({ message: "No se encontró el registro de este equipo en el torneo.", type: "error" });
+          }
+        }}
       />
     );
   }
@@ -1486,8 +1511,31 @@ export default function TournamentDetailView({ tournament, onBack }) {
                       : [];
 
                     return (
-                      <div key={zone.id} className="glass-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '12px', position: 'relative' }}>
+                      <div 
+                        key={zone.id} 
+                        className="zone-card" 
+                        style={{ 
+                          padding: 0, 
+                          overflow: 'visible',
+                          border: '1px solid #e4e4e7',
+                          borderRadius: '16px',
+                          boxShadow: '0 4px 20px rgba(25, 20, 15, 0.04)',
+                          background: '#ffffff',
+                          display: 'flex',
+                          flexDirection: 'column'
+                        }}
+                      >
+                        {/* Zone Header (Encabezado negro con texto blanco) */}
+                        <div style={{
+                          background: '#18181b',
+                          borderBottom: '1px solid #27272a',
+                          padding: '12px 16px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          position: 'relative',
+                          borderRadius: '16px 16px 0 0'
+                        }}>
                           {editingZoneId === zone.id ? (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', zIndex: 10 }}>
                               <input
@@ -1500,28 +1548,28 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                 }}
                                 autoFocus
                                 style={{
-                                  height: '36px',
-                                  padding: '0 12px',
-                                  fontSize: '15px',
+                                  height: '32px',
+                                  padding: '0 10px',
+                                  fontSize: '13px',
                                   fontWeight: '700',
-                                  borderRadius: '8px',
+                                  borderRadius: '6px',
                                   border: '1px solid #cc7a5c',
-                                  background: 'var(--input-bg, #ffffff)',
-                                  color: 'var(--text-primary)'
+                                  background: '#ffffff',
+                                  color: '#151515'
                                 }}
                               />
                               <button
                                 type="button"
                                 onClick={() => saveInlineZoneName(zone.id)}
                                 style={{
-                                  padding: '6px 12px',
-                                  height: '36px',
+                                  padding: '4px 10px',
+                                  height: '32px',
                                   background: 'var(--gx-primary)',
                                   color: '#151515',
                                   border: 'none',
-                                  borderRadius: '8px',
+                                  borderRadius: '6px',
                                   cursor: 'pointer',
-                                  fontSize: '13px',
+                                  fontSize: '12px',
                                   fontWeight: '600',
                                   display: 'flex',
                                   alignItems: 'center',
@@ -1534,14 +1582,14 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                 type="button"
                                 onClick={() => setEditingZoneId(null)}
                                 style={{
-                                  padding: '6px 10px',
-                                  height: '36px',
+                                  padding: '4px 8px',
+                                  height: '32px',
                                   background: 'transparent',
-                                  color: 'var(--text-muted)',
-                                  border: '1px solid var(--border-subtle)',
-                                  borderRadius: '8px',
+                                  color: '#e4e4e7',
+                                  border: '1px solid #3f3f46',
+                                  borderRadius: '6px',
                                   cursor: 'pointer',
-                                  fontSize: '13px',
+                                  fontSize: '12px',
                                   display: 'flex',
                                   alignItems: 'center'
                                 }}
@@ -1550,33 +1598,33 @@ export default function TournamentDetailView({ tournament, onBack }) {
                               </button>
                             </div>
                           ) : (
-                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)' }}>
-                              {zone.name}
-                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                              <span style={{ fontWeight: '800', letterSpacing: '1.5px', fontSize: '14px', textTransform: 'uppercase', color: '#ffffff' }}>
+                                {zone.name}
+                              </span>
+                            </div>
                           )}
+
+                          {/* Kebab/More Options Button */}
                           <button
                             type="button"
                             onClick={(e) => toggleDropdown(e, 'zone', zone.id)}
+                            className="tn-kebab-btn-flush-dark"
                             style={{
                               position: 'absolute',
                               right: '16px',
-                              background: 'none',
-                              border: 'none',
-                              padding: '4px',
-                              color: '#6f737b',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              minWidth: 'auto',
-                              height: 'auto'
+                              top: '50%',
+                              transform: 'translateY(-50%)'
                             }}
+                            title="Opciones de la zona"
+                            aria-label="Opciones de la zona"
                           >
-                            <MoreVertical size={16} />
+                            <MoreVertical size={16} color="#ffffff" />
                           </button>
 
                           {/* Dropdown for Zone Actions */}
                           {openDropdownZoneId === zone.id && (
-                            <div style={{ ...getDropdownStyles(dropdownPosition === 'up', '35px', '35px'), right: '16px', zIndex: 100 }} onClick={(e) => e.stopPropagation()}>
+                            <div style={getDropdownStyles(dropdownPosition === 'up', '42px', '42px')} onClick={(e) => e.stopPropagation()}>
                               <button 
                                 style={dropdownItemStyles} 
                                 onClick={() => {
@@ -1614,13 +1662,25 @@ export default function TournamentDetailView({ tournament, onBack }) {
                           )}
                         </div>
 
+                        {/* Zone Body - integrado a la tarjeta sin recuadro interno */}
                         {sortedZoneTeams.length === 0 ? (
-                          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                          <div style={{ padding: '28px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', background: '#ffffff', borderRadius: '0 0 16px 16px' }}>
                             No hay equipos asignados a esta zona.
                           </div>
                         ) : (
-                          <div className="table-container" style={{ margin: 0, overflowX: 'auto' }}>
-                            <table className="responsive-table compact-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                          <div 
+                            className="table-container" 
+                            style={{ 
+                              margin: 0, 
+                              padding: 0, 
+                              border: 'none', 
+                              boxShadow: 'none', 
+                              borderRadius: '0 0 16px 16px', 
+                              background: '#ffffff', 
+                              overflowX: 'auto' 
+                            }}
+                          >
+                            <table className="responsive-table compact-table" style={{ width: '100%', borderCollapse: 'collapse', margin: 0 }}>
                               <thead>
                                 <tr>
                                   <th style={{ width: '40px', textAlign: 'center' }}>#</th>
@@ -1971,23 +2031,70 @@ export default function TournamentDetailView({ tournament, onBack }) {
                       </span>
                     </div>
                   </div>
-                  <div className="tn-fx-actions">
+                  <div className="tn-fx-actions" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    {/* 3-dots kebab button for Fixture top bar */}
                     <button
-                      onClick={handleCreateNewRound}
-                      disabled={tournamentTeams.length < 2}
-                      title={tournamentTeams.length < 2 ? "Se necesitan al menos 2 equipos para agregar fechas" : "Agregar Nueva Fecha"}
-                      className="tn-fx-btn"
+                      type="button"
+                      onClick={(e) => toggleDropdown(e, 'fixtureBar')}
+                      className="tn-kebab-btn-bar"
+                      title="Opciones del Fixture"
+                      aria-label="Opciones del Fixture"
                     >
-                      <Plus size={16} /> Nueva Fecha
+                      <MoreVertical size={16} color="#ffffff" />
                     </button>
-                    {unifiedFixtures.length > 0 && (
-                      <button
-                        onClick={handleDeleteAllFixtures}
-                        className="danger tn-fx-btn"
-                        title="Eliminar Fixture Completo"
+
+                    {/* Dropdown Menu for Fixture Bar */}
+                    {openDropdownFixtureBar && (
+                      <div
+                        style={{
+                          ...getDropdownStyles(dropdownPosition === 'up', '42px', '42px'),
+                          right: 0
+                        }}
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <Trash2 size={16} /> <span>Eliminar Fixture</span>
-                      </button>
+                        <button
+                          style={dropdownItemStyles}
+                          disabled={tournamentTeams.length < 2}
+                          onClick={() => {
+                            setOpenDropdownFixtureBar(false);
+                            handleCreateNewRound();
+                          }}
+                          className="premium-dropdown-item"
+                        >
+                          <Plus size={14} color="#cc7a5c" />
+                          Nueva Fecha
+                        </button>
+
+                        <button
+                          style={dropdownItemStyles}
+                          disabled={unifiedFixtures.length < 2}
+                          onClick={() => {
+                            setOpenDropdownFixtureBar(false);
+                            setShowReorderModal(true);
+                          }}
+                          className="premium-dropdown-item"
+                        >
+                          <ArrowUpDown size={14} color="#cc7a5c" />
+                          Ordenar Fechas
+                        </button>
+
+                        {unifiedFixtures.length > 0 && (
+                          <>
+                            <div style={{ height: '1px', background: '#e4e4e7', margin: '4px 0' }} />
+                            <button
+                              style={{ ...dropdownItemStyles, color: '#d9534f' }}
+                              onClick={() => {
+                                setOpenDropdownFixtureBar(false);
+                                handleDeleteAllFixtures();
+                              }}
+                              className="premium-dropdown-item"
+                            >
+                              <Trash2 size={14} color="#d9534f" />
+                              Eliminar Fixture
+                            </button>
+                          </>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -2096,24 +2203,17 @@ export default function TournamentDetailView({ tournament, onBack }) {
                               <button
                                 type="button"
                                 onClick={(e) => toggleDropdown(e, 'round', r.id)}
+                                className="tn-kebab-btn-flush-dark"
                                 style={{
                                   position: 'absolute',
                                   right: '16px',
-                                  background: 'none',
-                                  border: 'none',
-                                  padding: '6px',
-                                  color: '#d4d4d8',
-                                  cursor: 'pointer',
-                                  minWidth: 'auto',
-                                  height: 'auto',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  borderRadius: '50%'
+                                  top: '50%',
+                                  transform: 'translateY(-50%)'
                                 }}
-                                className="secondary"
+                                title="Opciones de la fecha"
+                                aria-label="Opciones de la fecha"
                               >
-                                <MoreVertical size={16} />
+                                <MoreVertical size={16} color="#ffffff" />
                               </button>
 
                               {/* Dropdown Menu for Round */}
@@ -2300,24 +2400,15 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                       <button
                                         type="button"
                                         onClick={(e) => toggleDropdown(e, 'match', m.id)}
+                                        className="tn-kebab-btn-match"
                                         style={{
                                           position: 'absolute',
                                           right: '16px',
                                           top: '50%',
-                                          transform: 'translateY(-50%)',
-                                          background: 'none',
-                                          border: 'none',
-                                          padding: '4px',
-                                          color: '#6f737b',
-                                          cursor: 'pointer',
-                                          minWidth: 'auto',
-                                          height: 'auto',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          borderRadius: '50%'
+                                          transform: 'translateY(-50%)'
                                         }}
-                                        className="secondary"
+                                        title="Opciones del partido"
+                                        aria-label="Opciones del partido"
                                       >
                                         <MoreVertical size={16} />
                                       </button>
@@ -2628,86 +2719,144 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
 
       {/* EDIT ROUND MODAL */}
-      {showEditRoundModal && createPortal(
-        <div className="premium-modal-overlay anthropic-theme">
-          <div className="premium-modal-card" style={{ maxWidth: '460px', padding: isMobile ? '20px 16px' : '28px' }}>
-
-            {/* Header */}
-            <div className="modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  width: '38px', height: '38px', borderRadius: '10px',
-                  background: 'rgba(204, 122, 92, 0.12)',
-                  border: '1px solid rgba(204, 122, 92, 0.25)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
-                }}>
-                  <Calendar size={17} color="#cc7a5c" />
-                </div>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '800', color: '#1c1d21' }}>Editar Información de la Fecha</h3>
-                  <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#6f737b' }}>Modificá el nombre, fecha y horario general</p>
-                </div>
-              </div>
-              <button className="modal-close-btn" onClick={() => setShowEditRoundModal(false)}>
-                <X size={14} />
-              </button>
+      {showEditRoundModal && (
+        <Modal
+          title="Editar Información de la Fecha"
+          onClose={() => setShowEditRoundModal(false)}
+          width={480}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#52514e', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 5 }}>
+                Nombre de la Fecha *
+              </label>
+              <input 
+                type="text" 
+                value={editRoundName} 
+                onChange={(e) => setEditRoundName(e.target.value)} 
+                placeholder="Ej: Fecha 1, Semifinal..."
+                autoFocus
+                style={{
+                  width: '100%',
+                  height: 38,
+                  fontSize: 13.5,
+                  borderRadius: 8,
+                  border: '1px solid #d4d3ce',
+                  padding: '0 12px',
+                  background: '#ffffff',
+                  color: '#141413',
+                  boxSizing: 'border-box'
+                }}
+              />
             </div>
-            
-            {/* Body */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div className="input-group">
-                <label>Nombre de la Fecha</label>
+
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#52514e', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 5 }}>
+                  Fecha
+                </label>
                 <input 
-                  type="text" 
-                  value={editRoundName} 
-                  onChange={(e) => setEditRoundName(e.target.value)} 
-                  placeholder="Ej: Fecha 1, Semifinal..."
-                  autoFocus
+                  type="date" 
+                  value={editRoundDate} 
+                  onChange={(e) => setEditRoundDate(e.target.value)} 
+                  onClick={(e) => {
+                    try { e.target.showPicker(); } catch(err) {}
+                  }}
+                  style={{ 
+                    cursor: 'pointer',
+                    width: '100%',
+                    height: 38,
+                    fontSize: 13.5,
+                    borderRadius: 8,
+                    border: '1px solid #d4d3ce',
+                    padding: '0 12px',
+                    background: '#ffffff',
+                    color: '#141413',
+                    boxSizing: 'border-box'
+                  }}
                 />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div className="input-group">
-                  <label>Fecha</label>
-                  <input 
-                    type="date" 
-                    value={editRoundDate} 
-                    onChange={(e) => setEditRoundDate(e.target.value)} 
-                    onClick={(e) => {
-                      try { e.target.showPicker(); } catch(err) {}
-                    }}
-                    style={{ cursor: 'pointer' }}
-                  />
-                </div>
-                <div className="input-group">
-                  <label>Hora de Inicio</label>
-                  <TimeSelectInput 
-                    value={editRoundTime} 
-                    onChange={(val) => setEditRoundTime(val)} 
-                  />
-                </div>
-              </div>
-              <div style={{
-                background: 'rgba(204, 122, 92, 0.06)', border: '1px solid rgba(204, 122, 92, 0.15)',
-                borderRadius: '10px', padding: '10px 14px',
-                fontSize: '11px', color: '#6f737b', lineHeight: '1.5'
-              }}>
-                💡 Si configurás una hora general, todos los partidos de esta fecha usarán ese horario por defecto.
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#52514e', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 5 }}>
+                  Hora de Inicio
+                </label>
+                <TimeSelectInput 
+                  value={editRoundTime} 
+                  onChange={(val) => setEditRoundTime(val)} 
+                />
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="modal-footer">
-              <button className="secondary" onClick={() => setShowEditRoundModal(false)}>Cancelar</button>
-              <button onClick={() => {
-                handleUpdateRound(editRoundRoundIds.length > 0 ? editRoundRoundIds : [editRoundRoundId]);
-                setShowEditRoundModal(false);
-              }}>
+            <div style={{
+              background: '#faf9f6',
+              border: '1px solid #e6e4dd',
+              borderRadius: '10px',
+              padding: '10px 14px',
+              fontSize: '11.5px',
+              color: '#6f737b',
+              lineHeight: '1.45',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '8px'
+            }}>
+              <span style={{ fontSize: '13px' }}>💡</span>
+              <span>Si configurás una fecha u hora general, los partidos de esta jornada podrán usar estos valores por defecto.</span>
+            </div>
+
+            {/* Modal Actions */}
+            <div style={{
+              display: 'flex',
+              flexDirection: isMobile ? 'column-reverse' : 'row',
+              gap: '10px',
+              justifyContent: 'flex-end',
+              marginTop: '6px',
+              paddingTop: '10px',
+              borderTop: '1px solid #f0f0f2'
+            }}>
+              <button 
+                type="button"
+                onClick={() => setShowEditRoundModal(false)}
+                style={{
+                  height: 38,
+                  padding: '0 16px',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  background: '#ffffff',
+                  color: '#18181b',
+                  border: '1px solid #d4d3ce',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancelar
+              </button>
+              <button 
+                type="button"
+                onClick={() => {
+                  handleUpdateRound(editRoundRoundIds.length > 0 ? editRoundRoundIds : [editRoundRoundId]);
+                  setShowEditRoundModal(false);
+                }}
+                style={{
+                  height: 38,
+                  padding: '0 18px',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  background: '#141413',
+                  color: '#ffffff',
+                  border: '1px solid #141413',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6
+                }}
+              >
                 <Check size={14} /> Guardar Cambios
               </button>
             </div>
           </div>
-        </div>,
-        document.body
+        </Modal>
       )}
 
       {/* NEW MATCH MODAL */}
@@ -3619,6 +3768,18 @@ export default function TournamentDetailView({ tournament, onBack }) {
         document.body
       )}
 
+      {/* MODAL ORDENAR FECHAS */}
+      {showReorderModal && (
+        <ReorderRoundsModal
+          rounds={unifiedFixtures}
+          onClose={() => setShowReorderModal(false)}
+          onSuccess={async () => {
+            await fetchFixturesForAllZones();
+          }}
+          setAlert={setCustomAlert}
+        />
+      )}
+
       {/* MODAL REEMPLAZAR EQUIPO */}
       {replaceModalData && (
         <ReplaceTeamModal
@@ -3995,9 +4156,19 @@ const TeamDetailEditor = ({
   reloadMobileRoster,
   handleDeleteTeamClick,
   detailedTournament,
-  isMobile
+  isMobile,
+  onOpenReplaceTeam
 }) => {
   const [teamName, setTeamName] = useState(team.name || '');
+  const [openKebabMenu, setOpenKebabMenu] = useState(false);
+
+  useEffect(() => {
+    const handleOutside = () => setOpenKebabMenu(false);
+    if (openKebabMenu) {
+      window.addEventListener('click', handleOutside);
+      return () => window.removeEventListener('click', handleOutside);
+    }
+  }, [openKebabMenu]);
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(team.logo || null);
   const [photoFile, setPhotoFile] = useState(null);
@@ -4418,7 +4589,101 @@ const TeamDetailEditor = ({
           <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '800', color: '#1c1d21' }}>
             {teamName}
           </h2>
-          <div style={{ width: '130px' }} />
+          <div style={{ width: '130px', display: 'flex', justifyContent: 'flex-end', position: 'relative' }}>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpenKebabMenu(prev => !prev);
+              }}
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: 8,
+                border: '1px solid #d4d4d8',
+                background: '#ffffff',
+                color: '#3f4249',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer'
+              }}
+              title="Opciones del equipo"
+            >
+              <MoreVertical size={16} />
+            </button>
+            {openKebabMenu && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '40px',
+                  right: 0,
+                  zIndex: 200,
+                  background: '#ffffff',
+                  border: '1px solid #d4d4d8',
+                  borderRadius: '12px',
+                  boxShadow: '0 10px 25px rgba(25, 20, 15, 0.1)',
+                  minWidth: '200px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  padding: '6px 0',
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    width: '100%',
+                    padding: '10px 16px',
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    color: '#3f4249',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}
+                  onClick={() => {
+                    setOpenKebabMenu(false);
+                    if (onOpenReplaceTeam) onOpenReplaceTeam(team.id);
+                  }}
+                  className="premium-dropdown-item"
+                >
+                  <ArrowLeftRight size={15} color="#cc7a5c" />
+                  Reemplazar Equipo
+                </button>
+                <div style={{ height: '1px', background: '#e4e4e7', margin: '4px 0' }} />
+                <button
+                  type="button"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    width: '100%',
+                    padding: '10px 16px',
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    color: '#d9534f',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}
+                  onClick={() => {
+                    setOpenKebabMenu(false);
+                    handleRemove();
+                  }}
+                  className="premium-dropdown-item"
+                >
+                  <Trash2 size={15} color="#d9534f" />
+                  Quitar del Torneo
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Tarjeta Desktop adaptada a pantalla sin desborde */}
@@ -4498,9 +4763,108 @@ const TeamDetailEditor = ({
           <ArrowLeft size={20} />
         </button>
         <span style={{ fontWeight: '800', fontSize: '1.05rem', color: '#3f4249' }}>{teamName}</span>
-        <button onClick={handleRemove} style={{ background: 'none', border: 'none', color: '#cc7a5c', padding: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-          <MoreVertical size={20} />
-        </button>
+        <div style={{ position: 'relative' }}>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpenKebabMenu(prev => !prev);
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#3f4249',
+              padding: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '8px'
+            }}
+            title="Opciones del equipo"
+            aria-label="Opciones del equipo"
+          >
+            <MoreVertical size={20} />
+          </button>
+
+          {openKebabMenu && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '44px',
+                right: '0px',
+                zIndex: 200,
+                background: '#ffffff',
+                border: '1px solid #d4d4d8',
+                borderRadius: '12px',
+                boxShadow: '0 10px 25px rgba(25, 20, 15, 0.12)',
+                minWidth: '200px',
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '6px 0',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  width: '100%',
+                  padding: '10px 16px',
+                  fontSize: '0.85rem',
+                  fontWeight: '600',
+                  color: '#3f4249',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  transition: 'background 0.15s ease'
+                }}
+                onClick={() => {
+                  setOpenKebabMenu(false);
+                  if (onOpenReplaceTeam) {
+                    onOpenReplaceTeam(team.id);
+                  }
+                }}
+                className="premium-dropdown-item"
+              >
+                <ArrowLeftRight size={15} color="#cc7a5c" />
+                Reemplazar Equipo
+              </button>
+
+              <div style={{ height: '1px', background: '#e4e4e7', margin: '4px 0' }} />
+
+              <button
+                type="button"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  width: '100%',
+                  padding: '10px 16px',
+                  fontSize: '0.85rem',
+                  fontWeight: '600',
+                  color: '#d9534f',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  transition: 'background 0.15s ease'
+                }}
+                onClick={() => {
+                  setOpenKebabMenu(false);
+                  handleRemove();
+                }}
+                className="premium-dropdown-item"
+              >
+                <Trash2 size={15} color="#d9534f" />
+                Quitar del Torneo
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Contenido scrolleable libre (todo el contenido fluye normalmente) */}

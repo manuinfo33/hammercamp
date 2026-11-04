@@ -14,6 +14,7 @@ import {
   Image as ImageIcon,
   Megaphone,
   Mail,
+  ArrowLeft,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import logo from "@/assets/logo-superliga.png";
@@ -31,7 +32,11 @@ const nav = [
   { label: "Contacto", to: "/contacto", icon: Mail },
 ];
 
-export function Header() {
+export function Header({
+  mobileContext,
+}: {
+  mobileContext?: { title: string; subtitle?: string; backTo?: string };
+} = {}) {
   const [open, setOpen] = useState(false);
   const [mobileCatOpen, setMobileCatOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -88,14 +93,44 @@ export function Header() {
   return (
     <header className="bg-surface text-foreground sticky top-0 md:relative z-50 border-b border-white/[0.08] md:border-b-0">
       {/* Top Bar: Logo + Actions */}
-      <div className="container mx-auto px-4 py-3 md:px-6 md:py-6 flex items-center justify-between gap-4 relative z-50">
+      <div className="container mx-auto px-3.5 py-2.5 md:px-6 md:py-6 flex items-center justify-between gap-2.5 md:gap-4 relative z-50">
+        {mobileContext && (
+          <div className="flex md:hidden items-center gap-2.5 min-w-0 flex-1">
+            <Link
+              to={mobileContext.backTo || "/categorias"}
+              onClick={() => {
+                setOpen(false);
+                setMobileUserMenuOpen(false);
+              }}
+              className="size-9 border border-white/15 bg-white/[0.04] rounded-xl text-neutral-200 hover:text-white flex items-center justify-center shrink-0 transition-colors"
+              aria-label="Volver a Categorías"
+              title="Volver"
+            >
+              <ArrowLeft className="size-4" />
+            </Link>
+            <div className="size-9 rounded-xl bg-primary/15 border border-primary/35 text-primary flex items-center justify-center shrink-0">
+              <Trophy className="size-4" />
+            </div>
+            <div className="flex flex-col min-w-0 flex-1 leading-tight">
+              <span className="text-[14px] font-bold text-white truncate tracking-tight">
+                {mobileContext.title}
+              </span>
+              {mobileContext.subtitle && (
+                <span className="text-[11px] text-neutral-400 truncate mt-0.5">
+                  {mobileContext.subtitle}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         <Link
           to="/"
           onClick={() => {
             setOpen(false);
             setMobileUserMenuOpen(false);
           }}
-          className="flex items-center gap-2.5 md:gap-3 group"
+          className={`${mobileContext ? "hidden md:flex" : "flex"} items-center gap-2.5 md:gap-3 group`}
         >
           <img
             src={logo}
@@ -149,88 +184,89 @@ export function Header() {
         </div>
 
         {/* Mobile Right Actions: User + Hamburger */}
-        <div className="flex items-center gap-2 md:hidden">
-          {user ? (
-            <div className="relative">
+        <div className="flex items-center gap-2 md:hidden shrink-0">
+          {!mobileContext &&
+            (user ? (
+              <div className="relative">
+                <button
+                  className={`size-9 border rounded-xl flex items-center justify-center transition-all ${
+                    mobileUserMenuOpen
+                      ? "border-white/25 bg-white/10 text-white"
+                      : "border-white/10 bg-white/[0.03] text-neutral-300"
+                  }`}
+                  onClick={() => {
+                    setOpen(false);
+                    setMobileUserMenuOpen((v) => !v);
+                  }}
+                  aria-label="Menú de usuario"
+                >
+                  <User className="size-4" />
+                </button>
+                {mobileUserMenuOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setMobileUserMenuOpen(false)}
+                    />
+                    <div className="absolute right-0 top-full mt-2 w-52 bg-[#16171a]/98 backdrop-blur-xl border border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.65)] z-50 text-foreground p-1.5 rounded-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                      <div className="px-3.5 py-2.5 mb-1 border-b border-white/[0.07]">
+                        <p className="text-[10px] uppercase tracking-widest text-neutral-500">
+                          Sesión activa
+                        </p>
+                        <p className="text-xs font-semibold text-white truncate mt-0.5">
+                          Hola, {displayName}
+                        </p>
+                      </div>
+                      <Link
+                        to="/mi-cuenta"
+                        onClick={() => setMobileUserMenuOpen(false)}
+                        className="w-full text-left px-3.5 py-2.5 rounded-lg hover:bg-white/[0.06] text-neutral-300 hover:text-white transition-colors block text-xs font-medium uppercase tracking-[0.14em]"
+                        activeProps={{
+                          className:
+                            "w-full text-left px-3.5 py-2.5 rounded-lg bg-white/[0.08] text-white font-semibold transition-colors block text-xs uppercase tracking-[0.14em]",
+                        }}
+                      >
+                        Mi Cuenta
+                      </Link>
+                      {user.role === "Delegado" && (
+                        <Link
+                          to="/mi-equipo"
+                          onClick={() => setMobileUserMenuOpen(false)}
+                          className="flex items-center justify-between w-full text-left px-3.5 py-2.5 rounded-lg hover:bg-white/[0.06] text-neutral-300 hover:text-white transition-colors text-xs font-medium uppercase tracking-[0.14em]"
+                          activeProps={{
+                            className:
+                              "flex items-center justify-between w-full text-left px-3.5 py-2.5 rounded-lg bg-white/[0.08] text-white font-semibold transition-colors text-xs uppercase tracking-[0.14em]",
+                          }}
+                        >
+                          <span>Mi Equipo</span>
+                          <span className="size-1.5 rounded-full bg-primary" />
+                        </Link>
+                      )}
+                      <button
+                        onClick={() => {
+                          setMobileUserMenuOpen(false);
+                          handleLogout();
+                        }}
+                        className="w-full text-left px-3.5 py-2.5 mt-1 rounded-lg hover:bg-red-500/10 text-red-400 transition-colors block border-t border-white/[0.07] text-xs font-medium uppercase tracking-[0.14em]"
+                      >
+                        Cerrar Sesión
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
               <button
-                className={`size-9 border rounded-xl flex items-center justify-center transition-all ${
-                  mobileUserMenuOpen
-                    ? "border-white/25 bg-white/10 text-white"
-                    : "border-white/10 bg-white/[0.03] text-neutral-300"
-                }`}
+                className="size-9 border border-white/10 bg-white/[0.03] rounded-xl text-neutral-300 hover:text-white flex items-center justify-center transition-colors"
                 onClick={() => {
                   setOpen(false);
-                  setMobileUserMenuOpen((v) => !v);
+                  setIsLoginOpen(true);
                 }}
-                aria-label="Menú de usuario"
+                aria-label="Acceso"
               >
                 <User className="size-4" />
               </button>
-              {mobileUserMenuOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setMobileUserMenuOpen(false)}
-                  />
-                  <div className="absolute right-0 top-full mt-2 w-52 bg-[#16171a]/98 backdrop-blur-xl border border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.65)] z-50 text-foreground p-1.5 rounded-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-                    <div className="px-3.5 py-2.5 mb-1 border-b border-white/[0.07]">
-                      <p className="text-[10px] uppercase tracking-widest text-neutral-500">
-                        Sesión activa
-                      </p>
-                      <p className="text-xs font-semibold text-white truncate mt-0.5">
-                        Hola, {displayName}
-                      </p>
-                    </div>
-                    <Link
-                      to="/mi-cuenta"
-                      onClick={() => setMobileUserMenuOpen(false)}
-                      className="w-full text-left px-3.5 py-2.5 rounded-lg hover:bg-white/[0.06] text-neutral-300 hover:text-white transition-colors block text-xs font-medium uppercase tracking-[0.14em]"
-                      activeProps={{
-                        className:
-                          "w-full text-left px-3.5 py-2.5 rounded-lg bg-white/[0.08] text-white font-semibold transition-colors block text-xs uppercase tracking-[0.14em]",
-                      }}
-                    >
-                      Mi Cuenta
-                    </Link>
-                    {user.role === "Delegado" && (
-                      <Link
-                        to="/mi-equipo"
-                        onClick={() => setMobileUserMenuOpen(false)}
-                        className="flex items-center justify-between w-full text-left px-3.5 py-2.5 rounded-lg hover:bg-white/[0.06] text-neutral-300 hover:text-white transition-colors text-xs font-medium uppercase tracking-[0.14em]"
-                        activeProps={{
-                          className:
-                            "flex items-center justify-between w-full text-left px-3.5 py-2.5 rounded-lg bg-white/[0.08] text-white font-semibold transition-colors text-xs uppercase tracking-[0.14em]",
-                        }}
-                      >
-                        <span>Mi Equipo</span>
-                        <span className="size-1.5 rounded-full bg-primary" />
-                      </Link>
-                    )}
-                    <button
-                      onClick={() => {
-                        setMobileUserMenuOpen(false);
-                        handleLogout();
-                      }}
-                      className="w-full text-left px-3.5 py-2.5 mt-1 rounded-lg hover:bg-red-500/10 text-red-400 transition-colors block border-t border-white/[0.07] text-xs font-medium uppercase tracking-[0.14em]"
-                    >
-                      Cerrar Sesión
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          ) : (
-            <button
-              className="size-9 border border-white/10 bg-white/[0.03] rounded-xl text-neutral-300 hover:text-white flex items-center justify-center transition-colors"
-              onClick={() => {
-                setOpen(false);
-                setIsLoginOpen(true);
-              }}
-              aria-label="Acceso"
-            >
-              <User className="size-4" />
-            </button>
-          )}
+            ))}
 
           <button
             className={`size-9 border rounded-xl flex items-center justify-center transition-all ${

@@ -1244,20 +1244,22 @@ tbody tr:hover td { background: rgba(242, 187, 43, 0.06); }
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 3000;
-  padding: 20px;
+  z-index: 99999;
+  padding: 16px;
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   animation: overlayIn 0.18s ease-out forwards;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
 }
-.modal-backdrop-custom { z-index: 99999; }
 
 .premium-modal-card,
 .modal-card-custom {
   width: 100%;
   max-height: 90vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   background: #fff !important;
   color: var(--text-primary) !important;
   border: 1px solid var(--border-subtle) !important;
@@ -1265,8 +1267,10 @@ tbody tr:hover td { background: rgba(242, 187, 43, 0.06); }
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3) !important;
   animation: modalSlideUp 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
   scrollbar-width: thin;
+  overflow: hidden;
+  box-sizing: border-box;
 }
-.modal-card-custom { max-width: 440px; overflow: hidden; }
+
 .premium-modal-card h3 { color: var(--text-primary) !important; font-family: var(--font-display); font-weight: 800; letter-spacing: -0.01em; }
 .premium-modal-card p,
 .premium-modal-card label { color: var(--text-muted) !important; }
@@ -1275,12 +1279,11 @@ tbody tr:hover td { background: rgba(242, 187, 43, 0.06); }
 .modal-header-custom {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  padding-bottom: 16px;
-  margin-bottom: 20px;
+  align-items: center;
+  padding: 16px 20px;
   border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
 }
-.modal-header-custom { align-items: center; padding: 20px 24px; margin: 0; }
 .modal-header h3 {
   margin: 0;
   font-size: 1.15rem;
@@ -1288,7 +1291,33 @@ tbody tr:hover td { background: rgba(242, 187, 43, 0.06); }
   letter-spacing: 0.01em;
 }
 .modal-header p { margin: 4px 0 0; font-size: 12px; color: var(--text-muted); }
-.modal-body-custom { padding: 22px 24px; color: var(--text-secondary); }
+
+.modal-body-custom {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 16px 20px;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 480px) {
+  .modal-backdrop-custom {
+    padding: 8px;
+  }
+  .modal-card-custom {
+    max-height: 96vh;
+    border-radius: 14px;
+  }
+  .modal-header-custom {
+    padding: 12px 14px;
+  }
+  .modal-body-custom {
+    padding: 12px 14px;
+  }
+}
+
 .modal-footer,
 .modal-footer-custom {
   display: flex;
@@ -1848,7 +1877,9 @@ button.fp-close-btn:hover {
   /* Detalle de torneo: aprovechar todo el ancho y que las tablas no queden diminutas */
   .tournaments-container { margin-left: -6px; margin-right: -6px; }
   .tournaments-container .glass-card { padding: 12px 8px !important; border-radius: 14px !important; gap: 10px !important; }
-  .tournaments-container .glass-card .table-container { border: none; box-shadow: none; border-radius: 0; overflow-x: visible; }
+  .tournaments-container .glass-card .table-container,
+  .tournaments-container .zone-card .table-container,
+  .zone-card .table-container { border: none !important; box-shadow: none !important; border-radius: 0 0 16px 16px !important; overflow-x: auto; }
   .tournaments-container .responsive-table { min-width: 0 !important; width: 100%; table-layout: auto; }
   .tournaments-container .compact-table th { padding: 6px 3px !important; font-size: 10px !important; letter-spacing: 0.04em; width: auto !important; min-width: 0 !important; }
   .tournaments-container .compact-table td { padding: 6px 3px !important; font-size: 12.5px !important; }

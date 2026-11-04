@@ -1228,6 +1228,29 @@ class MatchRoundViewSet(viewsets.ModelViewSet):
                 BlueCard.objects.filter(tournament=tournament).delete()
             recalculate_tournament_standings_and_stats(tournament)
 
+    @action(detail=False, methods=['post'], url_path='reorder')
+    def reorder(self, request):
+        ordered_items = request.data.get('ordered_items')
+        rounds_data = request.data.get('rounds')
+
+        with transaction.atomic():
+            if ordered_items:
+                for item in ordered_items:
+                    round_ids = item.get('round_ids') or item.get('roundIds') or []
+                    order_val = item.get('order', 1)
+                    if round_ids:
+                        MatchRound.objects.filter(id__in=round_ids).update(order=order_val)
+            elif rounds_data:
+                for item in rounds_data:
+                    round_id = item.get('id')
+                    order_val = item.get('order', 1)
+                    if round_id:
+                        MatchRound.objects.filter(id=round_id).update(order=order_val)
+            else:
+                return Response({'error': 'No se enviaron datos de ordenamiento'}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({'success': True, 'message': 'Orden de fechas actualizado exitosamente'})
+
 
 def recalculate_tournament_standings_and_stats(tournament):
     if not tournament:

@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { 
-  ArrowLeft, Check, X, Shield, Star, AlertCircle
+  Check, X, Shield, Star, AlertCircle
 } from 'lucide-react';
 import api from '../../api';
+import { Modal } from '../finanzas/common';
 
 // Selector desplegable compacto para resultados y goles (muestra 0 a 5 goles visibles = 6 items, scroll hasta 99)
 const ScoreDropdownPicker = ({
@@ -85,7 +86,7 @@ const ScoreDropdownPicker = ({
   );
 };
 
-// Switch compacto estilo LbfSwitch
+// Switch compacto
 const CompactToggleSwitch = ({ checked, onChange }) => {
   return (
     <div 
@@ -94,10 +95,10 @@ const CompactToggleSwitch = ({ checked, onChange }) => {
         onChange();
       }}
       style={{
-        width: '38px',
-        height: '22px',
-        borderRadius: '11px',
-        background: checked ? '#4cd964' : '#e5e5ea',
+        width: '36px',
+        height: '20px',
+        borderRadius: '10px',
+        background: checked ? '#141413' : '#e4e4e7',
         position: 'relative',
         cursor: 'pointer',
         transition: 'background 0.2s ease',
@@ -108,15 +109,15 @@ const CompactToggleSwitch = ({ checked, onChange }) => {
     >
       <div 
         style={{
-          width: '18px',
-          height: '18px',
+          width: '16px',
+          height: '16px',
           borderRadius: '50%',
           background: '#ffffff',
           position: 'absolute',
           top: '2px',
           left: checked ? '18px' : '2px',
           transition: 'left 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.25)'
+          boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
         }}
       />
     </div>
@@ -132,10 +133,10 @@ const MainToggleSwitch = ({ checked, onChange }) => {
         onChange();
       }}
       style={{
-        width: '44px',
+        width: '42px',
         height: '24px',
         borderRadius: '12px',
-        background: checked ? '#4cd964' : '#e5e5ea',
+        background: checked ? '#141413' : '#e4e4e7',
         position: 'relative',
         cursor: 'pointer',
         transition: 'background 0.2s ease',
@@ -152,9 +153,9 @@ const MainToggleSwitch = ({ checked, onChange }) => {
           background: '#ffffff',
           position: 'absolute',
           top: '2px',
-          left: checked ? '22px' : '2px',
+          left: checked ? '20px' : '2px',
           transition: 'left 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.25)'
+          boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
         }}
       />
     </div>
@@ -169,6 +170,14 @@ const MatchResultModal = ({
   onSuccess,
   isMobile
 }) => {
+  const [internalMobile, setInternalMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768);
+  useEffect(() => {
+    const handleResize = () => setInternalMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  const mobile = isMobile ?? internalMobile;
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -539,40 +548,39 @@ const MatchResultModal = ({
     }
   };
 
-  // Render de la tabla de un equipo con Grid uniforme y espaciado claro
+  // Render de la tabla de un equipo con Grid uniforme
   const renderTeamTable = (teamName, roster, teamType) => {
-    const colGap = isMobile ? '10px' : '14px';
+    const colGap = mobile ? '8px' : '12px';
 
     return (
       <div style={{
         background: '#ffffff',
-        borderRadius: '14px',
-        border: '1px solid #d4d4d8',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
-        position: 'relative'
+        borderRadius: '12px',
+        border: '1px solid #e4e4e7',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+        overflow: 'hidden'
       }}>
-        {/* Cabecera con Nombre del Equipo (Gris más oscuro que #EAE4D8) */}
+        {/* Cabecera con Nombre del Equipo (Negro con texto blanco, coherente con Fixture y Zonas) */}
         <div style={{
-          background: '#d4d4d8',
-          color: '#1c1d21',
-          padding: '11px 16px',
+          background: '#18181b',
+          color: '#ffffff',
+          padding: '10px 14px',
           textAlign: 'center',
           fontWeight: '800',
-          fontSize: '0.92rem',
-          letterSpacing: '0.04em',
+          fontSize: '12.5px',
+          letterSpacing: '0.06em',
           textTransform: 'uppercase',
-          borderBottom: '1px solid #cbbeab',
-          borderRadius: '13px 13px 0 0'
+          borderBottom: '1px solid #27272a'
         }}>
           {teamName}
         </div>
 
-        {/* Subcabecera con columnas exactamente centradas (#EAE4D8) */}
+        {/* Subcabecera con columnas */}
         <div style={{
-          background: '#EAE4D8',
-          color: '#1c1d21',
-          borderBottom: '1px solid #dfd8cc',
-          padding: '8px 14px',
+          background: '#f8f9fa',
+          color: '#71717a',
+          borderBottom: '1px solid #e4e4e7',
+          padding: '8px 12px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -580,27 +588,27 @@ const MatchResultModal = ({
           fontWeight: '800',
           letterSpacing: '0.05em'
         }}>
-          <span style={{ flex: 1, textTransform: 'uppercase', color: '#1c1d21' }}>JUGADOR/A</span>
+          <span style={{ flex: 1, textTransform: 'uppercase' }}>JUGADOR/A</span>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '28px 28px 28px 28px 40px',
+            gridTemplateColumns: '28px 28px 28px 28px 36px',
             gap: colGap,
             alignItems: 'center',
             justifyItems: 'center',
             textAlign: 'center'
           }}>
-            <span style={{ width: '28px', textAlign: 'center', color: '#1c1d21' }}>G</span>
-            <span style={{ width: '28px', textAlign: 'center', color: '#ca8a04' }}>A</span>
-            <span style={{ width: '28px', textAlign: 'center', color: '#dc2626' }}>R</span>
-            <span style={{ width: '28px', textAlign: 'center', color: '#1c1d21' }}>F</span>
-            <span style={{ width: '40px', textAlign: 'center', color: '#1c1d21' }}>J</span>
+            <span style={{ width: '28px', textAlign: 'center', color: '#18181b' }} title="Goles">G</span>
+            <span style={{ width: '28px', textAlign: 'center', color: '#ca8a04' }} title="Tarjeta Amarilla">A</span>
+            <span style={{ width: '28px', textAlign: 'center', color: '#dc2626' }} title="Tarjeta Roja">R</span>
+            <span style={{ width: '28px', textAlign: 'center', color: '#18181b' }} title="Figura del partido">F</span>
+            <span style={{ width: '36px', textAlign: 'center', color: '#18181b' }} title="Jugó">J</span>
           </div>
         </div>
 
         {/* Filas de Jugadores */}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {roster.length === 0 ? (
-            <div style={{ padding: '24px 16px', textAlign: 'center', color: '#6f737b', fontSize: '13px' }}>
+            <div style={{ padding: '24px 16px', textAlign: 'center', color: '#71717a', fontSize: '13px' }}>
               No hay jugadores en la lista de buena fe de este equipo.
             </div>
           ) : (
@@ -615,28 +623,28 @@ const MatchResultModal = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '8px 14px',
-                    borderBottom: idx === roster.length - 1 ? 'none' : '1px solid #f0eae1',
+                    padding: '8px 12px',
+                    borderBottom: idx === roster.length - 1 ? 'none' : '1px solid #f0f0f2',
                     background: idx % 2 === 0 ? '#fafafb' : '#ffffff',
                     minHeight: '44px'
                   }}
                 >
-                  {/* Nombre y Apellido: juntos por defecto, sólo pasa a 2da línea si es extenso */}
+                  {/* Nombre y Apellido */}
                   <div style={{
                     flex: 1,
                     minWidth: 0,
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'center',
-                    paddingRight: '12px',
+                    paddingRight: '10px',
                     lineHeight: '1.25'
                   }}>
                     {isExtensive ? (
                       <>
                         <span style={{
-                          fontSize: '13px',
-                          fontWeight: '500',
-                          color: '#1c1d21',
+                          fontSize: '12.5px',
+                          fontWeight: '600',
+                          color: '#18181b',
                           wordBreak: 'break-word',
                           whiteSpace: 'normal'
                         }}>
@@ -644,9 +652,9 @@ const MatchResultModal = ({
                         </span>
                         {player.firstName && (
                           <span style={{
-                            fontSize: '12px',
+                            fontSize: '11.5px',
                             fontWeight: '400',
-                            color: '#6b7280',
+                            color: '#71717a',
                             wordBreak: 'break-word',
                             whiteSpace: 'normal',
                             marginTop: '1px'
@@ -657,9 +665,9 @@ const MatchResultModal = ({
                       </>
                     ) : (
                       <span style={{
-                        fontSize: '13px',
-                        fontWeight: '500',
-                        color: '#1c1d21',
+                        fontSize: '12.5px',
+                        fontWeight: '600',
+                        color: '#18181b',
                         wordBreak: 'break-word',
                         whiteSpace: 'normal'
                       }}>
@@ -668,15 +676,15 @@ const MatchResultModal = ({
                     )}
                   </div>
 
-                  {/* Controles en Grid idéntico al encabezado con celdas cuadradas y círculo */}
+                  {/* Controles en Grid */}
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: '28px 28px 28px 28px 40px',
+                    gridTemplateColumns: '28px 28px 28px 28px 36px',
                     gap: colGap,
                     alignItems: 'center',
                     justifyItems: 'center'
                   }}>
-                    {/* G: Goles (Cuadrado 28x28 con número centrado y desplegable de 0 a 5 scrollable) */}
+                    {/* G: Goles */}
                     <div 
                       style={{
                         width: '28px',
@@ -692,10 +700,10 @@ const MatchResultModal = ({
                       <div style={{
                         width: '28px',
                         height: '28px',
-                        borderRadius: '5px',
+                        borderRadius: '6px',
                         border: '1.5px solid #d4d4d8',
                         background: '#ffffff',
-                        color: player.goals > 0 ? '#1c1d21' : '#4b5563',
+                        color: player.goals > 0 ? '#18181b' : '#71717a',
                         fontWeight: '700',
                         fontSize: '13px',
                         display: 'flex',
@@ -715,7 +723,7 @@ const MatchResultModal = ({
                       </div>
                     </div>
 
-                    {/* A: Tarjeta Amarilla (Cuadrado 28x28) */}
+                    {/* A: Tarjeta Amarilla */}
                     <div
                       role="button"
                       tabIndex={0}
@@ -723,7 +731,7 @@ const MatchResultModal = ({
                       style={{
                         width: '28px',
                         height: '28px',
-                        borderRadius: '5px',
+                        borderRadius: '6px',
                         border: player.yellow_card ? '1.5px solid #ca8a04' : '1.5px solid #d4d4d8',
                         background: player.yellow_card ? '#facc15' : '#ffffff',
                         cursor: 'pointer',
@@ -737,10 +745,10 @@ const MatchResultModal = ({
                       }}
                       title={player.yellow_card ? 'Quitar tarjeta amarilla' : 'Asignar tarjeta amarilla'}
                     >
-                      {player.yellow_card ? <Check size={16} strokeWidth={3} color="#000000" /> : null}
+                      {player.yellow_card ? <Check size={15} strokeWidth={3} color="#000000" /> : null}
                     </div>
 
-                    {/* R: Tarjeta Roja (Cuadrado 28x28) */}
+                    {/* R: Tarjeta Roja */}
                     <div
                       role="button"
                       tabIndex={0}
@@ -748,7 +756,7 @@ const MatchResultModal = ({
                       style={{
                         width: '28px',
                         height: '28px',
-                        borderRadius: '5px',
+                        borderRadius: '6px',
                         border: player.red_card ? '1.5px solid #dc2626' : '1.5px solid #d4d4d8',
                         background: player.red_card ? '#ef4444' : '#ffffff',
                         color: '#ffffff',
@@ -774,7 +782,7 @@ const MatchResultModal = ({
                       ) : null}
                     </div>
 
-                    {/* F: Figura del Partido (Círculo 28x28) */}
+                    {/* F: Figura del Partido */}
                     <div
                       role="button"
                       tabIndex={0}
@@ -783,8 +791,8 @@ const MatchResultModal = ({
                         width: '28px',
                         height: '28px',
                         borderRadius: '50%',
-                        border: player.is_figura ? '2px solid #191919' : '1.5px solid #d4d4d8',
-                        background: player.is_figura ? '#1c1d21' : '#ffffff',
+                        border: player.is_figura ? '2px solid #141413' : '1.5px solid #d4d4d8',
+                        background: player.is_figura ? '#141413' : '#ffffff',
                         color: '#ffffff',
                         cursor: 'pointer',
                         display: 'flex',
@@ -792,7 +800,7 @@ const MatchResultModal = ({
                         justifyContent: 'center',
                         boxSizing: 'border-box',
                         flexShrink: 0,
-                        boxShadow: player.is_figura ? '0 2px 5px rgba(0,0,0,0.3)' : 'none',
+                        boxShadow: player.is_figura ? '0 2px 5px rgba(0,0,0,0.25)' : 'none',
                         transition: 'all 0.15s ease'
                       }}
                       title={player.is_figura ? 'Figura del partido (Clic para quitar)' : 'Marcar como figura'}
@@ -802,7 +810,7 @@ const MatchResultModal = ({
                       ) : null}
                     </div>
 
-                    {/* J: Jugó (switch verde/gris) */}
+                    {/* J: Jugó */}
                     <CompactToggleSwitch 
                       checked={player.played}
                       onChange={() => handleTogglePlayed(teamType, idx)}
@@ -819,7 +827,7 @@ const MatchResultModal = ({
 
   // Contenido de las tarjetas y formulario
   const content = (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', paddingBottom: '24px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       
       {/* Alerta de Error si ocurre */}
       {errorMessage && (
@@ -827,14 +835,14 @@ const MatchResultModal = ({
           background: '#fef2f2',
           border: '1px solid #fecaca',
           color: '#b91c1c',
-          padding: '12px 16px',
-          borderRadius: '12px',
+          padding: '10px 14px',
+          borderRadius: '10px',
           fontSize: '13px',
           display: 'flex',
           alignItems: 'center',
           gap: '8px'
         }}>
-          <AlertCircle size={18} />
+          <AlertCircle size={16} style={{ flexShrink: 0 }} />
           <span>{errorMessage}</span>
         </div>
       )}
@@ -843,33 +851,32 @@ const MatchResultModal = ({
       <div style={{
         background: '#ffffff',
         borderRadius: '14px',
-        border: '1px solid #d4d4d8',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
-        position: 'relative'
+        border: '1px solid #e4e4e7',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+        overflow: 'hidden'
       }}>
-        {/* Barra superior con la Fecha (Gris más oscuro que #EAE4D8) */}
+        {/* Barra superior con la Fecha (Negro con texto blanco idéntico a Fixture) */}
         <div style={{
-          background: '#d4d4d8',
-          color: '#1c1d21',
+          background: '#18181b',
+          color: '#ffffff',
           padding: '10px 16px',
           textAlign: 'center',
           fontWeight: '800',
-          fontSize: '0.9rem',
-          letterSpacing: '0.06em',
+          fontSize: '12px',
+          letterSpacing: '1.5px',
           textTransform: 'uppercase',
-          borderBottom: '1px solid #cbbeab',
-          borderRadius: '13px 13px 0 0'
+          borderBottom: '1px solid #27272a'
         }}>
           {roundName || match?.match_round_name || 'PARTIDO'}
         </div>
 
-        {/* Escudos, Nombres y Marcador no cortado */}
+        {/* Escudos, Nombres y Marcador */}
         <div style={{
-          padding: isMobile ? '20px 12px 16px' : '24px 20px',
+          padding: mobile ? '16px 12px 14px' : '20px 20px 18px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '10px'
+          gap: '12px'
         }}>
           {/* Equipo Local */}
           <div style={{
@@ -878,14 +885,15 @@ const MatchResultModal = ({
             flexDirection: 'column',
             alignItems: 'center',
             textAlign: 'center',
-            gap: '6px'
+            gap: '8px',
+            minWidth: 0
           }}>
             <div style={{
-              width: isMobile ? '52px' : '64px',
-              height: isMobile ? '52px' : '64px',
-              borderRadius: '8px',
+              width: mobile ? '48px' : '58px',
+              height: mobile ? '48px' : '58px',
+              borderRadius: '10px',
               overflow: 'hidden',
-              background: '#f4f4f6',
+              background: '#f8f8fa',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -894,46 +902,48 @@ const MatchResultModal = ({
               {match.local_team_logo ? (
                 <img src={match.local_team_logo} alt={match.local_team_name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               ) : (
-                <Shield size={28} color="#cc7a5c" />
+                <Shield size={24} color="#71717a" />
               )}
             </div>
             <span style={{
               fontWeight: '700',
-              fontSize: isMobile ? '0.82rem' : '0.92rem',
-              color: '#1c1d21',
-              lineHeight: '1.2'
+              fontSize: mobile ? '12px' : '13px',
+              color: '#18181b',
+              lineHeight: '1.25',
+              wordBreak: 'break-word'
             }}>
               {match.local_team_name}
             </span>
           </div>
 
-          {/* Marcador al centro con números limpios sin cortes */}
+          {/* Marcador al centro */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: isMobile ? '10px' : '16px'
+            gap: mobile ? '8px' : '14px',
+            flexShrink: 0
           }}>
             {/* Goles Local */}
             <div style={{
               position: 'relative',
-              width: isMobile ? '48px' : '56px',
-              height: isMobile ? '48px' : '54px',
+              width: mobile ? '44px' : '52px',
+              height: mobile ? '44px' : '50px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0
             }}>
-              {isMobile ? (
+              {mobile ? (
                 <div style={{
                   width: '100%',
                   height: '100%',
-                  fontSize: '22px',
+                  fontSize: '20px',
                   fontWeight: '800',
                   textAlign: 'center',
                   border: '1.5px solid #d4d4d8',
                   borderRadius: '8px',
                   background: '#ffffff',
-                  color: '#1c1d21',
+                  color: '#18181b',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -962,13 +972,13 @@ const MatchResultModal = ({
                   style={{
                     width: '100%',
                     height: '100%',
-                    fontSize: '26px',
+                    fontSize: '22px',
                     fontWeight: '800',
                     textAlign: 'center',
                     border: '1.5px solid #d4d4d8',
                     borderRadius: '8px',
                     background: '#ffffff',
-                    color: '#1c1d21',
+                    color: '#18181b',
                     outline: 'none',
                     lineHeight: 'normal',
                     padding: 0,
@@ -979,29 +989,29 @@ const MatchResultModal = ({
               )}
             </div>
 
-            <span style={{ fontSize: '18px', fontWeight: '800', color: '#6f737b' }}>-</span>
+            <span style={{ fontSize: '18px', fontWeight: '800', color: '#a1a1aa' }}>-</span>
 
             {/* Goles Visitante */}
             <div style={{
               position: 'relative',
-              width: isMobile ? '48px' : '56px',
-              height: isMobile ? '48px' : '54px',
+              width: mobile ? '44px' : '52px',
+              height: mobile ? '44px' : '50px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0
             }}>
-              {isMobile ? (
+              {mobile ? (
                 <div style={{
                   width: '100%',
                   height: '100%',
-                  fontSize: '22px',
+                  fontSize: '20px',
                   fontWeight: '800',
                   textAlign: 'center',
                   border: '1.5px solid #d4d4d8',
                   borderRadius: '8px',
                   background: '#ffffff',
-                  color: '#1c1d21',
+                  color: '#18181b',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1030,13 +1040,13 @@ const MatchResultModal = ({
                   style={{
                     width: '100%',
                     height: '100%',
-                    fontSize: '26px',
+                    fontSize: '22px',
                     fontWeight: '800',
                     textAlign: 'center',
                     border: '1.5px solid #d4d4d8',
                     borderRadius: '8px',
                     background: '#ffffff',
-                    color: '#1c1d21',
+                    color: '#18181b',
                     outline: 'none',
                     lineHeight: 'normal',
                     padding: 0,
@@ -1055,14 +1065,15 @@ const MatchResultModal = ({
             flexDirection: 'column',
             alignItems: 'center',
             textAlign: 'center',
-            gap: '6px'
+            gap: '8px',
+            minWidth: 0
           }}>
             <div style={{
-              width: isMobile ? '52px' : '64px',
-              height: isMobile ? '52px' : '64px',
-              borderRadius: '8px',
+              width: mobile ? '48px' : '58px',
+              height: mobile ? '48px' : '58px',
+              borderRadius: '10px',
               overflow: 'hidden',
-              background: '#f4f4f6',
+              background: '#f8f8fa',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -1071,14 +1082,15 @@ const MatchResultModal = ({
               {match.visitor_team_logo ? (
                 <img src={match.visitor_team_logo} alt={match.visitor_team_name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               ) : (
-                <Shield size={28} color="#cc7a5c" />
+                <Shield size={24} color="#71717a" />
               )}
             </div>
             <span style={{
               fontWeight: '700',
-              fontSize: isMobile ? '0.82rem' : '0.92rem',
-              color: '#1c1d21',
-              lineHeight: '1.2'
+              fontSize: mobile ? '12px' : '13px',
+              color: '#18181b',
+              lineHeight: '1.25',
+              wordBreak: 'break-word'
             }}>
               {match.visitor_team_name}
             </span>
@@ -1087,24 +1099,24 @@ const MatchResultModal = ({
 
         {/* Switch de Penales */}
         <div style={{
-          borderTop: '1px solid #f0eae1',
-          padding: '12px 16px',
+          borderTop: '1px solid #f0f0f2',
+          padding: '10px 16px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: '10px',
+          gap: '8px',
           background: '#fafafb'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '13px', fontWeight: '600', color: '#1c1d21' }}>Penales</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '12px', fontWeight: '600', color: '#52514e' }}>Definición por Penales</span>
             <MainToggleSwitch 
               checked={penalties}
               onChange={() => setPenalties(!penalties)}
             />
           </div>
 
-          {/* Si se selecciona Penales: dos pequeños resultados levemente por debajo */}
+          {/* Si se selecciona Penales */}
           {penalties && (
             <div style={{
               display: 'flex',
@@ -1123,17 +1135,17 @@ const MatchResultModal = ({
                 justifyContent: 'center',
                 flexShrink: 0
               }}>
-                {isMobile ? (
+                {mobile ? (
                   <div style={{
                     width: '100%',
                     height: '100%',
-                    fontSize: '16px',
+                    fontSize: '15px',
                     fontWeight: '800',
                     textAlign: 'center',
                     border: '1.5px solid #d4d4d8',
                     borderRadius: '6px',
                     background: '#ffffff',
-                    color: '#1c1d21',
+                    color: '#18181b',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1162,13 +1174,13 @@ const MatchResultModal = ({
                     style={{
                       width: '100%',
                       height: '100%',
-                      fontSize: '16px',
+                      fontSize: '15px',
                       fontWeight: '800',
                       textAlign: 'center',
                       border: '1.5px solid #d4d4d8',
                       borderRadius: '6px',
                       background: '#ffffff',
-                      color: '#1c1d21',
+                      color: '#18181b',
                       outline: 'none',
                       lineHeight: 'normal',
                       padding: 0,
@@ -1180,7 +1192,7 @@ const MatchResultModal = ({
                 )}
               </div>
 
-              <span style={{ fontSize: '15px', fontWeight: '800', color: '#6f737b' }}>-</span>
+              <span style={{ fontSize: '14px', fontWeight: '800', color: '#a1a1aa' }}>-</span>
 
               {/* Penales Visitante */}
               <div style={{
@@ -1192,17 +1204,17 @@ const MatchResultModal = ({
                 justifyContent: 'center',
                 flexShrink: 0
               }}>
-                {isMobile ? (
+                {mobile ? (
                   <div style={{
                     width: '100%',
                     height: '100%',
-                    fontSize: '16px',
+                    fontSize: '15px',
                     fontWeight: '800',
                     textAlign: 'center',
                     border: '1.5px solid #d4d4d8',
                     borderRadius: '6px',
                     background: '#ffffff',
-                    color: '#1c1d21',
+                    color: '#18181b',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1231,13 +1243,13 @@ const MatchResultModal = ({
                     style={{
                       width: '100%',
                       height: '100%',
-                      fontSize: '16px',
+                      fontSize: '15px',
                       fontWeight: '800',
                       textAlign: 'center',
                       border: '1.5px solid #d4d4d8',
                       borderRadius: '6px',
                       background: '#ffffff',
-                      color: '#1c1d21',
+                      color: '#18181b',
                       outline: 'none',
                       lineHeight: 'normal',
                       padding: 0,
@@ -1255,16 +1267,15 @@ const MatchResultModal = ({
 
       {/* 2. ESTADO DEL PARTIDO */}
       <div style={{
-        background: '#ffffff',
-        borderRadius: '12px',
-        padding: '12px 16px',
-        border: '1px solid #d4d4d8',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+        background: '#faf9f6',
+        borderRadius: '10px',
+        padding: '12px 14px',
+        border: '1px solid #e6e4dd',
         display: 'flex',
         flexDirection: 'column',
-        gap: '4px'
+        gap: '6px'
       }}>
-        <label style={{ fontSize: '11px', fontWeight: '700', color: '#6f737b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+        <label style={{ fontSize: '11px', fontWeight: 700, color: '#52514e', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
           Estado del partido
         </label>
         <select
@@ -1272,22 +1283,23 @@ const MatchResultModal = ({
           onChange={(e) => setMatchStatus(e.target.value)}
           style={{
             width: '100%',
-            height: '36px',
-            border: 'none',
-            borderBottom: '2px solid #191919',
-            background: 'transparent',
-            color: '#1c1d21',
-            fontWeight: '500',
-            fontSize: '14px',
+            height: '38px',
+            border: '1px solid #d4d3ce',
+            borderRadius: '8px',
+            background: '#ffffff',
+            color: '#18181b',
+            fontWeight: '600',
+            fontSize: '13.5px',
             outline: 'none',
             cursor: 'pointer',
-            padding: '2px 0'
+            padding: '0 10px',
+            boxSizing: 'border-box'
           }}
         >
-          <option value="FINALIZADO" style={{ fontWeight: '400' }}>FINALIZADO</option>
-          <option value="PENDIENTE" style={{ fontWeight: '400' }}>PENDIENTE</option>
-          <option value="POSTERGADO" style={{ fontWeight: '400' }}>POSTERGADO</option>
-          <option value="SUSPENDIDO" style={{ fontWeight: '400' }}>SUSPENDIDO</option>
+          <option value="FINALIZADO">FINALIZADO</option>
+          <option value="PENDIENTE">PENDIENTE</option>
+          <option value="POSTERGADO">POSTERGADO</option>
+          <option value="SUSPENDIDO">SUSPENDIDO</option>
         </select>
       </div>
 
@@ -1299,33 +1311,29 @@ const MatchResultModal = ({
 
       {/* 5. NO SE JUGO EL PARTIDO. LOS PUNTOS SON PARA: */}
       <div style={{
-        background: '#ffffff',
-        borderRadius: '14px',
+        background: '#faf9f6',
+        borderRadius: '12px',
         overflow: 'hidden',
-        border: '1px solid #d4d4d8',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.04)'
+        border: '1px solid #e6e4dd'
       }}>
         <div style={{
-          background: '#d4d4d8',
-          color: '#1c1d21',
-          padding: '11px 16px',
-          textAlign: 'center',
-          fontWeight: '800',
-          fontSize: '0.82rem',
-          letterSpacing: '0.04em',
+          padding: '10px 14px',
+          fontWeight: '700',
+          fontSize: '11px',
+          letterSpacing: '0.4px',
           textTransform: 'uppercase',
-          borderBottom: '1px solid #cbbeab'
+          color: '#52514e',
+          borderBottom: '1px solid #e6e4dd',
+          background: '#f5f4ef'
         }}>
-          NO SE JUGO EL PARTIDO. LOS PUNTOS SON PARA:
+          No se jugó el partido. Los puntos son para:
         </div>
 
         <div style={{
-          padding: '16px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: isMobile ? '24px' : '40px',
-          flexWrap: 'wrap'
+          padding: '12px 14px',
+          display: 'grid',
+          gridTemplateColumns: mobile ? '1fr' : '1fr 1fr',
+          gap: '10px'
         }}>
           {/* Opción Local */}
           <div 
@@ -1337,28 +1345,33 @@ const MatchResultModal = ({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '9px',
+              gap: '8px',
+              padding: '10px 12px',
+              borderRadius: '8px',
+              background: pointsAwardedTo === match.local_team ? '#ffffff' : 'transparent',
+              border: pointsAwardedTo === match.local_team ? '1.5px solid #141413' : '1px solid #d4d3ce',
               cursor: 'pointer',
-              userSelect: 'none'
+              userSelect: 'none',
+              transition: 'all 0.15s ease'
             }}
           >
             <div style={{
-              width: '28px',
-              height: '28px',
+              width: '20px',
+              height: '20px',
               borderRadius: '5px',
-              border: '1.5px solid #d4d4d8',
-              background: '#ffffff',
+              border: pointsAwardedTo === match.local_team ? '1.5px solid #141413' : '1.5px solid #a1a1aa',
+              background: pointsAwardedTo === match.local_team ? '#141413' : '#ffffff',
+              color: '#ffffff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxSizing: 'border-box',
               flexShrink: 0
             }}>
               {pointsAwardedTo === match.local_team && (
-                <Check size={16} strokeWidth={3} color="#000000" />
+                <Check size={13} strokeWidth={3} />
               )}
             </div>
-            <span style={{ fontSize: '13px', fontWeight: '700', color: '#1c1d21' }}>
+            <span style={{ fontSize: '12.5px', fontWeight: '600', color: '#18181b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {match.local_team_name}
             </span>
           </div>
@@ -1373,28 +1386,33 @@ const MatchResultModal = ({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '9px',
+              gap: '8px',
+              padding: '10px 12px',
+              borderRadius: '8px',
+              background: pointsAwardedTo === match.visitor_team ? '#ffffff' : 'transparent',
+              border: pointsAwardedTo === match.visitor_team ? '1.5px solid #141413' : '1px solid #d4d3ce',
               cursor: 'pointer',
-              userSelect: 'none'
+              userSelect: 'none',
+              transition: 'all 0.15s ease'
             }}
           >
             <div style={{
-              width: '28px',
-              height: '28px',
+              width: '20px',
+              height: '20px',
               borderRadius: '5px',
-              border: '1.5px solid #d4d4d8',
-              background: '#ffffff',
+              border: pointsAwardedTo === match.visitor_team ? '1.5px solid #141413' : '1.5px solid #a1a1aa',
+              background: pointsAwardedTo === match.visitor_team ? '#141413' : '#ffffff',
+              color: '#ffffff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxSizing: 'border-box',
               flexShrink: 0
             }}>
               {pointsAwardedTo === match.visitor_team && (
-                <Check size={16} strokeWidth={3} color="#000000" />
+                <Check size={13} strokeWidth={3} />
               )}
             </div>
-            <span style={{ fontSize: '13px', fontWeight: '700', color: '#1c1d21' }}>
+            <span style={{ fontSize: '12.5px', fontWeight: '600', color: '#18181b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {match.visitor_team_name}
             </span>
           </div>
@@ -1402,179 +1420,112 @@ const MatchResultModal = ({
       </div>
 
       {/* 6. BOTONES INFERIORES: GUARDAR Y BORRAR RESULTADO */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
-        <button
-          type="button"
-          onClick={handleSaveResult}
-          disabled={saving}
-          style={{
-            width: '100%',
-            height: '44px',
-            background: '#4cd964',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '22px',
-            fontSize: '14px',
-            fontWeight: '800',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 6px rgba(76,217,100,0.3)',
-            transition: 'background 0.15s ease'
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = '#3fc456'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = '#4cd964'; }}
-        >
-          {saving ? "GUARDANDO..." : "GUARDAR"}
-        </button>
-
+      <div style={{
+        display: 'flex',
+        flexDirection: mobile ? 'column-reverse' : 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '10px',
+        paddingTop: '8px',
+        borderTop: '1px solid #f0f0f2',
+        marginTop: '4px'
+      }}>
+        {/* Borrar Resultado */}
         <button
           type="button"
           onClick={() => setShowConfirmDelete(true)}
           disabled={saving}
           style={{
-            width: '100%',
-            height: '44px',
-            background: '#ff3b30',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '22px',
-            fontSize: '14px',
-            fontWeight: '800',
+            width: mobile ? '100%' : 'auto',
+            height: '38px',
+            padding: '0 14px',
+            background: '#fef2f2',
+            color: '#dc2626',
+            border: '1px solid #fecaca',
+            borderRadius: '8px',
+            fontSize: '12.5px',
+            fontWeight: '600',
             cursor: 'pointer',
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 6px rgba(255,59,48,0.3)',
-            transition: 'background 0.15s ease'
+            transition: 'all 0.15s ease'
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = '#e0352b'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = '#ff3b30'; }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = '#fee2e2'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = '#fef2f2'; }}
         >
-          BORRAR RESULTADO
+          Borrar Resultado
         </button>
-      </div>
 
-    </div>
-  );
-
-  // MODAL / VISTA según plataforma (Móvil vs PC Escritorio)
-  const modalDOM = isMobile ? (
-    /* VISTA MÓVIL: Pantalla completa idéntica a modificar equipo (Foto 2), cubriendo el menú superior */
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      zIndex: 99999,
-      background: '#fafafb',
-      overflowY: 'auto',
-      display: 'flex',
-      flexDirection: 'column'
-    }} className="anthropic-theme animate-fade-in">
-      
-        {/* Cabecera Móvil idéntica a TeamDetailEditor (Foto 2) */}
         <div style={{
-          height: '56px',
-          background: '#fafafb',
-          borderBottom: '1px solid #e4e4e7',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 16px',
-          color: '#3f4249',
-          position: 'sticky',
-          top: 0,
-          zIndex: 100
+          gap: '10px',
+          width: mobile ? '100%' : 'auto',
+          justifyContent: 'flex-end'
         }}>
           <button
             type="button"
             onClick={onClose}
+            disabled={saving}
             style={{
-              background: 'none',
-              border: 'none',
-              color: '#cc7a5c',
-              padding: '8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
+              flex: mobile ? 1 : 'none',
+              height: '38px',
+              padding: '0 16px',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: 500,
+              background: '#ffffff',
+              color: '#18181b',
+              border: '1px solid #d4d3ce',
+              cursor: 'pointer'
             }}
           >
-            <ArrowLeft size={20} />
+            Cancelar
           </button>
 
-          <span style={{ fontWeight: '800', fontSize: '1.05rem', color: '#3f4249' }}>
-            Cargar Partido
-          </span>
-
-          <div style={{ width: '36px' }} />
-        </div>
-
-        <div style={{ padding: '16px', flex: 1 }}>
-          {loading ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#6f737b' }}>
-              Cargando datos del partido...
-            </div>
-          ) : content}
-        </div>
-      </div>
-    ) : (
-      /* VISTA ESCRITORIO (PC): Mismo diseño y posición de ventana que Editar Partido */
-      <div 
-        className="premium-modal-overlay anthropic-theme" 
-        style={{ zIndex: 99999 }}
-      >
-        <div 
-          className="premium-modal-card" 
-          style={{ 
-            maxWidth: '580px', 
-            maxHeight: '90vh',
-            padding: '24px 28px',
-            display: 'flex',
-            flexDirection: 'column'
-          }}
-        >
-          {/* Cabecera idéntica a Editar Partido */}
-          <div className="modal-header" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{
-                width: '38px', height: '38px', borderRadius: '10px',
-                background: 'rgba(204, 122, 92, 0.12)',
-                border: '1px solid rgba(204, 122, 92, 0.25)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
-              }}>
-                <Check size={18} color="#cc7a5c" />
-              </div>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '800', color: '#1c1d21', lineHeight: '1' }}>
-                  Cargar Partido
-                </h3>
-              </div>
-            </div>
-            <button className="modal-close-btn" onClick={onClose}>
-              <X size={14} />
-            </button>
-          </div>
-
-
-        {/* Cuerpo scrolleable */}
-        <div style={{ overflowY: 'auto', paddingRight: '4px', flex: 1 }}>
-          {loading ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#6f737b' }}>
-              Cargando datos del partido...
-            </div>
-          ) : content}
+          <button
+            type="button"
+            onClick={handleSaveResult}
+            disabled={saving}
+            style={{
+              flex: mobile ? 1 : 'none',
+              height: '38px',
+              padding: '0 18px',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: 600,
+              background: '#141413',
+              color: '#ffffff',
+              border: '1px solid #141413',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px'
+            }}
+          >
+            <Check size={14} />
+            {saving ? "Guardando..." : "Guardar Partido"}
+          </button>
         </div>
       </div>
+
     </div>
   );
 
   return (
     <>
-      {createPortal(modalDOM, document.body)}
+      <Modal
+        title="Cargar Partido"
+        onClose={onClose}
+        width={620}
+      >
+        {loading ? (
+          <div style={{ padding: '40px', textAlign: 'center', color: '#71717a', fontSize: '13.5px' }}>
+            Cargando datos del partido...
+          </div>
+        ) : content}
+      </Modal>
 
       {/* =========================================================
           MODAL DE 2 PASOS PARA TARJETA ROJA (Portal a document.body)
@@ -1614,20 +1565,20 @@ const MatchResultModal = ({
                 background: '#ef4444',
                 boxShadow: '0 2px 6px rgba(239, 68, 68, 0.4)'
               }} />
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#1c1d21' }}>
+              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '800', color: '#18181b' }}>
                 Tarjeta Roja
               </h3>
             </div>
 
-            <div style={{ fontSize: '13px', fontWeight: '600', color: '#cc7a5c' }}>
-              Jugador/a: {redCardModal.playerName}
+            <div style={{ fontSize: '13px', fontWeight: '600', color: '#52514e' }}>
+              Jugador/a: <strong style={{ color: '#18181b' }}>{redCardModal.playerName}</strong>
             </div>
 
             {/* PASO 1: Cantidad de fechas */}
             {redCardModal.step === 1 && (
               <>
-                <p style={{ margin: 0, fontSize: '13px', color: '#4b5563', lineHeight: '1.4' }}>
-                  Ingresar la cantidad de fechas de suspensión o dejar vacío para definirlo más adelante:
+                <p style={{ margin: 0, fontSize: '13px', color: '#52514e', lineHeight: '1.4' }}>
+                  Ingresá la cantidad de fechas de suspensión (o dejalo vacío para definirlo luego):
                 </p>
                 <input
                   type="text"
@@ -1640,14 +1591,14 @@ const MatchResultModal = ({
                   autoFocus
                   style={{
                     width: '100%',
-                    height: '42px',
+                    height: '38px',
                     borderRadius: '8px',
-                    border: redCardError ? '1.5px solid #ef4444' : '1.5px solid #d4d4d8',
+                    border: redCardError ? '1.5px solid #ef4444' : '1px solid #d4d3ce',
                     background: '#ffffff',
                     padding: '0 12px',
-                    fontSize: '14px',
+                    fontSize: '13.5px',
                     fontWeight: '600',
-                    color: '#1c1d21',
+                    color: '#18181b',
                     outline: 'none',
                     boxSizing: 'border-box'
                   }}
@@ -1674,18 +1625,18 @@ const MatchResultModal = ({
                     <span>{redCardError}</span>
                   </div>
                 )}
-                <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+                <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
                   <button
                     type="button"
                     onClick={handleRedCardCancel}
                     style={{
                       flex: 1,
-                      height: '40px',
+                      height: '38px',
                       borderRadius: '8px',
-                      border: '1px solid #d4d4d8',
+                      border: '1px solid #d4d3ce',
                       background: '#ffffff',
-                      color: '#4b5563',
-                      fontWeight: '700',
+                      color: '#18181b',
+                      fontWeight: '500',
                       fontSize: '13px',
                       cursor: 'pointer'
                     }}
@@ -1697,17 +1648,17 @@ const MatchResultModal = ({
                     onClick={handleRedCardStep1Confirm}
                     style={{
                       flex: 1,
-                      height: '40px',
+                      height: '38px',
                       borderRadius: '8px',
-                      border: 'none',
-                      background: 'var(--gx-primary)',
-                      color: '#151515',
-                      fontWeight: '700',
+                      border: '1px solid #141413',
+                      background: '#141413',
+                      color: '#ffffff',
+                      fontWeight: '600',
                       fontSize: '13px',
                       cursor: 'pointer'
                     }}
                   >
-                    OK
+                    Siguiente
                   </button>
                 </div>
               </>
@@ -1716,11 +1667,11 @@ const MatchResultModal = ({
             {/* PASO 2: Motivo de la suspensión */}
             {redCardModal.step === 2 && (
               <>
-                <p style={{ margin: 0, fontSize: '13px', color: '#4b5563', lineHeight: '1.4' }}>
-                  Ingrese el motivo de la suspensión:
+                <p style={{ margin: 0, fontSize: '13px', color: '#52514e', lineHeight: '1.4' }}>
+                  Ingresá el motivo de la suspensión:
                 </p>
                 <textarea
-                  placeholder="Describa el motivo de la expulsión..."
+                  placeholder="Describí el motivo de la expulsión..."
                   rows={3}
                   value={redCardModal.reason}
                   onChange={(e) => setRedCardModal({ ...redCardModal, reason: e.target.value })}
@@ -1728,12 +1679,12 @@ const MatchResultModal = ({
                   style={{
                     width: '100%',
                     borderRadius: '8px',
-                    border: '1.5px solid #d4d4d8',
+                    border: '1px solid #d4d3ce',
                     background: '#ffffff',
                     padding: '10px 12px',
                     fontSize: '13px',
                     fontWeight: '500',
-                    color: '#1c1d21',
+                    color: '#18181b',
                     outline: 'none',
                     resize: 'none',
                     boxSizing: 'border-box'
@@ -1746,18 +1697,18 @@ const MatchResultModal = ({
                     if (e.key === 'Escape') handleRedCardCancel();
                   }}
                 />
-                <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+                <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
                   <button
                     type="button"
                     onClick={handleRedCardCancel}
                     style={{
                       flex: 1,
-                      height: '40px',
+                      height: '38px',
                       borderRadius: '8px',
-                      border: '1px solid #d4d4d8',
+                      border: '1px solid #d4d3ce',
                       background: '#ffffff',
-                      color: '#4b5563',
-                      fontWeight: '700',
+                      color: '#18181b',
+                      fontWeight: '500',
                       fontSize: '13px',
                       cursor: 'pointer'
                     }}
@@ -1769,17 +1720,17 @@ const MatchResultModal = ({
                     onClick={handleRedCardStep2Confirm}
                     style={{
                       flex: 1,
-                      height: '40px',
+                      height: '38px',
                       borderRadius: '8px',
-                      border: 'none',
-                      background: 'var(--gx-primary)',
-                      color: '#151515',
-                      fontWeight: '700',
+                      border: '1px solid #141413',
+                      background: '#141413',
+                      color: '#ffffff',
+                      fontWeight: '600',
                       fontSize: '13px',
                       cursor: 'pointer'
                     }}
                   >
-                    OK
+                    Confirmar
                   </button>
                 </div>
               </>
@@ -1815,26 +1766,27 @@ const MatchResultModal = ({
             boxShadow: '0 8px 30px rgba(0,0,0,0.25)',
             display: 'flex',
             flexDirection: 'column',
-            gap: '16px'
+            gap: '14px',
+            border: '1px solid #fecaca'
           }} className="animate-fade-in" onClick={e => e.stopPropagation()}>
-            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#dc2626' }}>
-              ¿Borrar resultado?
+            <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '800', color: '#dc2626' }}>
+              ¿Borrar resultado del partido?
             </h3>
-            <p style={{ margin: 0, fontSize: '14px', color: '#4b5563', lineHeight: '1.5' }}>
+            <p style={{ margin: 0, fontSize: '13.5px', color: '#52514e', lineHeight: '1.5' }}>
               Se restablecerá el marcador del partido y se eliminarán los goles, tarjetas y estadísticas de los jugadores en este encuentro.
             </p>
-            <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
               <button
                 type="button"
                 onClick={() => setShowConfirmDelete(false)}
                 style={{
                   flex: 1,
-                  height: '40px',
+                  height: '38px',
                   borderRadius: '8px',
-                  border: '1px solid #d4d4d8',
-                  background: '#f3f4f6',
-                  color: '#4b5563',
-                  fontWeight: '700',
+                  border: '1px solid #d4d3ce',
+                  background: '#ffffff',
+                  color: '#18181b',
+                  fontWeight: '500',
                   fontSize: '13px',
                   cursor: 'pointer'
                 }}
@@ -1846,12 +1798,12 @@ const MatchResultModal = ({
                 onClick={handleConfirmClearResult}
                 style={{
                   flex: 1,
-                  height: '40px',
+                  height: '38px',
                   borderRadius: '8px',
-                  border: 'none',
-                  background: '#ff3b30',
+                  border: '1px solid #dc2626',
+                  background: '#dc2626',
                   color: '#ffffff',
-                  fontWeight: '700',
+                  fontWeight: '600',
                   fontSize: '13px',
                   cursor: 'pointer'
                 }}
