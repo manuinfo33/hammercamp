@@ -9,7 +9,7 @@ import {
   Lock, AlertTriangle, ArrowRight, ArrowLeft, LogOut, User, Bell
 } from "lucide-react";
 import { toast } from "sonner";
-import logo from "@/assets/logo-superliga.png";
+import { useBranding } from "@/lib/branding";
 import adNike from "@/assets/ad-nike.png";
 import adAdidas from "@/assets/ad-adidas.png";
 import adCocacola from "@/assets/ad-cocacola.png";
@@ -22,6 +22,7 @@ export const Route = createFileRoute("/mi-equipo")({
 
 
 function Page() {
+  const { logoSrc: logo, brandName } = useBranding();
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [token, setToken] = useState<string>("");
@@ -191,7 +192,7 @@ function Page() {
       }
 
       if (!parsedUser.team_id) {
-        setError("No tienes un equipo asignado a tu cuenta de delegado. Contacta a la administración de La Superliga.");
+        setError(`No tienes un equipo asignado a tu cuenta de delegado. Contacta a la administración de ${brandName}.`);
         setLoading(false);
         return;
       }
@@ -620,12 +621,12 @@ function Page() {
       <header className="sticky top-0 z-40 bg-[#18181b] text-white border-b border-neutral-800 shadow-md">
         <div className="container mx-auto px-4 md:px-6 py-2.5 md:py-3.5 flex items-center justify-between gap-3">
           
-          {/* Izquierda: Logo de la Superliga + Hola, <Nombre del delegado> */}
+          {/* Izquierda: Logo + Hola, <Nombre del delegado> */}
           <div className="flex items-center gap-2.5 min-w-0">
-            <Link to="/" className="cursor-pointer inline-flex items-center justify-center shrink-0" title="La Superliga">
+            <Link to="/" className="cursor-pointer inline-flex items-center justify-center shrink-0" title={brandName}>
               <img
                 src={logo}
-                alt="La Superliga"
+                alt={brandName}
                 className="h-10 md:h-12 w-auto object-contain hover:scale-105 transition-transform"
               />
             </Link>
@@ -1979,7 +1980,7 @@ function Page() {
                 ¿Estás seguro de que deseas desvincular a <strong className="text-foreground">{playerToRemove.player_name}</strong> de tu lista de buena fe?
               </p>
               <p className="text-[11px] text-muted-foreground/80 mt-2 bg-surface-elevated p-2 rounded-lg border border-border/40">
-                * El jugador solo se quitará de la plantilla de tu equipo, pero sus datos se conservarán en la base general de La Superliga.
+                * El jugador solo se quitará de la plantilla de tu equipo, pero sus datos se conservarán en la base general de {brandName}.
               </p>
             </div>
 
@@ -2127,8 +2128,8 @@ function Page() {
       <footer className="hidden md:block border-t border-border/50 bg-surface/80 py-4 px-6 mt-12">
         <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
-            <img src={logo} alt="La Superliga" className="h-6 w-auto object-contain opacity-80" />
-            <span className="font-semibold text-foreground/80">La Superliga Torneos</span>
+            <img src={logo} alt={brandName} className="h-6 w-auto object-contain opacity-80" />
+            <span className="font-semibold text-foreground/80">{brandName} Torneos</span>
             <span className="text-muted-foreground/50">·</span>
             <span>Panel de Delegados</span>
           </div>

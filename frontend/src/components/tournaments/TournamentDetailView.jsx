@@ -2288,6 +2288,12 @@ export default function TournamentDetailView({ tournament, onBack }) {
                               ) : (
                                 r.matches.map((m, index) => {
                                   const isLast = index === r.matches.length - 1 && !libreTeam;
+                                  const matchDate = m.date || r.date || null;
+                                  const matchTime = m.time || r.time || null;
+                                  const rawCancha = m.cancha ? String(m.cancha).trim() : '';
+                                  const canchaLabel = rawCancha
+                                    ? `Cancha: ${rawCancha.replace(/^cancha\s*:?\s*/i, '') || rawCancha}`
+                                    : null;
                                   return (
                                     <div 
                                       key={m.id} 
@@ -2319,7 +2325,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
 
                                       {/* Center Column: Handles all 3 states (Image 1, Image 2, Image 3) */}
                                       <div style={{ 
-                                        flex: '0 0 100px', 
+                                        flex: '0 0 104px', 
                                         display: 'flex', 
                                         flexDirection: 'column',
                                         alignItems: 'center', 
@@ -2329,7 +2335,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                         userSelect: 'none'
                                       }}>
                                         {m.played ? (
-                                          /* IMAGEN 3: Partido Finalizado (FINALIZADO + Marcador, sin fecha ni hora) */
+                                          /* IMAGEN 3: Partido Finalizado (FINALIZADO + Marcador) */
                                           <>
                                             <span style={{ 
                                               fontSize: '8px', 
@@ -2353,16 +2359,30 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                               <span>{m.local_score ?? 0}</span>
                                               <span>{m.visitor_score ?? 0}</span>
                                             </div>
+                                            {canchaLabel && (
+                                              <span style={{ fontSize: '10px', fontWeight: '600', color: '#6f737b' }}>
+                                                {canchaLabel}
+                                              </span>
+                                            )}
                                           </>
-                                        ) : (m.date || m.time) ? (
-                                          /* IMAGEN 2: Partido Programado con Fecha y Horario (sin cancha) */
+                                        ) : (matchDate || matchTime || canchaLabel) ? (
+                                          /* IMAGEN 2: Partido Programado con Fecha, Horario y Cancha */
                                           <>
-                                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#1c1d21' }}>
-                                              {m.date ? m.date.split('-').reverse().slice(0, 2).join('/') : ''}
-                                            </span>
-                                            <span style={{ fontSize: '10px', fontWeight: '600', color: '#6f737b' }}>
-                                              {m.time ? `${m.time.slice(0, 5)} Hs` : ''}
-                                            </span>
+                                            {matchDate && (
+                                              <span style={{ fontSize: '11px', fontWeight: '700', color: '#1c1d21' }}>
+                                                {matchDate.split('-').reverse().slice(0, 2).join('/')}
+                                              </span>
+                                            )}
+                                            {matchTime && (
+                                              <span style={{ fontSize: '10px', fontWeight: '600', color: '#6f737b' }}>
+                                                {`${matchTime.slice(0, 5)} Hs`}
+                                              </span>
+                                            )}
+                                            {canchaLabel && (
+                                              <span style={{ fontSize: '10px', fontWeight: '600', color: '#6f737b' }}>
+                                                {canchaLabel}
+                                              </span>
+                                            )}
                                           </>
                                         ) : (
                                           /* IMAGEN 1: Partido Sin Carga (-  -) */
@@ -3542,7 +3562,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                       style={{
                         background: 'transparent',
                         border: 'none',
-                        color: 'var(--gx-primary-hover, #b98a10)',
+                        color: 'var(--gx-primary-ink)',
                         fontWeight: '700',
                         fontSize: '12px',
                         cursor: 'pointer',
@@ -3589,7 +3609,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                         justifyContent: 'space-between',
                         padding: '10px 20px',
                         borderBottom: idx === filtered.length - 1 ? 'none' : '1px solid #f0eae1',
-                        background: isSelected ? 'rgba(242, 187, 43, 0.12)' : (idx % 2 === 0 ? '#fafafb' : '#ffffff'),
+                        background: isSelected ? 'rgba(var(--gx-primary-rgb), 0.12)' : (idx % 2 === 0 ? '#fafafb' : '#ffffff'),
                         cursor: 'pointer',
                         transition: 'background 0.15s ease'
                       }}
@@ -3604,7 +3624,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                             width: '18px',
                             height: '18px',
                             cursor: 'pointer',
-                            accentColor: 'var(--gx-primary, #f2bb2b)'
+                            accentColor: 'var(--gx-primary)'
                           }}
                           onClick={e => e.stopPropagation()}
                         />
@@ -3640,7 +3660,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                       <span style={{
                         fontSize: '11.5px',
                         fontWeight: '700',
-                        color: isSelected ? 'var(--gx-primary-hover, #b98a10)' : '#a1a1aa'
+                        color: isSelected ? 'var(--gx-primary-ink)' : '#a1a1aa'
                       }}>
                         {isSelected ? 'Seleccionado' : 'Elegir'}
                       </span>

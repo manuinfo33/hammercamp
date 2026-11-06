@@ -1180,8 +1180,65 @@ class CarouselImageViewSet(viewsets.ModelViewSet):
             qs = qs.filter(is_active=is_active.lower() == 'true')
         return qs
 
-from .models import News
-from .serializers import NewsSerializer
+
+    @action(detail=False, methods=['post'], url_path='reorder')
+    def reorder(self, request):
+        ordered_ids = request.data.get('ordered_ids')
+        if not ordered_ids or not isinstance(ordered_ids, list):
+            ordered_items = request.data.get('ordered_items')
+            if ordered_items and isinstance(ordered_items, list):
+                ordered_ids = [item.get('id') for item in ordered_items if item.get('id')]
+            else:
+                return Response({'error': 'ordered_ids debe ser una lista de IDs'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        with transaction.atomic():
+            for index, item_id in enumerate(ordered_ids):
+                CarouselImage.objects.filter(id=item_id).update(order=index)
+        return Response({'status': 'ok', 'message': 'Orden actualizado correctamente'})
+
+from .models import GalleryImage, News
+from .serializers import GalleryImageSerializer, NewsSerializer
+
+
+class GalleryImageViewSet(viewsets.ModelViewSet):
+    queryset = GalleryImage.objects.all()
+    serializer_class = GalleryImageSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['order', 'created_at']
+    ordering = ['order', '-created_at']
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        is_active = self.request.query_params.get('is_active')
+        if is_active is not None:
+            qs = qs.filter(is_active=is_active.lower() == 'true')
+        return qs
+
+    def perform_create(self, serializer):
+        original_img = self.request.FILES.get('original_image')
+        if not original_img and 'image' in self.request.FILES:
+            serializer.save(original_image=self.request.FILES['image'])
+        else:
+            serializer.save()
+
+    def perform_update(self, serializer):
+        serializer.save()
+
+    @action(detail=False, methods=['post'], url_path='reorder')
+    def reorder(self, request):
+        ordered_ids = request.data.get('ordered_ids')
+        if not ordered_ids or not isinstance(ordered_ids, list):
+            ordered_items = request.data.get('ordered_items')
+            if ordered_items and isinstance(ordered_items, list):
+                ordered_ids = [item.get('id') for item in ordered_items if item.get('id')]
+            else:
+                return Response({'error': 'ordered_ids debe ser una lista de IDs'}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            for index, item_id in enumerate(ordered_ids):
+                GalleryImage.objects.filter(id=item_id).update(order=index)
+        return Response({'status': 'ok', 'message': 'Orden actualizado correctamente'})
 
 class NewsViewSet(viewsets.ModelViewSet):
     queryset = News.objects.all()
@@ -1189,8 +1246,8 @@ class NewsViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
     search_fields = ['title', 'excerpt']
-    ordering_fields = ['date', 'created_at']
-    ordering = ['-date', '-created_at']
+    ordering_fields = ['is_pinned', 'date', 'created_at']
+    ordering = ['-is_pinned', '-date', '-created_at']
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -1198,6 +1255,13 @@ class NewsViewSet(viewsets.ModelViewSet):
         if category:
             qs = qs.filter(category=category)
         return qs
+
+    def perform_create(self, serializer):
+        original_img = self.request.FILES.get('original_image')
+        if not original_img and 'image' in self.request.FILES:
+            serializer.save(original_image=self.request.FILES['image'])
+        else:
+            serializer.save()
 
 
 class MatchRoundViewSet(viewsets.ModelViewSet):
@@ -1227,6 +1291,16 @@ class MatchRoundViewSet(viewsets.ModelViewSet):
             if not MatchRound.objects.filter(tournament_zone__tournament=tournament).exists():
                 BlueCard.objects.filter(tournament=tournament).delete()
             recalculate_tournament_standings_and_stats(tournament)
+
+    def perform_create(self, serializer):
+        original_img = self.request.FILES.get('original_image')
+        if not original_img and 'image' in self.request.FILES:
+            serializer.save(original_image=self.request.FILES['image'])
+        else:
+            serializer.save()
+
+    def perform_update(self, serializer):
+        serializer.save()
 
     @action(detail=False, methods=['post'], url_path='reorder')
     def reorder(self, request):
@@ -1648,3 +1722,60 @@ class TeamReplacementHistoryViewSet(viewsets.ReadOnlyModelViewSet):
         if team_id:
             qs = qs.filter(models.Q(outgoing_team_id=team_id) | models.Q(incoming_team_id=team_id))
         return qs
+
+
+from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser as _MultiPartParser, FormParser as _FormParser, JSONParser as _JSONParser
+from .models import SiteSettings
+from .serializers import SiteSettingsSerializer
+
+
+class SiteSettingsView(APIView):
+    """
+    Identidad de marca del sitio (logo + color principal).
+    - GET: publico (lo consumen la web visual, la app de delegados y la de gestion).
+    - PATCH: solo administradores.
+    """
+    parser_classes = [_MultiPartParser, _FormParser, _JSONParser]
+
+    def get_authenticators(self):
+        # En GET ignoramos cualquier token (aunque este vencido) para que la
+        # lectura publica nunca devuelva 401.
+        if self.request is not None and self.request.method == 'GET':
+            return []
+        return super().get_authenticators()
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    def get(self, request):
+        data = SiteSettingsSerializer(SiteSettings.load(), context={'request': request}).data
+        return Response(data)
+
+    def patch(self, request):
+        if not request.user.is_superuser:
+            return Response({'detail': 'Solo los administradores pueden modificar la identidad de marca.'},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        settings_obj = SiteSettings.load()
+        data = request.data
+
+        # Quitar el logo y volver al logo por defecto
+        if str(data.get('remove_logo', '')).lower() in ('1', 'true'):
+            for field in ('logo', 'logo_original'):
+                f = getattr(settings_obj, field)
+                if f:
+                    f.delete(save=False)
+            settings_obj.logo = None
+            settings_obj.logo_original = None
+            settings_obj.logo_crop_data = None
+            settings_obj.save()
+            if 'primary_color' not in data:
+                return Response(SiteSettingsSerializer(settings_obj, context={'request': request}).data)
+
+        serializer = SiteSettingsSerializer(settings_obj, data=data, partial=True, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)

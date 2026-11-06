@@ -1,3 +1,4 @@
+import { useBranding } from "@/lib/branding";
 import { API_URL, BACKEND_URL, getMediaUrl } from "@/lib/api";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Header } from "@/components/site/Header";
@@ -22,6 +23,7 @@ export const Route = createFileRoute("/mi-cuenta")({
 });
 
 function Page() {
+  const { brandName } = useBranding();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -238,7 +240,7 @@ function Page() {
             </div>
 
             <p className="text-[11px] text-muted-foreground/70 mt-5 sm:mt-6 pt-4 border-t border-border/50 leading-relaxed">
-              * Para solicitar modificaciones en tus datos de delegado o equipo, contacta a la administración de La Superliga.
+              * Para solicitar modificaciones en tus datos de delegado o equipo, contacta a la administración de {brandName}.
             </p>
           </div>
         </div>

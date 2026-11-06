@@ -16,8 +16,8 @@ import {
   Mail,
   ArrowLeft,
 } from "lucide-react";
-import { useState, useEffect } from "react";
-import logo from "@/assets/logo-superliga.png";
+import { useState, useEffect, useRef } from "react";
+import { useBranding } from "@/lib/branding";
 import adNike from "@/assets/ad-nike.png";
 import adAdidas from "@/assets/ad-adidas.png";
 import adCocacola from "@/assets/ad-cocacola.png";
@@ -37,12 +37,50 @@ export function Header({
 }: {
   mobileContext?: { title: string; subtitle?: string; backTo?: string };
 } = {}) {
+  const { logoSrc: logo, brandName, brandLead, brandAccent } = useBranding();
   const [open, setOpen] = useState(false);
   const [mobileCatOpen, setMobileCatOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
   const [mobileUserMenuOpen, setMobileUserMenuOpen] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+  const menuRef = useRef<HTMLUListElement>(null);
+  const toggleBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open]);
+
+  const handleNavKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (!open || e.ctrlKey || e.metaKey || e.altKey) {
+      return;
+    }
+    if (e.key === "Escape") {
+      setOpen(false);
+      toggleBtnRef.current?.focus();
+      return;
+    }
+    const menuLinks = menuRef.current?.querySelectorAll<HTMLElement>(".nav__link");
+    if (!menuLinks || menuLinks.length === 0) return;
+
+    if (e.key === "Tab" || e.keyCode === 9) {
+      if (e.shiftKey) {
+        if (document.activeElement === menuLinks[0]) {
+          toggleBtnRef.current?.focus();
+          e.preventDefault();
+        }
+      } else if (document.activeElement === toggleBtnRef.current) {
+        menuLinks[0].focus();
+        e.preventDefault();
+      }
+    }
+  };
 
   const ads = [
     { id: 1, image: adNike, name: "Nike" },
@@ -95,7 +133,7 @@ export function Header({
       {/* Top Bar: Logo + Actions */}
       <div className="container mx-auto px-3.5 py-2.5 md:px-6 md:py-6 flex items-center justify-between gap-2.5 md:gap-4 relative z-50">
         {mobileContext && (
-          <div className="flex md:hidden items-center gap-2.5 min-w-0 flex-1">
+          <div className="flex md:hidden items-center gap-2.5 min-w-0 flex-1 relative z-[60]">
             <Link
               to={mobileContext.backTo || "/categorias"}
               onClick={() => {
@@ -130,18 +168,18 @@ export function Header({
             setOpen(false);
             setMobileUserMenuOpen(false);
           }}
-          className={`${mobileContext ? "hidden md:flex" : "flex"} items-center gap-2.5 md:gap-3 group`}
+          className={`${mobileContext ? "hidden md:flex" : "flex"} items-center gap-2.5 md:gap-3 group relative z-[60]`}
         >
           <img
             src={logo}
-            alt="La Superliga Torneos"
+            alt={brandName}
             width={56}
             height={56}
             className="size-10 md:size-14 object-contain"
           />
           <span className="flex flex-col leading-none">
             <span className="font-display text-xl sm:text-2xl md:text-3xl font-bold tracking-tight uppercase">
-              La <span className="text-primary">Superliga</span>
+              {brandLead}{brandLead ? " " : ""}<span className="text-primary">{brandAccent}</span>
             </span>
             <span className="text-[9px] md:text-[10px] uppercase tracking-[0.35em] text-primary/80 mt-0.5 md:mt-1">
               Torneos
@@ -183,11 +221,11 @@ export function Header({
           </div>
         </div>
 
-        {/* Mobile Right Actions: User + Hamburger */}
+        {/* Mobile Right Actions: User + Animated Hamburger Menu */}
         <div className="flex items-center gap-2 md:hidden shrink-0">
           {!mobileContext &&
             (user ? (
-              <div className="relative">
+              <div className="relative z-[60]">
                 <button
                   className={`size-9 border rounded-xl flex items-center justify-center transition-all ${
                     mobileUserMenuOpen
@@ -257,7 +295,7 @@ export function Header({
               </div>
             ) : (
               <button
-                className="size-9 border border-white/10 bg-white/[0.03] rounded-xl text-neutral-300 hover:text-white flex items-center justify-center transition-colors"
+                className="size-9 border border-white/10 bg-white/[0.03] rounded-xl text-neutral-300 hover:text-white flex items-center justify-center transition-colors relative z-[60]"
                 onClick={() => {
                   setOpen(false);
                   setIsLoginOpen(true);
@@ -268,184 +306,78 @@ export function Header({
               </button>
             ))}
 
-          <button
-            className={`size-9 border rounded-xl flex items-center justify-center transition-all ${
-              open
-                ? "border-white/25 bg-white/10 text-white"
-                : "border-white/10 bg-white/[0.03] text-neutral-300"
-            }`}
-            onClick={() => {
-              setMobileUserMenuOpen(false);
-              setOpen((v) => !v);
-            }}
-            aria-label="Menú"
-            aria-expanded={open}
+          <nav
+            id="nav"
+            ref={navRef}
+            onKeyDown={handleNavKeyDown}
+            className={`nav ${open ? "nav--open" : ""}`}
+            role="navigation"
           >
-            {open ? <X className="size-4" /> : <Menu className="size-4" />}
-          </button>
+            {/* MENU TOGGLE BUTTON */}
+            <button
+              type="button"
+              ref={toggleBtnRef}
+              className="nav__toggle"
+              aria-expanded={open}
+              aria-controls="menu"
+              aria-label={open ? "Cerrar menú" : "Abrir menú"}
+              onClick={(e) => {
+                e.preventDefault();
+                setMobileUserMenuOpen(false);
+                setOpen((v) => !v);
+              }}
+            >
+              <svg
+                className="menuicon"
+                xmlns="http://www.w3.org/2000/svg"
+                width="44"
+                height="44"
+                viewBox="0 0 50 50"
+              >
+                <title>Alternar Menú</title>
+                <g>
+                  <line className="menuicon__bar" x1="13" y1="16.5" x2="37" y2="16.5" />
+                  <line className="menuicon__bar" x1="13" y1="24.5" x2="37" y2="24.5" />
+                  <line className="menuicon__bar" x1="13" y1="24.5" x2="37" y2="24.5" />
+                  <line className="menuicon__bar" x1="13" y1="32.5" x2="37" y2="32.5" />
+                  <circle className="menuicon__circle" r="23" cx="25" cy="25" />
+                </g>
+              </svg>
+            </button>
+
+            <div className="nav__overlay md:hidden">
+              {/* ANIMATED BACKGROUND ELEMENT */}
+              <div className="splash" />
+
+              {/* ACTUAL NAVIGATION MENU */}
+              <ul
+                ref={menuRef}
+                className="nav__menu"
+                id="menu"
+                tabIndex={-1}
+                aria-label="main navigation"
+                aria-hidden={!open}
+              >
+                {nav.map((item) => (
+                  <li key={item.to} className="nav__item">
+                    <Link
+                      to={item.to}
+                      activeOptions={{ exact: item.to === "/" }}
+                      onClick={() => setOpen(false)}
+                      className="nav__link"
+                      activeProps={{
+                        className: "nav__link nav__link--active",
+                      }}
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </nav>
         </div>
       </div>
-
-      {/* =========================================================
-          MOBILE MENU: Full-width, flush with header, refined & minimal
-         ========================================================= */}
-      {open && (
-        <>
-          {/* Invisible click-outside catcher so background page stays visible */}
-          <div
-            className="fixed inset-0 z-40 md:hidden"
-            onClick={() => setOpen(false)}
-          />
-
-          <div className="absolute left-0 right-0 top-full w-full z-50 md:hidden bg-[#141518]/98 backdrop-blur-xl border-b border-white/10 rounded-b-2xl shadow-[0_24px_48px_rgba(0,0,0,0.65)] overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
-            <div className="divide-y divide-white/[0.05] max-h-[75vh] overflow-y-auto px-4">
-              {nav.map((item) => {
-                const Icon = item.icon;
-                if (item.label === "Categorías") {
-                  return (
-                    <div key={item.to} className="py-0.5">
-                      <div className="flex items-center justify-between">
-                        <Link
-                          to={item.to}
-                          onClick={() => setOpen(false)}
-                          className="flex-1 flex items-center gap-3.5 py-3.5 text-[11.5px] font-medium uppercase tracking-[0.18em] text-neutral-300 hover:text-white transition-colors"
-                          activeProps={{
-                            className:
-                              "flex-1 flex items-center gap-3.5 py-3.5 text-[11.5px] font-semibold uppercase tracking-[0.18em] text-white",
-                          }}
-                        >
-                          {({ isActive }) => (
-                            <>
-                              <span
-                                className={`w-0.5 h-3.5 rounded-full transition-colors ${
-                                  isActive ? "bg-primary" : "bg-transparent"
-                                }`}
-                              />
-                              <Icon
-                                className={`size-4 shrink-0 transition-colors ${
-                                  isActive ? "text-white" : "text-neutral-500"
-                                }`}
-                              />
-                              <span>{item.label}</span>
-                            </>
-                          )}
-                        </Link>
-                        {categories.length > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => setMobileCatOpen((v) => !v)}
-                            className="p-3 -mr-2 text-neutral-500 hover:text-white transition-colors flex items-center"
-                            aria-label="Desplegar categorías"
-                          >
-                            <ChevronDown
-                              className={`size-4 transition-transform duration-200 ${
-                                mobileCatOpen ? "rotate-180 text-white" : ""
-                              }`}
-                            />
-                          </button>
-                        )}
-                      </div>
-
-                      {mobileCatOpen && categories.length > 0 && (
-                        <div className="mb-2.5 ml-6 pl-3.5 border-l border-white/10 space-y-0.5 animate-in slide-in-from-top-1 duration-150">
-                          {categories.map((c: any) => (
-                            <Link
-                              key={c.id}
-                              to={`/categorias/${c.id}`}
-                              onClick={() => setOpen(false)}
-                              className="flex items-center justify-between py-2 px-2 rounded-lg text-[11px] font-medium uppercase tracking-[0.15em] text-neutral-400 hover:text-white hover:bg-white/[0.04] transition-colors"
-                              activeProps={{
-                                className:
-                                  "flex items-center justify-between py-2 px-2 rounded-lg text-[11px] font-semibold uppercase tracking-[0.15em] text-white bg-white/[0.06]",
-                              }}
-                            >
-                              <span>{c.name}</span>
-                              <ChevronRight className="size-3.5 text-neutral-600" />
-                            </Link>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                }
-
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setOpen(false)}
-                    activeOptions={{ exact: item.to === "/" }}
-                    className="flex items-center justify-between py-3.5 text-[11.5px] font-medium uppercase tracking-[0.18em] text-neutral-300 hover:text-white transition-colors group"
-                    activeProps={{
-                      className:
-                        "flex items-center justify-between py-3.5 text-[11.5px] font-semibold uppercase tracking-[0.18em] text-white",
-                    }}
-                  >
-                    {({ isActive }) => (
-                      <>
-                        <div className="flex items-center gap-3.5">
-                          <span
-                            className={`w-0.5 h-3.5 rounded-full transition-colors ${
-                              isActive ? "bg-primary" : "bg-transparent"
-                            }`}
-                          />
-                          <Icon
-                            className={`size-4 shrink-0 transition-colors ${
-                              isActive
-                                ? "text-white"
-                                : "text-neutral-500 group-hover:text-neutral-300"
-                            }`}
-                          />
-                          <span>{item.label}</span>
-                        </div>
-                        <ChevronRight
-                          className={`size-3.5 transition-transform ${
-                            isActive
-                              ? "text-neutral-300"
-                              : "text-neutral-600 group-hover:translate-x-0.5"
-                          }`}
-                        />
-                      </>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-
-            {/* Subtle minimal footer row inside mobile menu */}
-            <div className="px-4 py-2.5 bg-black/25 border-t border-white/[0.06] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] uppercase tracking-[0.2em] text-neutral-500 font-medium">
-                  Auspicia
-                </span>
-                <div className="w-10 h-6 rounded overflow-hidden border border-white/10 bg-black/40">
-                  <img
-                    src={ads[currentAdIndex].image}
-                    alt={ads[currentAdIndex].name}
-                    className="w-full h-full object-cover opacity-90"
-                  />
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <a
-                  href="#"
-                  aria-label="Facebook"
-                  className="size-7 rounded-lg border border-white/[0.08] bg-white/[0.02] text-neutral-400 hover:text-white flex items-center justify-center transition-colors"
-                >
-                  <Facebook className="size-3.5" />
-                </a>
-                <a
-                  href="#"
-                  aria-label="Instagram"
-                  className="size-7 rounded-lg border border-white/[0.08] bg-white/[0.02] text-neutral-400 hover:text-white flex items-center justify-center transition-colors"
-                >
-                  <Instagram className="size-3.5" />
-                </a>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
 
       {/* =========================================================
           DESKTOP NAVIGATION BAR (md and up)
@@ -535,7 +467,7 @@ export function Header({
                       }}
                     >
                       <span>Mi Equipo</span>
-                      <span className="size-2 rounded-full bg-yellow-400 shadow-[0_0_6px_#facc15] animate-pulse" />
+                      <span className="size-2 rounded-full bg-primary shadow-[0_0_6px_var(--primary)] animate-pulse" />
                     </Link>
                   )}
                   <button

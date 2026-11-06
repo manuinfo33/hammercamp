@@ -435,8 +435,8 @@ function CategoryDetailPage() {
                   width: 44,
                   height: 44,
                   borderRadius: 11,
-                  background: "rgba(242, 187, 43, 0.16)",
-                  color: "#9a6b00",
+                  background: "color-mix(in srgb, var(--primary) 16%, transparent)",
+                  color: "var(--primary)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -694,6 +694,10 @@ function CategoryDetailPage() {
                                 const visitorName = m.away_team_name || m.visitor_team_name || "A confirmar";
                                 const localScore = m.home_score ?? m.local_score ?? 0;
                                 const visitorScore = m.away_score ?? m.visitor_score ?? 0;
+                                const rawCancha = m.cancha ? String(m.cancha).trim() : "";
+                                const canchaLabel = rawCancha
+                                  ? `Cancha: ${rawCancha.replace(/^cancha\s*:?\s*/i, "") || rawCancha}`
+                                  : null;
 
                                 return (
                                   <div
@@ -727,7 +731,7 @@ function CategoryDetailPage() {
                                     {/* Columna Central (idéntica a Gestión) */}
                                     <div
                                       style={{
-                                        flex: "0 0 96px",
+                                        flex: "0 0 104px",
                                         display: "flex",
                                         flexDirection: "column",
                                         alignItems: "center",
@@ -764,20 +768,31 @@ function CategoryDetailPage() {
                                             <span>{localScore}</span>
                                             <span>{visitorScore}</span>
                                           </div>
+                                          {canchaLabel && (
+                                            <span
+                                              style={{
+                                                fontSize: 10,
+                                                fontWeight: 600,
+                                                color: "#6f737b",
+                                              }}
+                                            >
+                                              {canchaLabel}
+                                            </span>
+                                          )}
                                         </>
-                                      ) : m.date || m.time ? (
+                                      ) : m.date || m.time || canchaLabel ? (
                                         <>
-                                          <span
-                                            style={{
-                                              fontSize: 11,
-                                              fontWeight: 700,
-                                              color: "#1c1d21",
-                                            }}
-                                          >
-                                            {m.date
-                                              ? m.date.split("-").reverse().slice(0, 2).join("/")
-                                              : ""}
-                                          </span>
+                                          {m.date && (
+                                            <span
+                                              style={{
+                                                fontSize: 11,
+                                                fontWeight: 700,
+                                                color: "#1c1d21",
+                                              }}
+                                            >
+                                              {m.date.split("-").reverse().slice(0, 2).join("/")}
+                                            </span>
+                                          )}
                                           {m.time && (
                                             <span
                                               style={{
@@ -787,6 +802,17 @@ function CategoryDetailPage() {
                                               }}
                                             >
                                               {m.time.slice(0, 5)} Hs
+                                            </span>
+                                          )}
+                                          {canchaLabel && (
+                                            <span
+                                              style={{
+                                                fontSize: 10,
+                                                fontWeight: 600,
+                                                color: "#6f737b",
+                                              }}
+                                            >
+                                              {canchaLabel}
                                             </span>
                                           )}
                                         </>

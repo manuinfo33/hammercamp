@@ -115,3 +115,11 @@ class ReclamoAdmin(admin.ModelAdmin):
     search_fields = ('asunto', 'descripcion', 'team__name')
 
 
+
+
+from .models import SiteSettings
+
+
+@admin.register(SiteSettings)
+class SiteSettingsAdmin(admin.ModelAdmin):
+    list_display = ('__str__', 'primary_color', 'updated_at')

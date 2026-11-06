@@ -22,6 +22,7 @@ import {
 import { useHeaderInfo } from '../context/HeaderContext';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useBranding } from '../context/BrandingContext';
 
 const YouTubeIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -44,6 +45,7 @@ const DATA_LINKS = [
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
+  const { logoSrc, brandName, brandNameUpper } = useBranding();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -134,12 +136,12 @@ const Sidebar = () => {
             )}
 
             {/* En PC (o en mobile cuando no hay headerInfo), siempre se muestra el logo y LA SUPERLIGA GESTION */}
-            <div className={`gx-header-brand ${headerInfo ? 'desktop-only' : ''}`} onClick={() => navigate('/')} title="La Superliga">
+            <div className={`gx-header-brand ${headerInfo ? 'desktop-only' : ''}`} onClick={() => navigate('/')} title={brandName}>
               <span className="gx-header-logo">
-                <img src="/logo-superliga.png" alt="La Superliga" />
+                <img src={logoSrc} alt={brandName} />
               </span>
               <span className="gx-header-brand-text">
-                <b>LA SUPERLIGA</b>
+                <b>{brandNameUpper}</b>
                 <i>GESTIÓN</i>
               </span>
             </div>
@@ -177,7 +179,7 @@ const Sidebar = () => {
                   <div className="gx-sheet-backdrop" onClick={() => setNotificationsOpen(false)} />
                   <div className="gx-popover gx-popover-notif">
                     <div className="gx-popover-head">
-                      <span className="t"><Bell size={16} color="#b98a10" /> Notificaciones</span>
+                      <span className="t"><Bell size={16} color="var(--gx-primary-ink)" /> Notificaciones</span>
                       <span className="gx-pill">Nuevas</span>
                     </div>
                     <div style={{ padding: '4px 0' }}>
@@ -495,7 +497,7 @@ const Sidebar = () => {
           <div className="modal-card-custom animate-fade-in" style={{ maxWidth: '460px', borderRadius: '20px' }}>
             <div className="modal-header-custom" style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-subtle)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(242, 187, 43, 0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#b98a10', flexShrink: 0 }}>
+                <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(var(--gx-primary-rgb), 0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gx-primary-ink)', flexShrink: 0 }}>
                   <HelpCircle size={22} />
                 </div>
                 <div>
@@ -557,7 +559,7 @@ const Sidebar = () => {
           <div className="modal-card-custom animate-fade-in" style={{ maxWidth: '460px', borderRadius: '20px' }}>
             <div className="modal-header-custom" style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-subtle)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(242, 187, 43, 0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#b98a10', flexShrink: 0 }}>
+                <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(var(--gx-primary-rgb), 0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gx-primary-ink)', flexShrink: 0 }}>
                   <User size={22} />
                 </div>
                 <div>
@@ -574,7 +576,7 @@ const Sidebar = () => {
                 </div>
                 <div style={{ minWidth: 0 }}>
                   <h4 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: 800 }}>{displayName}</h4>
-                  <span style={{ display: 'inline-block', marginTop: '4px', fontSize: '10.5px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', background: 'rgba(242, 187, 43, 0.18)', color: '#b98a10', padding: '2px 8px', borderRadius: '6px' }}>
+                  <span style={{ display: 'inline-block', marginTop: '4px', fontSize: '10.5px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', background: 'rgba(var(--gx-primary-rgb), 0.18)', color: 'var(--gx-primary-ink)', padding: '2px 8px', borderRadius: '6px' }}>
                     {user?.role || 'Administrador'}
                   </span>
                 </div>

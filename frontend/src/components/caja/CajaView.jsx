@@ -38,7 +38,7 @@ function ResumenCard({ icon: Icon, label, value, color, sub }) {
         </div>
         <div style={{
           width: '44px', height: '44px', borderRadius: '12px',
-          background: color.includes('gradient') ? color : `${color}22`,
+          background: color.includes('gradient') ? color : (color.startsWith('var(') ? `color-mix(in srgb, ${color} 14%, transparent)` : `${color}22`),
           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
         }}>
           <Icon size={22} color={isNeg ? '#dc2626' : (color.includes('gradient') ? '#151515' : color)} />
@@ -88,14 +88,14 @@ export default function CajaView() {
             icon={Wallet}
             label="Saldo Total"
             value={resumen.saldo_total}
-            color="linear-gradient(135deg, #f2bb2b, #d99a0b)"
+            color="linear-gradient(135deg, var(--gx-primary), var(--gx-primary-ink))"
             sub="Efectivo + Banco"
           />
           <ResumenCard
             icon={DollarSign}
             label="Efectivo"
             value={resumen.saldo_efectivo}
-            color="#d99a0b"
+            color="var(--gx-primary-ink)"
           />
           <ResumenCard
             icon={Building2}

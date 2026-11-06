@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useBranding } from '../context/BrandingContext';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User, Loader2, ChevronRight } from 'lucide-react';
 
@@ -9,6 +10,7 @@ const LoginView = () => {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
+  const { logoSrc, brandName } = useBranding();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -39,7 +41,7 @@ const LoginView = () => {
         {/* Logo + Brand */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{ width: '120px', height: '120px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#18181b', borderRadius: '24px', padding: '12px', boxShadow: '0 12px 32px rgba(0,0,0,0.18)' }}>
-            <img src="/logo-superliga.png" alt="La Superliga Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            <img src={logoSrc} alt={`${brandName} Logo`} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
         </div>
 
@@ -127,7 +129,7 @@ const LoginView = () => {
         </div>
 
         <p style={{ textAlign: 'center', marginTop: '24px', color: 'var(--text-muted)', fontSize: '12px' }}>
-          &copy; 2026 La Superliga Gestión. Todos los derechos reservados.
+          &copy; 2026 {brandName} Gestión. Todos los derechos reservados.
         </p>
       </div>
 

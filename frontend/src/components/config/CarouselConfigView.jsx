@@ -1,21 +1,88 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api';
-import { Plus, Trash2, Image as ImageIcon, CheckCircle, XCircle, Upload, X } from 'lucide-react';
+import {
+  Plus,
+  Trash2,
+  Image as ImageIcon,
+  CheckCircle2,
+  XCircle,
+  Upload,
+  ArrowUpDown,
+  Check,
+  GripVertical,
+  ChevronLeft,
+  ChevronRight,
+  Crop,
+  Eye,
+  EyeOff
+} from 'lucide-react';
+import ImageCropPreviewModal from './ImageCropPreviewModal';
+
+const btnOutline = {
+  height: 32,
+  padding: '0 12px',
+  borderRadius: 8,
+  fontSize: 12.5,
+  fontWeight: 500,
+  background: '#ffffff',
+  color: '#18181b',
+  border: '1px solid #d4d3ce',
+  boxShadow: 'none',
+  textTransform: 'none',
+  letterSpacing: 0,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 6,
+  cursor: 'pointer'
+};
+
+const btnDark = {
+  height: 32,
+  padding: '0 14px',
+  borderRadius: 8,
+  fontSize: 12.5,
+  fontWeight: 600,
+  background: '#141413',
+  color: '#ffffff',
+  border: '1px solid #141413',
+  boxShadow: 'none',
+  textTransform: 'none',
+  letterSpacing: 0,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 6,
+  cursor: 'pointer'
+};
 
 const CarouselConfigView = () => {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [newImage, setNewImage] = useState(null);
   const [title, setTitle] = useState('');
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [deletingId, setDeletingId] = useState(null);
+
+  // Estados para el Modal de Recorte y Previsualización
+  const [pendingCropFile, setPendingCropFile] = useState(null);
+  const [editingImageItem, setEditingImageItem] = useState(null);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+
+  // Estados para el Modo Reordenar
+  const [isReordering, setIsReordering] = useState(false);
+  const [reorderedImages, setReorderedImages] = useState([]);
+  const [savingOrder, setSavingOrder] = useState(false);
+  const [draggedIdx, setDraggedIdx] = useState(null);
+  const [touchItemIdx, setTouchItemIdx] = useState(null);
 
   const fetchImages = async () => {
     try {
       setLoading(true);
       const res = await api.get('carousel-images/');
       setImages(res.data);
+      setReorderedImages(res.data);
     } catch (err) {
       console.error(err);
       setError('Error al cargar imágenes.');
@@ -28,27 +95,54 @@ const CarouselConfigView = () => {
     fetchImages();
   }, []);
 
-  const handleUpload = async (e) => {
-    e.preventDefault();
-    if (!newImage) return;
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setEditingImageItem(null);
+    setPendingCropFile(file);
+    setCropModalOpen(true);
+    e.target.value = '';
+  };
 
+  const handleStartEdit = (img) => {
+    setPendingCropFile(null);
+    setEditingImageItem(img);
+    setCropModalOpen(true);
+  };
+
+  const handleCropConfirm = async ({ croppedFile, originalFile, cropData, title: confirmedTitle }) => {
     const formData = new FormData();
-    formData.append('image', newImage);
-    if (title) formData.append('title', title);
-    formData.append('order', images.length);
+    if (croppedFile) formData.append('image', croppedFile);
+    if (originalFile) formData.append('original_image', originalFile);
+    if (cropData) formData.append('crop_data', JSON.stringify(cropData));
+    if (confirmedTitle !== undefined) formData.append('title', confirmedTitle.trim());
 
     try {
       setUploading(true);
-      await api.post('carousel-images/', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      setNewImage(null);
+      setError('');
+
+      if (editingImageItem) {
+        await api.patch(`carousel-images/${editingImageItem.id}/`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        setSuccessMsg('Encuadre actualizado.');
+      } else {
+        formData.append('order', images.length);
+        await api.post('carousel-images/', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        setSuccessMsg('Imagen agregada al carrusel.');
+      }
+
+      setCropModalOpen(false);
+      setPendingCropFile(null);
+      setEditingImageItem(null);
       setTitle('');
-      document.getElementById('image-upload').value = '';
-      fetchImages();
+      setTimeout(() => setSuccessMsg(''), 3200);
+      await fetchImages();
     } catch (err) {
       console.error(err);
-      setError('Error al subir la imagen.');
+      setError(editingImageItem ? 'Error al actualizar la imagen.' : 'Error al subir la imagen.');
     } finally {
       setUploading(false);
     }
@@ -76,143 +170,605 @@ const CarouselConfigView = () => {
     }
   };
 
-  if (loading) return <div style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Cargando imágenes...</div>;
+  // --- LÓGICA DE REORDENAMIENTO ---
+  const handleStartReorder = () => {
+    setIsReordering(true);
+    setReorderedImages([...images]);
+  };
+
+  const handleCancelReorder = () => {
+    setIsReordering(false);
+    setReorderedImages([...images]);
+    setDraggedIdx(null);
+    setTouchItemIdx(null);
+  };
+
+  const moveItem = (fromIndex, toIndex) => {
+    if (toIndex < 0 || toIndex >= reorderedImages.length) return;
+    setReorderedImages((prev) => {
+      const updated = [...prev];
+      const [moved] = updated.splice(fromIndex, 1);
+      updated.splice(toIndex, 0, moved);
+      return updated;
+    });
+  };
+
+  const handleDragStart = (e, index) => {
+    setDraggedIdx(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', `${index}`);
+  };
+
+  const handleDragEnter = (e, index) => {
+    e.preventDefault();
+    if (draggedIdx === null || draggedIdx === index) return;
+    moveItem(draggedIdx, index);
+    setDraggedIdx(index);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIdx(null);
+  };
+
+  const handleTouchStart = (e, index) => {
+    setTouchItemIdx(index);
+  };
+
+  const handleTouchMove = (e) => {
+    if (touchItemIdx === null) return;
+    const touch = e.touches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    const card = element?.closest('[data-carousel-idx]');
+    if (card) {
+      const targetIdx = parseInt(card.getAttribute('data-carousel-idx'), 10);
+      if (!isNaN(targetIdx) && targetIdx !== touchItemIdx) {
+        moveItem(touchItemIdx, targetIdx);
+        setTouchItemIdx(targetIdx);
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setTouchItemIdx(null);
+  };
+
+  const handleSaveOrder = async () => {
+    if (reorderedImages.length === 0) return;
+    setSavingOrder(true);
+    try {
+      const orderedIds = reorderedImages.map((img) => img.id);
+      await api.post('carousel-images/reorder/', { ordered_ids: orderedIds });
+      setSuccessMsg('Orden guardado correctamente.');
+      setTimeout(() => setSuccessMsg(''), 3000);
+      setIsReordering(false);
+      await fetchImages();
+    } catch (err) {
+      console.error('Error al guardar nuevo orden:', err);
+      setError('Hubo un error al guardar el orden.');
+    } finally {
+      setSavingOrder(false);
+    }
+  };
+
+  if (loading) {
+    return <div style={{ color: '#787772', fontSize: 13 }}>Cargando imágenes…</div>;
+  }
+
+  const currentDisplayImages = isReordering ? reorderedImages : images;
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h2 className="cf-section-title">Imágenes del Carrusel</h2>
-      </div>
-
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18, width: '100%' }}>
       {error && (
-        <div className="cf-alert">
-          {error}
+        <div
+          style={{
+            padding: '10px 14px',
+            borderRadius: 10,
+            background: '#fef2f2',
+            border: '1px solid #fecaca',
+            color: '#991b1b',
+            fontSize: 13,
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8
+          }}
+        >
+          <XCircle size={15} style={{ flexShrink: 0 }} />
+          <span>{error}</span>
         </div>
       )}
 
-      {/* Formulario Agregar Nueva Imagen */}
-      <div style={{ marginBottom: '32px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '32px' }}>
-        <h3 className="cf-eyebrow" style={{ marginBottom: '16px' }}>
-          <ImageIcon size={14} /> Agregar Nueva Imagen
-        </h3>
-        
-        <form onSubmit={handleUpload} className="cf-form-row">
-          <div className="input-group" style={{ flex: 1 }}>
-            <label>Título (opcional)</label>
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} style={{ borderColor: 'var(--border-subtle)' }} />
+      {successMsg && (
+        <div
+          style={{
+            padding: '10px 14px',
+            borderRadius: 10,
+            background: '#ffffff',
+            border: '1px solid #d4d3ce',
+            color: '#141413',
+            fontSize: 13,
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+          }}
+        >
+          <CheckCircle2 size={15} style={{ color: '#166534', flexShrink: 0 }} />
+          <span>{successMsg}</span>
+        </div>
+      )}
+
+      {/* ====================================================================
+         1. TARJETA SUPERIOR: SUBIR NUEVA IMAGEN Y CONTROL DE ORDEN
+         ==================================================================== */}
+      <div
+        style={{
+          background: '#ffffff',
+          border: '1px solid #e5e4df',
+          borderRadius: 12,
+          overflow: 'hidden'
+        }}
+      >
+        <div
+          style={{
+            padding: '12px 18px',
+            background: '#f6f5f1',
+            borderBottom: '1px solid #e5e4df',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 10
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: 6,
+                background: '#7cb2f4',
+                color: '#132a4a',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <ImageIcon size={13} strokeWidth={2} />
+            </span>
+            <strong style={{ fontSize: 13.5, fontWeight: 700, color: '#141413' }}>
+              Carrusel principal
+            </strong>
+            <span style={{ fontSize: 12, color: '#787772' }}>
+              ({images.length})
+            </span>
           </div>
-          
-          <div className="input-group" style={{ flex: 1 }}>
-            <label>Imagen</label>
-            <div style={{
-              border: newImage ? '1px solid var(--border-medium)' : '2px dashed var(--border-medium)',
-              borderRadius: '12px',
-              padding: '10px 16px',
-              textAlign: 'center',
-              background: '#fafafb',
-              cursor: 'pointer',
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {isReordering ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleCancelReorder}
+                  disabled={savingOrder}
+                  style={{ ...btnOutline, height: 30, padding: '0 12px', fontSize: 12 }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveOrder}
+                  disabled={savingOrder}
+                  style={{ ...btnDark, height: 30, padding: '0 12px', fontSize: 12 }}
+                >
+                  <Check size={13} />
+                  {savingOrder ? 'Guardando…' : 'Guardar orden'}
+                </button>
+              </>
+            ) : (
+              images.length > 1 && (
+                <button
+                  type="button"
+                  onClick={handleStartReorder}
+                  style={{ ...btnOutline, height: 30, padding: '0 12px', fontSize: 12 }}
+                >
+                  <ArrowUpDown size={13} /> Ordenar
+                </button>
+              )
+            )}
+          </div>
+        </div>
+
+        {isReordering ? (
+          <div
+            style={{
+              padding: '12px 18px',
+              background: '#fefce8',
+              fontSize: 12.5,
+              color: '#713f12',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              height: '42px',
-              boxSizing: 'border-box'
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 8
             }}
-            onClick={() => document.getElementById('image-upload').click()}
-            >
-              <input 
-                type="file" 
-                id="image-upload" 
-                accept="image/*" 
-                style={{ display: 'none' }}
-                onChange={(e) => setNewImage(e.target.files[0])} 
-                required 
-              />
-              {newImage ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{newImage.name}</span>
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); setNewImage(null); }}
-                    style={{ background: 'none', border: 'none', padding: '2px', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <Upload size={16} style={{ color: 'var(--gx-primary-ink)' }} />
-                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Subir Imagen</span>
-                </>
-              )}
-            </div>
+          >
+            <span>Arrastrá las tarjetas o usá las flechas para cambiar su posición.</span>
+            <strong>#1 aparece primero en la web</strong>
           </div>
-          
-          <button type="submit" disabled={uploading} style={{ height: '42px', padding: '0 24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {uploading ? '...' : <><Plus size={18} /> Subir</>}
-          </button>
-        </form>
+        ) : (
+          <div
+            style={{
+              padding: '14px 18px',
+              display: 'flex',
+              alignItems: 'flex-end',
+              flexWrap: 'wrap',
+              gap: 12
+            }}
+          >
+            <div style={{ flex: '1 1 240px' }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#787772', marginBottom: 5 }}>
+                Título sobre el banner (opcional)
+              </div>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Ej: GRAN FINAL CLAUSURA 2026"
+                style={{
+                  height: 34,
+                  padding: '0 10px',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  borderRadius: 8,
+                  background: '#faf9f6',
+                  border: '1px solid #e5e4df',
+                  color: '#141413',
+                  width: '100%',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            <input
+              type="file"
+              id="image-upload"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleFileSelect}
+            />
+
+            <button
+              type="button"
+              onClick={() => document.getElementById('image-upload').click()}
+              disabled={uploading}
+              style={{ ...btnDark, height: 34, padding: '0 16px' }}
+            >
+              <Upload size={13.5} />
+              {uploading ? 'Subiendo…' : 'Subir y encuadrar imagen'}
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Grid de imágenes */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))', gap: '20px' }}>
-        {images.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>No hay imágenes configuradas.</p>
-        ) : (
-          images.map((img) => (
-            <div key={img.id} className="cf-media-card">
-              <div style={{ width: '100%', height: '160px', background: '#f4f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '1px solid var(--border-subtle)' }}>
-                <img src={img.image} alt={img.title || 'Carrusel'} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: img.is_active ? 1 : 0.4 }} />
-              </div>
-              <div style={{ padding: '16px' }}>
-                <h4 style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px', fontSize: '14px' }}>{img.title || 'Sin Título'}</h4>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
-                  <button 
-                    onClick={() => toggleActive(img.id, img.is_active)}
-                    style={{ 
-                      background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
-                      color: img.is_active ? '#059669' : 'var(--text-muted)' 
+      {/* ====================================================================
+         2. GRILLA DE TARJETAS DEL CARRUSEL
+         ==================================================================== */}
+      {currentDisplayImages.length === 0 ? (
+        <div
+          style={{
+            background: '#ffffff',
+            border: '1px solid #e5e4df',
+            borderRadius: 12,
+            padding: '28px 20px',
+            textAlign: 'center',
+            color: '#787772',
+            fontSize: 13
+          }}
+        >
+          No hay imágenes cargadas en el carrusel.
+        </div>
+      ) : (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(265px, 1fr))',
+            gap: 14
+          }}
+          onTouchMove={isReordering ? handleTouchMove : undefined}
+          onTouchEnd={isReordering ? handleTouchEnd : undefined}
+        >
+          {currentDisplayImages.map((img, index) => {
+            const isDragging = draggedIdx === index || touchItemIdx === index;
+
+            return (
+              <div
+                key={img.id}
+                data-carousel-idx={index}
+                draggable={isReordering}
+                onDragStart={isReordering ? (e) => handleDragStart(e, index) : undefined}
+                onDragEnter={isReordering ? (e) => handleDragEnter(e, index) : undefined}
+                onDragOver={isReordering ? handleDragOver : undefined}
+                onDragEnd={isReordering ? handleDragEnd : undefined}
+                onTouchStart={isReordering ? (e) => handleTouchStart(e, index) : undefined}
+                style={{
+                  background: isDragging ? '#fefce8' : '#ffffff',
+                  border: isDragging
+                    ? '1.5px dashed #141413'
+                    : '1px solid #e5e4df',
+                  borderRadius: 12,
+                  padding: 6,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  cursor: isReordering ? 'grab' : 'default',
+                  transform: isDragging ? 'scale(1.01)' : 'none',
+                  transition: 'transform 0.12s ease, border-color 0.12s ease'
+                }}
+              >
+                {/* Banner de imagen */}
+                <div
+                  style={{
+                    width: '100%',
+                    aspectRatio: '2.28 / 1',
+                    borderRadius: 8,
+                    background: '#18181b',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <img
+                    src={img.image}
+                    alt={img.title || 'Carrusel'}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      opacity: img.is_active ? 1 : 0.4,
+                      transition: 'opacity 0.2s ease'
+                    }}
+                  />
+
+                  {/* Número de orden */}
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: 8,
+                      left: 8,
+                      background: 'rgba(20, 20, 19, 0.82)',
+                      color: '#ffffff',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: 6,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4
                     }}
                   >
-                    {img.is_active ? <CheckCircle size={18} /> : <XCircle size={18} />}
-                    <span style={{ fontSize: '13px', fontWeight: img.is_active ? '600' : '400' }}>{img.is_active ? 'Visible' : 'Oculta'}</span>
-                  </button>
-                  
-                  {deletingId === img.id ? (
-                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center', animation: 'fadeIn 0.2s ease' }}>
-                      <span style={{ fontSize: '10px', color: '#dc2626', fontWeight: 'bold', marginRight: '4px' }}>¿Eliminar?</span>
-                      <button 
+                    {isReordering && <GripVertical size={12} />}#{index + 1}
+                  </span>
+
+                  {/* Controles de orden en modo reordenar */}
+                  {isReordering && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                        display: 'flex',
+                        gap: 4
+                      }}
+                    >
+                      <button
                         type="button"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(img.id); }} 
-                        className="danger" 
-                        style={{ minWidth: 'auto', height: '24px', padding: '0 6px', fontSize: '10px' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          moveItem(index, index - 1);
+                        }}
+                        disabled={index === 0}
+                        style={{
+                          width: 26,
+                          height: 26,
+                          minWidth: 26,
+                          padding: 0,
+                          borderRadius: 6,
+                          border: 'none',
+                          background: 'rgba(20, 20, 19, 0.82)',
+                          color: '#ffffff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: index === 0 ? 'not-allowed' : 'pointer',
+                          opacity: index === 0 ? 0.4 : 1
+                        }}
                       >
-                        Sí
+                        <ChevronLeft size={14} />
                       </button>
-                      <button 
+                      <button
                         type="button"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeletingId(null); }} 
-                        className="secondary" 
-                        style={{ minWidth: 'auto', height: '24px', padding: '0 6px', fontSize: '10px' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          moveItem(index, index + 1);
+                        }}
+                        disabled={index === currentDisplayImages.length - 1}
+                        style={{
+                          width: 26,
+                          height: 26,
+                          minWidth: 26,
+                          padding: 0,
+                          borderRadius: 6,
+                          border: 'none',
+                          background: 'rgba(20, 20, 19, 0.82)',
+                          color: '#ffffff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor:
+                            index === currentDisplayImages.length - 1 ? 'not-allowed' : 'pointer',
+                          opacity: index === currentDisplayImages.length - 1 ? 0.4 : 1
+                        }}
                       >
-                        No
+                        <ChevronRight size={14} />
                       </button>
                     </div>
-                  ) : (
-                    <button 
-                      onClick={() => setDeletingId(img.id)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', display: 'flex', alignItems: 'center', padding: '8px' }}
-                      title="Eliminar imagen"
+                  )}
+                </div>
+
+                {/* Cuerpo de la tarjeta */}
+                <div
+                  style={{
+                    padding: '10px 10px 6px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8
+                  }}
+                >
+                  <strong
+                    style={{
+                      fontSize: 13.5,
+                      fontWeight: 700,
+                      color: '#141413',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}
+                    title={img.title || 'Sin título'}
+                  >
+                    {img.title || 'Sin título'}
+                  </strong>
+
+                  {!isReordering && (
+                    <div
+                      style={{
+                        paddingTop: 8,
+                        borderTop: '1px solid #f1f0ec',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 6
+                      }}
                     >
-                      <Trash2 size={18} />
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleActive(img.id, img.is_active)}
+                        style={{
+                          ...btnOutline,
+                          height: 28,
+                          padding: '0 9px',
+                          fontSize: 11.5,
+                          color: img.is_active ? '#166534' : '#787772',
+                          borderColor: img.is_active ? '#bbf7d0' : '#e5e4df',
+                          background: img.is_active ? '#f0fdf4' : '#faf9f6'
+                        }}
+                      >
+                        {img.is_active ? <Eye size={12.5} /> : <EyeOff size={12.5} />}
+                        {img.is_active ? 'Visible' : 'Oculta'}
+                      </button>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <button
+                          type="button"
+                          onClick={() => handleStartEdit(img)}
+                          style={{
+                            ...btnOutline,
+                            height: 28,
+                            padding: '0 10px',
+                            fontSize: 11.5
+                          }}
+                          title="Retocar encuadre o título"
+                        >
+                          <Crop size={12.5} /> Retocar
+                        </button>
+
+                        {deletingId === img.id ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(img.id)}
+                              style={{
+                                ...btnDark,
+                                height: 28,
+                                padding: '0 8px',
+                                fontSize: 11,
+                                background: '#dc2626',
+                                borderColor: '#dc2626'
+                              }}
+                            >
+                              Sí
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeletingId(null)}
+                              style={{
+                                ...btnOutline,
+                                height: 28,
+                                padding: '0 8px',
+                                fontSize: 11
+                              }}
+                            >
+                              No
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setDeletingId(img.id)}
+                            title="Eliminar imagen"
+                            style={{
+                              width: 28,
+                              height: 28,
+                              minWidth: 28,
+                              padding: 0,
+                              borderRadius: 6,
+                              background: '#ffffff',
+                              color: '#787772',
+                              border: '1px solid #e5e4df',
+                              boxShadow: 'none',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
-            </div>
-          ))
-        )}
-      </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Modal de Recorte y Previsualización Web */}
+      {cropModalOpen && (pendingCropFile || editingImageItem) && (
+        <ImageCropPreviewModal
+          file={pendingCropFile}
+          imageUrl={
+            editingImageItem ? editingImageItem.original_image || editingImageItem.image : null
+          }
+          initialCropData={editingImageItem?.crop_data || null}
+          initialTitle={editingImageItem ? editingImageItem.title || '' : title}
+          isEditing={!!editingImageItem}
+          uploading={uploading}
+          onClose={() => {
+            setCropModalOpen(false);
+            setPendingCropFile(null);
+            setEditingImageItem(null);
+          }}
+          onConfirm={handleCropConfirm}
+        />
+      )}
     </div>
   );
 };

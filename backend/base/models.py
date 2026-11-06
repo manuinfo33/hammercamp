@@ -208,31 +208,55 @@ class ZoneTeam(models.Model):
     class Meta:
         verbose_name = "Equipo en Zona"
         verbose_name_plural = "Equipos en Zona"
-        unique_together = ('zone', 'team')
-
-class TeamReplacementHistory(models.Model):
-    tournament = models.ForeignKey('Tournament', on_delete=models.CASCADE, related_name='replacement_history', verbose_name="Torneo")
-    zone = models.ForeignKey('TournamentZone', on_delete=models.CASCADE, related_name='replacement_history', verbose_name="Zona")
-    outgoing_team = models.ForeignKey('Team', on_delete=models.CASCADE, related_name='replacement_exits', verbose_name="Equipo Saliente")
-    incoming_team = models.ForeignKey('Team', on_delete=models.CASCADE, related_name='replacement_entries', verbose_name="Equipo Entrante")
-    inherit_points = models.BooleanField(default=False, verbose_name="Hereda Puntos")
-    reason = models.CharField(max_length=150, verbose_name="Motivo")
-    note = models.TextField(blank=True, null=True, verbose_name="Observaciones")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha")
-
-    def __str__(self):
-        return f"{self.incoming_team.name} reemplazó a {self.outgoing_team.name} ({self.zone.name})"
-
-    class Meta:
-        verbose_name = "Historial de Reemplazo"
-        verbose_name_plural = "Historial de Reemplazos"
-        ordering = ['-created_at']
+        unique_together = ('zone', 'team')
+
+
+
+class TeamReplacementHistory(models.Model):
+
+    tournament = models.ForeignKey('Tournament', on_delete=models.CASCADE, related_name='replacement_history', verbose_name="Torneo")
+
+    zone = models.ForeignKey('TournamentZone', on_delete=models.CASCADE, related_name='replacement_history', verbose_name="Zona")
+
+    outgoing_team = models.ForeignKey('Team', on_delete=models.CASCADE, related_name='replacement_exits', verbose_name="Equipo Saliente")
+
+    incoming_team = models.ForeignKey('Team', on_delete=models.CASCADE, related_name='replacement_entries', verbose_name="Equipo Entrante")
+
+    inherit_points = models.BooleanField(default=False, verbose_name="Hereda Puntos")
+
+    reason = models.CharField(max_length=150, verbose_name="Motivo")
+
+    note = models.TextField(blank=True, null=True, verbose_name="Observaciones")
+
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha")
+
+
+
+    def __str__(self):
+
+        return f"{self.incoming_team.name} reemplazó a {self.outgoing_team.name} ({self.zone.name})"
+
+
+
+    class Meta:
+
+        verbose_name = "Historial de Reemplazo"
+
+        verbose_name_plural = "Historial de Reemplazos"
+
+        ordering = ['-created_at']
+
 
 
 
 class CarouselImage(models.Model):
     title = models.CharField(max_length=100, blank=True, null=True, verbose_name="Título")
     image = models.ImageField(upload_to='carousel/', verbose_name="Imagen")
+
+    original_image = models.ImageField(upload_to='carousel/originals/', blank=True, null=True, verbose_name="Imagen Original")
+
+    crop_data = models.JSONField(blank=True, null=True, verbose_name="Datos de Encuadre")
+
     is_active = models.BooleanField(default=True, verbose_name="Activa")
     order = models.PositiveSmallIntegerField(default=0, verbose_name="Orden")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Creado el")
@@ -247,12 +271,34 @@ class CarouselImage(models.Model):
         ordering = ['order', '-created_at']
 
 
+class GalleryImage(models.Model):
+    title = models.CharField(max_length=100, blank=True, null=True, verbose_name="Título")
+    image = models.ImageField(upload_to='gallery/', verbose_name="Imagen")
+    original_image = models.ImageField(upload_to='gallery/originals/', blank=True, null=True, verbose_name="Imagen Original")
+    crop_data = models.JSONField(blank=True, null=True, verbose_name="Datos de Encuadre")
+    is_active = models.BooleanField(default=True, verbose_name="Activa")
+    order = models.PositiveSmallIntegerField(default=0, verbose_name="Orden")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Creado el")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Actualizado el")
+
+    def __str__(self):
+        return self.title or f"Imagen de Galería {self.id}"
+
+    class Meta:
+        verbose_name = "Imagen de Galería"
+        verbose_name_plural = "Imágenes de Galería"
+        ordering = ['order', '-created_at']
+
+
 class News(models.Model):
     category = models.CharField(max_length=50, verbose_name="Categoría")
     title = models.CharField(max_length=200, verbose_name="Título")
     excerpt = models.TextField(verbose_name="Resumen")
     date = models.DateField(default=timezone.now, verbose_name="Fecha")
     image = models.ImageField(upload_to='news/', verbose_name="Imagen")
+    original_image = models.ImageField(upload_to='news/originals/', blank=True, null=True, verbose_name="Imagen Original")
+    crop_data = models.JSONField(blank=True, null=True, verbose_name="Datos de Encuadre")
+    is_pinned = models.BooleanField(default=False, verbose_name="Fijada")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Creado el")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Actualizado el")
 
@@ -262,7 +308,7 @@ class News(models.Model):
     class Meta:
         verbose_name = "Noticia"
         verbose_name_plural = "Noticias"
-        ordering = ['-date', '-created_at']
+        ordering = ['-is_pinned', '-date', '-created_at']
 
 
 class MatchRound(models.Model):
@@ -491,3 +537,52 @@ class Reclamo(models.Model):
         ordering = ['-created_at']
 
 
+
+
+class SiteSettings(models.Model):
+    """
+    Identidad de marca (white-label). Es un registro unico (singleton, pk=1):
+    logo de la empresa y color principal que se aplican a la web visual,
+    a la app de delegados y a la app de gestion.
+    """
+    DEFAULT_PRIMARY_COLOR = '#f2bb2b'
+
+    DEFAULT_NAME = 'La Superliga'
+
+    name = models.CharField(max_length=60, default=DEFAULT_NAME, verbose_name="Nombre de la plataforma")
+    contact_address = models.CharField(max_length=200, blank=True, default='Av. del Deporte 3600, La Plata', verbose_name="Dirección")
+    contact_phone = models.CharField(max_length=40, blank=True, default='+54 221 555-1736', verbose_name="Celular")
+    contact_email = models.CharField(max_length=120, blank=True, default='info@lasuperliga.com.ar', verbose_name="Email de contacto")
+    about_description = models.TextField(
+        blank=True,
+        default=(
+            "La Superliga es un complejo deportivo dedicado al fútbol amateur desde 2008. "
+            "Organizamos torneos en distintas categorías y abrimos las puertas a equipos de toda la región.\n\n"
+            "Contamos con canchas de césped sintético de última generación, iluminación profesional, "
+            "vestuarios, buffet y estacionamiento propio.\n\n"
+            "Nuestra pasión es el juego: que cada jugador, sin importar la edad o el nivel, "
+            "tenga la mejor experiencia dentro y fuera de la cancha."
+        ),
+        verbose_name="Descripción de la empresa (Nosotros)"
+    )
+    logo = models.ImageField(upload_to='branding/', blank=True, null=True, verbose_name="Logo")
+    logo_original = models.ImageField(upload_to='branding/originals/', blank=True, null=True, verbose_name="Logo original")
+    logo_crop_data = models.JSONField(blank=True, null=True, verbose_name="Datos de encuadre del logo")
+    primary_color = models.CharField(max_length=7, default=DEFAULT_PRIMARY_COLOR, verbose_name="Color principal")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Actualizado el")
+
+    class Meta:
+        verbose_name = "Configuracion del sitio"
+        verbose_name_plural = "Configuracion del sitio"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+    def __str__(self):
+        return "Configuracion del sitio"

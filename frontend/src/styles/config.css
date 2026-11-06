@@ -1,64 +1,66 @@
-/* Configuración Web Visual — tabs y paneles idénticos al submenú de Mi Equipo */
-.cf-tabs {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-  border-bottom: 1px solid #d8cfc0;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.cf-tabs::-webkit-scrollbar { display: none; }
+/* Configuración Web Visual — tabs en PC y grilla segmentada 2x2 en celular */
+@media (min-width: 769px) {
+  .cf-tabs {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    border-bottom: 1px solid #d8cfc0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .cf-tabs::-webkit-scrollbar { display: none; }
 
-.cf-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-  height: auto;
-  padding: 14px 4px;
-  margin-bottom: -1px;
-  background: transparent !important;
-  color: #191919 !important;
-  border: none !important;
-  border-bottom: 4px solid transparent !important;
-  border-radius: 0 !important;
-  font-size: 14.5px !important;
-  font-weight: 500 !important;
-  letter-spacing: 0 !important;
-  text-transform: none !important;
-  cursor: pointer;
-  box-shadow: none !important;
-  transform: none !important;
-  transition: all 0.15s ease;
-  outline: none;
-}
+  .cf-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    height: auto;
+    padding: 14px 4px;
+    margin-bottom: -1px;
+    background: transparent !important;
+    color: #191919 !important;
+    border: none !important;
+    border-bottom: 4px solid transparent !important;
+    border-radius: 0 !important;
+    font-size: 14.5px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    cursor: pointer;
+    box-shadow: none !important;
+    transform: none !important;
+    transition: all 0.15s ease;
+    outline: none;
+  }
 
-.cf-tab svg {
-  color: #7f776f;
-  transition: color 0.15s ease;
-}
+  .cf-tab svg {
+    color: #7f776f;
+    transition: color 0.15s ease;
+  }
 
-.cf-tab:hover {
-  background: transparent !important;
-  color: #cc7a5c !important;
-  box-shadow: none !important;
-  transform: none !important;
-}
+  .cf-tab:hover {
+    background: transparent !important;
+    color: #cc7a5c !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
 
-.cf-tab:hover svg {
-  color: #cc7a5c;
-}
+  .cf-tab:hover svg {
+    color: #cc7a5c;
+  }
 
-.cf-tab.active {
-  color: #cc7a5c !important;
-  font-weight: 700 !important;
-  border-bottom-color: #cc7a5c !important;
-  background: transparent !important;
-}
+  .cf-tab.active {
+    color: #cc7a5c !important;
+    font-weight: 700 !important;
+    border-bottom-color: #cc7a5c !important;
+    background: transparent !important;
+  }
 
-.cf-tab.active svg {
-  color: #cc7a5c !important;
+  .cf-tab.active svg {
+    color: #cc7a5c !important;
+  }
 }
 
 .cf-panel {
@@ -68,22 +70,271 @@
   padding: 28px;
   box-shadow: var(--gx-shadow-sm);
 }
+
 @media (max-width: 768px) {
-  .cf-tabs { gap: 8px; border-bottom: none; padding-bottom: 2px; }
-  .cf-tab {
-    height: 42px;
-    padding: 0 16px;
-    margin: 0;
-    border: 1px solid var(--border-medium);
-    border-radius: 999px;
-    background: #fff;
-    font-size: 13px;
+  .cf-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    background: #eeece6;
+    padding: 5px;
+    border-radius: 12px;
+    border: 1px solid #e2dfd7;
   }
-  .cf-tab.active { background: #18181b; color: #fff; border-color: #18181b; }
-  .cf-tab.active svg { color: var(--gx-primary); }
-  .cf-tab:hover { background: #fff; }
-  .cf-tab.active:hover { background: #18181b; color: #fff; }
+
+  .cf-tab {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    width: 100% !important;
+    height: 36px !important;
+    padding: 0 8px !important;
+    margin: 0 !important;
+    border: 1px solid rgba(20, 20, 19, 0.06) !important;
+    border-radius: 8px !important;
+    background: rgba(255, 255, 255, 0.75) !important;
+    color: #52514e !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    box-shadow: none !important;
+    transform: none !important;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    outline: none;
+  }
+
+  .cf-tab svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: #787772;
+  }
+
+  .cf-tab.active {
+    background: #141413 !important;
+    color: #ffffff !important;
+    border-color: #141413 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14) !important;
+  }
+
+  .cf-tab.active svg {
+    color: #f5dd90 !important;
+  }
+
   .cf-panel { padding: 16px 14px; border-radius: 14px; }
+}
+
+/* ==========================================================================
+   NUEVO MENÚ UI/UX — CONFIGURACIÓN WEB VISUAL & FINANZAS (.cwv-nav)
+   - En PC: Barra de tarjetas interactivas con icono, título y subtítulo
+   - En Celular: Dock segmentado en una sola fila (icono + etiqueta corta)
+   - Color activo suave y cálido acorde a la estética de las tarjetas
+   ========================================================================== */
+.cwv-nav {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  background: #ffffff;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid #e5e4df;
+  box-shadow: 0 2px 10px rgba(20, 20, 19, 0.03);
+}
+
+.cwv-nav.cwv-nav-5 {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.cwv-nav-btn {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 11px !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 54px !important;
+  padding: 9px 12px !important;
+  margin: 0 !important;
+  border-radius: 10px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: #141413 !important;
+  text-align: left !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  cursor: pointer;
+  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+}
+
+.cwv-nav-btn:hover:not(.active) {
+  background: #f6f5f1 !important;
+  border-color: #e7e5df !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.cwv-nav-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #f4f3ef;
+  border: 1px solid #e7e5df;
+  color: #52514e;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.16s ease;
+}
+
+.cwv-nav-btn:hover:not(.active) .cwv-nav-icon {
+  background: #ffffff;
+  color: #141413;
+}
+
+.cwv-nav-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.cwv-nav-title-desktop {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #141413;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cwv-nav-title-mobile {
+  display: none;
+}
+
+.cwv-nav-desc {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: #787772;
+  line-height: 1.2;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Estado activo suave y cálido (armonizado con las tarjetas de la sección) */
+.cwv-nav-btn.active {
+  background: #f6eed6 !important;
+  border-color: #e2cb88 !important;
+  color: #261e0b !important;
+  box-shadow: 0 2px 6px rgba(140, 105, 20, 0.08) !important;
+}
+
+.cwv-nav-btn.active .cwv-nav-icon {
+  background: #f3dc88;
+  border-color: #dfc15d;
+  color: #4d3d0d;
+}
+
+.cwv-nav-btn.active .cwv-nav-title-desktop {
+  color: #1f1808;
+}
+
+.cwv-nav-btn.active .cwv-nav-desc {
+  color: #6e5c30;
+}
+
+/* Vista Celular: Dock compacto en una sola fila */
+@media (max-width: 768px) {
+  .cwv-nav {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    padding: 4px;
+    border-radius: 13px;
+    background: #ffffff;
+    border: 1px solid #e5e4df;
+    box-shadow: 0 2px 8px rgba(20, 20, 19, 0.04);
+  }
+
+  .cwv-nav.cwv-nav-5 {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 3px;
+  }
+
+  .cwv-nav-btn {
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    min-height: 50px !important;
+    padding: 6px 2px !important;
+    border-radius: 9px !important;
+    text-align: center !important;
+  }
+
+  .cwv-nav-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: transparent;
+    border: none;
+    color: #787772;
+  }
+
+  .cwv-nav-icon svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .cwv-nav-btn.active .cwv-nav-icon {
+    background: transparent;
+    border: none;
+    color: #785608;
+  }
+
+  .cwv-nav-text {
+    align-items: center;
+    flex: initial;
+    width: 100%;
+  }
+
+  .cwv-nav-title-desktop,
+  .cwv-nav-desc {
+    display: none !important;
+  }
+
+  .cwv-nav-title-mobile {
+    display: block !important;
+    font-size: 11px;
+    font-weight: 600;
+    color: #52514e;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .cwv-nav-btn.active .cwv-nav-title-mobile {
+    color: #261e0b;
+    font-weight: 700;
+  }
 }
 
 .cf-form-row { display: flex; gap: 20px; align-items: flex-end; }
@@ -136,4 +387,136 @@
   .cf-row-3 { flex-direction: column; gap: 14px; }
   .cf-row-3 > .cf-w220, .cf-row-3 > .cf-w180 { width: 100% !important; }
   .cf-grid-2 { grid-template-columns: 1fr; }
+}
+
+/* Ocultar encabezado descriptivo en celular para ganar espacio */
+.cf-desktop-header {
+  display: block;
+}
+@media (max-width: 768px) {
+  .cf-desktop-header {
+    display: none !important;
+  }
+}
+
+/* Layout responsivo y compacto de noticias */
+.news-form-body {
+  padding: 16px 18px;
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+}
+.news-cover-col {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 240px;
+  max-width: 320px;
+  min-width: 220px;
+}
+.news-cover-box {
+  flex: 1;
+  min-height: 180px;
+  border-radius: 10px;
+  background: #faf9f6;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 14px;
+  text-align: center;
+}
+.news-cover-box.has-preview {
+  padding: 0;
+}
+.news-fields-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 2.5 1 360px;
+  min-width: 250px;
+}
+.news-input {
+  height: 38px;
+  padding: 0 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  border-radius: 8px;
+  background: #faf9f6;
+  border: 1px solid #e5e4df;
+  color: #141413;
+  width: 100%;
+  box-sizing: border-box;
+}
+.news-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.5;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #faf9f6;
+  border: 1px solid #e5e4df;
+  color: #141413;
+  resize: vertical;
+  min-height: 105px;
+}
+
+@media (max-width: 768px) {
+  .news-form-body {
+    padding: 10px 12px;
+    gap: 10px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .news-cover-col {
+    flex: 0 0 auto !important;
+    height: auto !important;
+    max-width: 100%;
+    min-width: 100%;
+  }
+  .news-cover-box {
+    flex: 0 0 auto !important;
+    min-height: 58px !important;
+    height: auto !important;
+    padding: 8px 12px !important;
+    flex-direction: row !important;
+    gap: 10px !important;
+    justify-content: center !important;
+  }
+  .news-cover-box.has-preview {
+    min-height: 140px !important;
+    padding: 0 !important;
+  }
+  .news-drop-icon {
+    width: 28px !important;
+    height: 28px !important;
+    margin-bottom: 0 !important;
+    flex-shrink: 0 !important;
+  }
+  .news-drop-text {
+    text-align: left !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  .news-fields-col {
+    flex: 0 0 auto !important;
+    height: auto !important;
+    gap: 10px;
+    min-width: 100%;
+  }
+  .news-input {
+    height: 35px;
+    padding: 0 10px;
+    font-size: 13px;
+  }
+  .news-textarea {
+    min-height: 68px;
+    padding: 8px 10px;
+    font-size: 13px;
+  }
 }

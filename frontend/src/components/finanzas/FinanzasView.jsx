@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useBranding } from '../../context/BrandingContext';
 import {
   Wallet,
   ClipboardList,
@@ -21,11 +22,41 @@ import { ars, num, errMsg, Field, Modal, Empty } from './common';
 
 const list = (r) => r.data?.results || r.data;
 const TABS = [
-  { id: 'jornada', label: 'Caja de Fecha', icon: ClipboardList },
-  { id: 'general', label: 'Caja General', icon: Landmark },
-  { id: 'socios', label: 'Socios', icon: Users },
-  { id: 'deudas', label: 'Deudas e Inscripciones', icon: AlertCircle },
-  { id: 'config', label: 'Configuración de pagos', icon: SlidersHorizontal },
+  {
+    id: 'jornada',
+    label: 'Caja de Fecha',
+    mobileLabel: 'Fecha',
+    desc: 'Planilla por jornada',
+    icon: ClipboardList,
+  },
+  {
+    id: 'general',
+    label: 'Caja General',
+    mobileLabel: 'General',
+    desc: 'Movimientos y saldos',
+    icon: Landmark,
+  },
+  {
+    id: 'socios',
+    label: 'Socios',
+    mobileLabel: 'Socios',
+    desc: 'Cuentas corrientes',
+    icon: Users,
+  },
+  {
+    id: 'deudas',
+    label: 'Deudas e Inscripciones',
+    mobileLabel: 'Deudas',
+    desc: 'Saldos de equipos',
+    icon: AlertCircle,
+  },
+  {
+    id: 'config',
+    label: 'Configuración de pagos',
+    mobileLabel: 'Valores',
+    desc: 'Precios y aranceles',
+    icon: SlidersHorizontal,
+  },
 ];
 const today = () => new Date().toISOString().slice(0, 10);
 const ALL_CATS = [
@@ -470,6 +501,7 @@ function GeneralTab({ summary, teams, partners, reload }) {
 }
 
 function SociosTab({ summary, teams, partners, reload }) {
+  const { brandName } = useBranding();
   const [modal, setModal] = useState(null);
   const bal = summary?.partner_balances || [];
   return (
@@ -486,7 +518,7 @@ function SociosTab({ summary, teams, partners, reload }) {
           Cuenta corriente de socios
         </h3>
         <p style={{ margin: '2px 0 0', fontSize: 12, color: '#787772' }}>
-          Lo que La Superliga le debe a cada socio por gastos pagados con dinero propio.
+          Lo que {brandName} le debe a cada socio por gastos pagados con dinero propio.
         </p>
       </div>
       {bal.length === 0 ? (
@@ -570,34 +602,46 @@ export default function FinanzasView() {
         gap: 16,
       }}
     >
-      <PageHeader
-        icon={Wallet}
-        title="Finanzas"
-        subtitle="Caja de cada fecha, tesorería, socios, inscripciones y cuentas corrientes de equipos. Solo administradores."
-      />
-      <div className="cf-tabs">
-        {TABS.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            className={`cf-tab ${tab === id ? 'active' : ''}`}
-            onClick={() => {
-              if (id === tab) return;
-              if (typeof window.__finanzasDayBeforeLeave === 'function') {
-                const proceed = window.__finanzasDayBeforeLeave(() => {
-                  setTab(id);
-                  base.reload();
-                });
-                if (!proceed) return;
-              }
-              setTab(id);
-              base.reload();
-            }}
-          >
-            <Icon size={18} /> {label}
-          </button>
-        ))}
+      <div className="cf-desktop-header">
+        <PageHeader
+          icon={Wallet}
+          title="Finanzas"
+          subtitle="Caja de cada fecha, tesorería, socios, inscripciones y cuentas corrientes de equipos. Solo administradores."
+        />
       </div>
+      <nav className="cwv-nav cwv-nav-5" aria-label="Secciones de Finanzas">
+        {TABS.map(({ id, label, mobileLabel, desc, icon: Icon }) => {
+          const isActive = tab === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              className={`cwv-nav-btn ${isActive ? 'active' : ''}`}
+              onClick={() => {
+                if (id === tab) return;
+                if (typeof window.__finanzasDayBeforeLeave === 'function') {
+                  const proceed = window.__finanzasDayBeforeLeave(() => {
+                    setTab(id);
+                    base.reload();
+                  });
+                  if (!proceed) return;
+                }
+                setTab(id);
+                base.reload();
+              }}
+            >
+              <span className="cwv-nav-icon">
+                <Icon size={18} strokeWidth={isActive ? 2.2 : 1.9} />
+              </span>
+              <span className="cwv-nav-text">
+                <span className="cwv-nav-title-desktop">{label}</span>
+                <span className="cwv-nav-title-mobile">{mobileLabel}</span>
+                <span className="cwv-nav-desc">{desc}</span>
+              </span>
+            </button>
+          );
+        })}
+      </nav>
       {tab === 'jornada' && <JornadaView onDayChanged={base.reload} />}
       {tab === 'general' && <GeneralTab {...base} />}
       {tab === 'socios' && <SociosTab {...base} />}

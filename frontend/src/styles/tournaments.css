@@ -67,7 +67,7 @@
   background: var(--gx-primary-hover) !important;
   border-color: var(--gx-primary-hover) !important;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(242, 187, 43, 0.35) !important;
+  box-shadow: 0 4px 12px rgba(var(--gx-primary-rgb), 0.35) !important;
 }
 
 .tn-fx-btn.danger {

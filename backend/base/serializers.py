@@ -269,13 +269,16 @@ class TournamentCreateSerializer(serializers.ModelSerializer):
                     zone.delete()
         return instance
 
-from .models import Category, Team, Delegate, Transaccion, SaldoSocio, Tournament, TournamentZone, ZoneTeam, CarouselImage, News
-
-# ... (omitted replacing the import, I should just use multi_replace or append). Wait, I'll just append NewsSerializer.
+from .models import Category, Team, Delegate, Transaccion, SaldoSocio, Tournament, TournamentZone, ZoneTeam, CarouselImage, GalleryImage, News
 
 class CarouselImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = CarouselImage
+        fields = '__all__'
+
+class GalleryImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GalleryImage
         fields = '__all__'
 
 class NewsSerializer(serializers.ModelSerializer):
@@ -516,3 +519,26 @@ class ReclamoSerializer(serializers.ModelSerializer):
             return f"{obj.creado_por.first_name} {obj.creado_por.last_name}".strip() or obj.creado_por.username
         return None
 
+
+
+import re as _re
+from .models import SiteSettings
+
+
+class SiteSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SiteSettings
+        fields = ['name', 'contact_address', 'contact_phone', 'contact_email', 'about_description', 'logo', 'logo_original', 'logo_crop_data', 'primary_color', 'updated_at']
+        read_only_fields = ['updated_at']
+
+    def validate_name(self, value):
+        value = (value or '').strip()
+        if not value:
+            raise serializers.ValidationError('El nombre no puede estar vacio.')
+        return value
+
+    def validate_primary_color(self, value):
+        value = (value or '').strip()
+        if not _re.fullmatch(r'#[0-9a-fA-F]{6}', value):
+            raise serializers.ValidationError('El color debe tener formato hexadecimal, por ejemplo #f2bb2b.')
+        return value.lower()

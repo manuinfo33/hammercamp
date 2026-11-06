@@ -1,8 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { Facebook, Instagram, MapPin, Phone, Mail } from "lucide-react";
-import logo from "@/assets/logo-superliga.png";
+import { useBranding } from "@/lib/branding";
 
 export function Footer() {
+  const { logoSrc: logo, brandName, brandLead, brandAccent, contactAddress, contactPhone, contactEmail } = useBranding();
   return (
     <footer className="bg-surface border-t border-border/60 mt-10 md:mt-20">
       <div className="container mx-auto px-4 py-10 sm:px-6 md:py-14 grid gap-8 md:grid-cols-3">
@@ -10,20 +11,20 @@ export function Footer() {
           <div className="flex items-center gap-3">
             <img
               src={logo}
-              alt="La Superliga"
+              alt={brandName}
               width={48}
               height={48}
               className="size-11 md:size-12 object-contain"
             />
             <div className="font-display text-xl md:text-2xl font-bold uppercase leading-tight text-white">
-              La <span className="text-primary">Superliga</span>
+              {brandLead}{brandLead ? " " : ""}<span className="text-primary">{brandAccent}</span>
               <div className="text-[9px] md:text-[10px] tracking-[0.35em] text-primary/80 font-semibold mt-0.5">
                 Torneos
               </div>
             </div>
           </div>
           <p className="mt-3 text-xs sm:text-sm text-muted-foreground max-w-xs leading-relaxed">
-            La Superliga — torneos de fútbol amateur F11 y F7. Resultados,
+            {brandName} — torneos de fútbol amateur F11 y F7. Resultados,
             fechas y todas las novedades de cada categoría.
           </p>
           <div className="flex gap-2.5 mt-4">
@@ -83,18 +84,24 @@ export function Footer() {
               Contacto
             </h3>
             <ul className="mt-3 sm:mt-4 space-y-2.5 text-xs sm:text-sm text-muted-foreground">
-              <li className="flex items-start gap-2.5">
-                <MapPin className="size-4 mt-0.5 text-primary shrink-0" />
-                <span>Av. del Deporte 3600, La Plata</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Phone className="size-4 text-primary shrink-0" />
-                <span>+54 221 555-1736</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Mail className="size-4 text-primary shrink-0" />
-                <span className="break-all">info@lasuperliga.com.ar</span>
-              </li>
+              {contactAddress && (
+                <li className="flex items-start gap-2.5">
+                  <MapPin className="size-4 mt-0.5 text-primary shrink-0" />
+                  <span>{contactAddress}</span>
+                </li>
+              )}
+              {contactPhone && (
+                <li className="flex items-center gap-2.5">
+                  <Phone className="size-4 text-primary shrink-0" />
+                  <span>{contactPhone}</span>
+                </li>
+              )}
+              {contactEmail && (
+                <li className="flex items-center gap-2.5">
+                  <Mail className="size-4 text-primary shrink-0" />
+                  <span className="break-all">{contactEmail}</span>
+                </li>
+              )}
             </ul>
           </div>
         </div>
@@ -102,7 +109,7 @@ export function Footer() {
       <div className="border-t border-border/60">
         <div className="container mx-auto px-4 sm:px-6 py-4 text-[11px] sm:text-xs text-muted-foreground flex flex-col sm:flex-row gap-1.5 justify-between text-center sm:text-left">
           <span>
-            © {new Date().getFullYear()} La Superliga Torneos. Todos los derechos reservados.
+            © {new Date().getFullYear()} {brandName} Torneos. Todos los derechos reservados.
           </span>
           <span>Hecho con pasión por el fútbol amateur.</span>
         </div>

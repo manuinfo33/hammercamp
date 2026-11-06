@@ -1,4 +1,4 @@
-from django.urls import path, include
+﻿from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
 
@@ -13,6 +13,7 @@ router.register(r'tournament-zones', views.TournamentZoneViewSet)
 router.register(r'zones', views.TournamentZoneViewSet, basename='zones')
 router.register(r'zone-teams', views.ZoneTeamViewSet)
 router.register(r'carousel-images', views.CarouselImageViewSet)
+router.register(r'gallery-images', views.GalleryImageViewSet)
 router.register(r'news', views.NewsViewSet)
 router.register(r'match-rounds', views.MatchRoundViewSet)
 router.register(r'matches', views.MatchViewSet)
@@ -27,6 +28,7 @@ router.register(r'team-replacements', views.TeamReplacementHistoryViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('site-settings/', views.SiteSettingsView.as_view(), name='site_settings'),
     path('hello/', views.hello_world, name='hello_world'),
     path('user-info/', views.get_user_info, name='user_info'),
     path('caja/resumen/', views.caja_resumen, name='caja_resumen'),

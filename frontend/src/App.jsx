@@ -13,6 +13,7 @@ import TournamentDetailView from './components/tournaments/TournamentDetailView'
 import UnirPDF from './components/UnirPDF';
 import LoginView from './components/LoginView';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { BrandingProvider, useBranding } from './context/BrandingContext';
 import Typewriter from './components/Typewriter';
 
 import CategoriasView from './components/categories/CategoriasView';
@@ -95,6 +96,7 @@ const DelegateRosterWrapper = () => {
 
 const HomeView = () => {
   const { user } = useAuth();
+  const { brandName } = useBranding();
   const [showMerger, setShowMerger] = useState(false);
 
   if (user?.role === 'Delegado') {
@@ -118,7 +120,7 @@ const HomeView = () => {
       <PageHeader
         icon={LayoutDashboard}
         title={<Typewriter text={`Hola, ${userName}`} />}
-        subtitle="Bienvenido de nuevo al panel de control de La Superliga."
+        subtitle={`Bienvenido de nuevo al panel de control de ${brandName}.`}
         actions={
           <button type="button" onClick={() => setShowMerger(true)}>
             <FileText size={16} /> Unir PDF
@@ -164,35 +166,37 @@ const HomeView = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<LoginView />} />
-          <Route path="/*" element={
-            <ProtectedRoute>
-              <DashboardLayout>
-                <Routes>
-                  <Route path="/" element={<HomeView />} />
-                  <Route path="/equipos" element={<AdminRoute><EquiposView /></AdminRoute>} />
-                  <Route path="/delegados" element={<AdminRoute><DelegadosView /></AdminRoute>} />
-                  <Route path="/jugadores" element={<AdminRoute><JugadoresView /></AdminRoute>} />
-                  <Route path="/caja" element={<AdminRoute><CajaView /></AdminRoute>} />
-                  <Route path="/finanzas" element={<AdminRoute><FinanzasView /></AdminRoute>} />
-                  <Route path="/categorias" element={<AdminRoute><CategoriasView /></AdminRoute>} />
-                  <Route path="/torneos" element={<AdminRoute><TorneosView /></AdminRoute>} />
-                  <Route path="/torneos/:id" element={<AdminRoute><TournamentDetailView /></AdminRoute>} />
-                  <Route path="/torneos/:id/:tab" element={<AdminRoute><TournamentDetailView /></AdminRoute>} />
-                  <Route path="/configuracion" element={<AdminRoute><ConfiguracionView /></AdminRoute>} />
-                  
-                  <Route path="/equipo" element={<DelegateRoute><DelegateTeamWrapper /></DelegateRoute>} />
-                  <Route path="/lista-buena-fe" element={<DelegateRoute><DelegateRosterWrapper /></DelegateRoute>} />
-                </Routes>
-              </DashboardLayout>
-            </ProtectedRoute>
-          } />
-        </Routes>
-      </Router>
-    </AuthProvider>
+    <BrandingProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<LoginView />} />
+            <Route path="/*" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Routes>
+                    <Route path="/" element={<HomeView />} />
+                    <Route path="/equipos" element={<AdminRoute><EquiposView /></AdminRoute>} />
+                    <Route path="/delegados" element={<AdminRoute><DelegadosView /></AdminRoute>} />
+                    <Route path="/jugadores" element={<AdminRoute><JugadoresView /></AdminRoute>} />
+                    <Route path="/caja" element={<AdminRoute><CajaView /></AdminRoute>} />
+                    <Route path="/finanzas" element={<AdminRoute><FinanzasView /></AdminRoute>} />
+                    <Route path="/categorias" element={<AdminRoute><CategoriasView /></AdminRoute>} />
+                    <Route path="/torneos" element={<AdminRoute><TorneosView /></AdminRoute>} />
+                    <Route path="/torneos/:id" element={<AdminRoute><TournamentDetailView /></AdminRoute>} />
+                    <Route path="/torneos/:id/:tab" element={<AdminRoute><TournamentDetailView /></AdminRoute>} />
+                    <Route path="/configuracion" element={<AdminRoute><ConfiguracionView /></AdminRoute>} />
+                    
+                    <Route path="/equipo" element={<DelegateRoute><DelegateTeamWrapper /></DelegateRoute>} />
+                    <Route path="/lista-buena-fe" element={<DelegateRoute><DelegateRosterWrapper /></DelegateRoute>} />
+                  </Routes>
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </BrandingProvider>
   );
 }
 

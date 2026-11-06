@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { MapPin, Phone, Mail } from "lucide-react";
+import { useBranding } from "@/lib/branding";
 
 export const Route = createFileRoute("/contacto")({
   component: Page,
@@ -9,6 +10,7 @@ export const Route = createFileRoute("/contacto")({
 });
 
 function Page() {
+  const { contactAddress, contactPhone, contactEmail } = useBranding();
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -26,18 +28,24 @@ function Page() {
             </div>
           </div>
           <ul className="mt-6 sm:mt-8 space-y-3.5 text-sm sm:text-base text-muted-foreground bg-surface md:bg-transparent p-4 md:p-0 rounded-2xl border border-border/60 md:border-0">
-            <li className="flex items-start gap-3">
-              <MapPin className="size-5 text-primary mt-0.5 shrink-0" />
-              <span>Av. del Deporte 3600, La Plata</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <Phone className="size-5 text-primary shrink-0" />
-              <span>+54 221 555-1736</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <Mail className="size-5 text-primary shrink-0" />
-              <span>info@lasuperliga.com.ar</span>
-            </li>
+            {contactAddress && (
+              <li className="flex items-start gap-3">
+                <MapPin className="size-5 text-primary mt-0.5 shrink-0" />
+                <span>{contactAddress}</span>
+              </li>
+            )}
+            {contactPhone && (
+              <li className="flex items-center gap-3">
+                <Phone className="size-5 text-primary shrink-0" />
+                <span>{contactPhone}</span>
+              </li>
+            )}
+            {contactEmail && (
+              <li className="flex items-center gap-3">
+                <Mail className="size-5 text-primary shrink-0" />
+                <span>{contactEmail}</span>
+              </li>
+            )}
           </ul>
         </div>
         <form className="bg-surface rounded-2xl border border-border/70 p-5 sm:p-8 space-y-4 sm:space-y-5 shadow-xs">
