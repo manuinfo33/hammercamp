@@ -375,7 +375,7 @@ function TrophyIllustration({
 
 function TournamentFloodlightBanner({
   index,
-  height = 108,
+  height = 132,
 }: {
   index: number;
   height?: number;
@@ -387,10 +387,10 @@ function TournamentFloodlightBanner({
     <div
       style={{
         height,
-        borderRadius: 10,
         overflow: "hidden",
         position: "relative",
         background: theme.bg,
+        borderBottom: "3px solid rgba(245, 221, 144, 0.35)",
       }}
     >
       <svg
@@ -466,8 +466,8 @@ function CategoriasIndexPage() {
       fetch(`${API_URL}/tournaments/`).then((res) => res.json()),
     ])
       .then(([catsData, tournsData]) => {
-        setCategories(catsData || []);
-        setTournaments(tournsData || []);
+        setCategories(Array.isArray(catsData) ? catsData : []);
+        setTournaments(Array.isArray(tournsData) ? tournsData : []);
         setLoading(false);
       })
       .catch((err) => {
@@ -482,13 +482,44 @@ function CategoriasIndexPage() {
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
         .sl-tourn-card-title {
           font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
-          letter-spacing: -0.01em !important;
+          letter-spacing: -0.02em !important;
           text-transform: none !important;
         }
+        .sl-tourn-card {
+          background: #ffffff;
+          border: 1px solid #e6e4dd;
+          border-radius: 18px;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          box-shadow: 0 2px 10px rgba(20, 20, 19, 0.04);
+          text-decoration: none;
+          color: inherit;
+          transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+                      box-shadow 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+                      border-color 0.24s ease;
+        }
         .sl-tourn-card:hover {
-          border-color: #c7c5bd !important;
-          transform: translateY(-2px);
-          box-shadow: 0 8px 22px rgba(20, 20, 19, 0.08) !important;
+          border-color: #c9c6bc;
+          transform: translateY(-4px);
+          box-shadow: 0 14px 30px rgba(20, 20, 19, 0.09);
+        }
+        .sl-tourn-card-cta {
+          width: 34px;
+          height: 34px;
+          border-radius: 10px;
+          background: #f4f3ef;
+          color: #18181b;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+        }
+        .sl-tourn-card:hover .sl-tourn-card-cta {
+          background: #18181b;
+          color: #ffffff;
+          transform: translateX(2px);
         }
       `}</style>
 
@@ -508,170 +539,133 @@ function CategoriasIndexPage() {
           </div>
         </div>
 
-        {/* Grilla de tarjetas de torneos */}
+        {/* Grilla de tarjetas (solo torneos creados) */}
         <div className="mt-6 sm:mt-10">
           {loading ? (
             <div className="py-12 text-center text-muted-foreground text-sm">
-              Cargando categorías...
+              Cargando torneos...
             </div>
-          ) : categories.length === 0 ? (
+          ) : tournaments.length === 0 ? (
             <div className="bg-surface rounded-2xl border border-border/70 p-10 text-center text-muted-foreground text-sm">
-              No hay categorías disponibles.
+              No hay torneos creados actualmente.
             </div>
           ) : (
             <div
               style={{
                 display: "grid",
                 gridTemplateColumns:
-                  "repeat(auto-fill, minmax(min(100%, 310px), 1fr))",
-                gap: 18,
+                  "repeat(auto-fill, minmax(min(100%, 300px), 1fr))",
+                gap: 22,
               }}
             >
-              {categories.map((c: any, idx: number) => {
-                const activeTournament = tournaments.find(
-                  (t: any) => t.category?.toString() === c.id.toString(),
+              {tournaments.map((t: any, idx: number) => {
+                const matchedCat = categories.find(
+                  (c: any) => String(c.id) === String(t.category),
                 );
-                const totalZones = activeTournament?.zones?.length || 0;
-                const totalTeams =
-                  activeTournament?.zones?.reduce(
-                    (acc: number, z: any) => acc + (z.zone_teams?.length || 0),
-                    0,
-                  ) || 0;
+                const categoryName =
+                  t.category_name || matchedCat?.name || "Categoría General";
+                const theme = FLOODLIGHT_THEMES[idx % 8];
 
                 return (
                   <Link
-                    key={c.id}
+                    key={t.id}
                     to="/categorias/$id"
-                    params={{ id: String(c.id) }}
+                    params={{ id: String(t.id) }}
                     className="sl-tourn-card"
-                    style={{
-                      background: "#ffffff",
-                      border: "1px solid #e5e4df",
-                      borderRadius: 14,
-                      padding: 8,
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                      boxShadow: "0 1px 2px rgba(20, 20, 19, 0.03)",
-                      textDecoration: "none",
-                      color: "inherit",
-                      transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
-                    }}
                   >
-                    {/* Imagen estilo "Noche de Reflectores" (8 diseños de copa y color) */}
-                    <TournamentFloodlightBanner index={idx} height={106} />
+                    {/* Ilustración superior a sangre completa */}
+                    <TournamentFloodlightBanner index={idx} height={132} />
 
-                    {/* Cuerpo de la tarjeta */}
+                    {/* Cuerpo limpio y editorial: Categoría asociada + Título del torneo */}
                     <div
                       style={{
-                        padding: "14px 12px 8px",
+                        padding: "18px 20px 16px",
                         display: "flex",
                         flexDirection: "column",
-                        gap: 12,
-                        flex: 1,
                         justifyContent: "space-between",
+                        gap: 18,
+                        flex: 1,
                       }}
                     >
                       <div
                         style={{
                           display: "flex",
                           flexDirection: "column",
-                          gap: 10,
+                          gap: 8,
                         }}
                       >
+                        {/* Etiqueta de categoría asociada */}
                         <div
                           style={{
-                            display: "flex",
-                            alignItems: "flex-start",
-                            justifyContent: "space-between",
-                            gap: 10,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 7,
+                            alignSelf: "flex-start",
+                            padding: "4px 10px",
+                            borderRadius: 999,
+                            background: "#f5f4f0",
+                            border: "1px solid #e8e6df",
                           }}
                         >
-                          <h3
-                            className="sl-tourn-card-title"
-                            style={{
-                              margin: 0,
-                              fontSize: 16.5,
-                              fontWeight: 700,
-                              color: "#141413",
-                              lineHeight: 1.3,
-                            }}
-                          >
-                            {activeTournament ? activeTournament.name : c.name}
-                          </h3>
-
                           <span
                             style={{
-                              padding: "3px 9px",
-                              borderRadius: 6,
-                              fontSize: 11.5,
-                              fontWeight: 600,
-                              background: activeTournament
-                                ? "#dbeafe"
-                                : "#f1f0ec",
-                              color: activeTournament ? "#1d4ed8" : "#787772",
+                              width: 7,
+                              height: 7,
+                              borderRadius: "50%",
+                              background: theme.bg,
                               flexShrink: 0,
                             }}
+                          />
+                          <span
+                            style={{
+                              fontSize: 11,
+                              fontWeight: 700,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.08em",
+                              color: "#575652",
+                              lineHeight: 1,
+                            }}
                           >
-                            {activeTournament ? "Vigente" : "Sin torneo"}
+                            Categoría · {categoryName}
                           </span>
                         </div>
 
-                        <div
-                          style={{ display: "flex", flexWrap: "wrap", gap: 6 }}
+                        {/* Nombre / Título del Torneo */}
+                        <h3
+                          className="sl-tourn-card-title"
+                          style={{
+                            margin: 0,
+                            fontSize: 19,
+                            fontWeight: 800,
+                            color: "#141413",
+                            lineHeight: 1.28,
+                          }}
                         >
-                          <span style={tagPill}>
-                            <strong
-                              style={{ fontWeight: 700, color: "#141413" }}
-                            >
-                              Categoría:
-                            </strong>{" "}
-                            <span>{c.name}</span>
-                          </span>
-                          <span style={tagPill}>
-                            <strong
-                              style={{ fontWeight: 700, color: "#141413" }}
-                            >
-                              Zonas:
-                            </strong>{" "}
-                            <span>{totalZones}</span>
-                          </span>
-                          <span style={tagPill}>
-                            <strong
-                              style={{ fontWeight: 700, color: "#141413" }}
-                            >
-                              Equipos:
-                            </strong>{" "}
-                            <span>{totalTeams}</span>
-                          </span>
-                        </div>
+                          {t.name}
+                        </h3>
                       </div>
 
+                      {/* Pie de tarjeta minimalista */}
                       <div
                         style={{
                           display: "flex",
                           alignItems: "center",
-                          justifyContent: "flex-end",
-                          paddingTop: 10,
-                          borderTop: "1px solid #f1f0ec",
+                          justifyContent: "space-between",
+                          paddingTop: 12,
+                          borderTop: "1px solid #f0efe9",
                         }}
                       >
                         <span
                           style={{
-                            height: 32,
-                            padding: "0 12px",
                             fontSize: 12.5,
                             fontWeight: 600,
-                            borderRadius: 8,
-                            background: "#ffffff",
-                            color: "#18181b",
-                            border: "1px solid #d4d3ce",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
+                            color: "#6f6e69",
                           }}
                         >
-                          Ver torneo <ArrowRight size={13} />
+                          Ver posiciones y fixture
+                        </span>
+                        <span className="sl-tourn-card-cta">
+                          <ArrowRight size={15} />
                         </span>
                       </div>
                     </div>

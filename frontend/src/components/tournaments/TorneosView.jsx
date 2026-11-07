@@ -7,27 +7,152 @@ import TournamentForm from './TournamentForm';
 import PageHeader from '../ui/PageHeader';
 import '../../styles/tournaments.css';
 
-const TOURNAMENT_BANNERS = [
-  { bg: '#7cb2f4', stroke: '#132a4a' }, // Azul suave
-  { bg: '#e89d7c', stroke: '#3b1d11' }, // Terracota / Coral cálido
-  { bg: '#c8ded3', stroke: '#1f3a2e' }, // Verde salvia
-  { bg: '#dcd8ea', stroke: '#2c2545' }, // Lavanda / Violeta pastel
-  { bg: '#f5dd90', stroke: '#4d3d0d' }, // Mostaza suave / Ocre cálido
-  { bg: '#eeece6', stroke: '#3d3929' }, // Arena / Gris cálido
+const FLOODLIGHT_THEMES = [
+  { bg: '#132a4a', sideBeam: '#7cb2f4', centerBeam: '#f5dd90', arch: '#7cb2f4', star: '#f5dd90', cupMain: '#f5dd90', cupShade: '#e0be5a', cupBase: '#faf9f6', emblem: '#132a4a' },
+  { bg: '#133829', sideBeam: '#6ee7b7', centerBeam: '#fde68a', arch: '#6ee7b7', star: '#fde68a', cupMain: '#fde68a', cupShade: '#eab308', cupBase: '#faf9f6', emblem: '#133829' },
+  { bg: '#3f1420', sideBeam: '#fda4af', centerBeam: '#fcd34d', arch: '#fda4af', star: '#fcd34d', cupMain: '#fcd34d', cupShade: '#d99b26', cupBase: '#faf9f6', emblem: '#3f1420' },
+  { bg: '#261b47', sideBeam: '#c4b5fd', centerBeam: '#f5dd90', arch: '#c4b5fd', star: '#f5dd90', cupMain: '#f5dd90', cupShade: '#dfba48', cupBase: '#faf9f6', emblem: '#261b47' },
+  { bg: '#1b1d24', sideBeam: '#fbbf24', centerBeam: '#fef08a', arch: '#9ca3af', star: '#fbbf24', cupMain: '#fde047', cupShade: '#ca8a04', cupBase: '#faf9f6', emblem: '#1b1d24' },
+  { bg: '#0f333e', sideBeam: '#67e8f9', centerBeam: '#f5dd90', arch: '#67e8f9', star: '#f5dd90', cupMain: '#f5dd90', cupShade: '#d4af37', cupBase: '#faf9f6', emblem: '#0f333e' },
+  { bg: '#3c1f14', sideBeam: '#fdba74', centerBeam: '#fde68a', arch: '#fdba74', star: '#fde68a', cupMain: '#fde68a', cupShade: '#d97706', cupBase: '#faf9f6', emblem: '#3c1f14' },
+  { bg: '#1e293b', sideBeam: '#93c5fd', centerBeam: '#fde68a', arch: '#93c5fd', star: '#fde68a', cupMain: '#f5dd90', cupShade: '#cda434', cupBase: '#faf9f6', emblem: '#1e293b' },
 ];
 
-const tagPill = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '4px',
-  fontSize: '12px',
-  padding: '4px 10px',
-  borderRadius: '6px',
-  background: '#f1f0ec',
-  color: '#52514e',
-  border: 'none',
-  lineHeight: 1.3,
-};
+function TrophyIllustration({ variant, theme }) {
+  switch (variant) {
+    case 0:
+      return (
+        <g transform="translate(200, 62)">
+          <path d="M -20,-28 L 20,-28 L 14,2 C 12,12 -12,12 -14,2 Z" fill={theme.cupMain} />
+          <path d="M -20,-22 L -28,-22 L -25,-6 L -15,-4" fill="none" stroke={theme.cupMain} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M 20,-22 L 28,-22 L 25,-6 L 15,-4" fill="none" stroke={theme.cupMain} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="-5" y="9" width="10" height="12" fill={theme.cupShade} />
+          <rect x="-16" y="21" width="32" height="7" rx="3" fill={theme.cupBase} />
+          <circle cx="0" cy="-12" r="6" fill={theme.emblem} />
+        </g>
+      );
+    case 1:
+      return (
+        <g transform="translate(200, 62)">
+          <path d="M -13,-18 C -30,-30 -30,0 -11,4" fill="none" stroke={theme.cupMain} strokeWidth="3.2" strokeLinecap="round" />
+          <path d="M 13,-18 C 30,-30 30,0 11,4" fill="none" stroke={theme.cupMain} strokeWidth="3.2" strokeLinecap="round" />
+          <path d="M -14,-28 L 14,-28 L 17,-8 C 17,6 8,12 0,12 C -8,12 -17,6 -17,-8 Z" fill={theme.cupMain} />
+          <ellipse cx="0" cy="-28" rx="14" ry="3.5" fill={theme.cupShade} />
+          <rect x="-6" y="11" width="12" height="9" rx="2" fill={theme.cupShade} />
+          <rect x="-18" y="20" width="36" height="8" rx="3" fill={theme.cupBase} />
+          <polygon points="0,-19 5,-11 0,-3 -5,-11" fill={theme.emblem} />
+        </g>
+      );
+    case 2:
+      return (
+        <g transform="translate(200, 62)">
+          <polyline points="-17,-22 -27,-18 -23,-4 -12,-2" fill="none" stroke={theme.cupMain} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+          <polyline points="17,-22 27,-18 23,-4 12,-2" fill="none" stroke={theme.cupMain} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+          <polygon points="-19,-26 19,-26 23,-12 11,6 -11,6 -23,-12" fill={theme.cupMain} />
+          <polygon points="-8,-26 8,-26 10,-12 4,6 -4,6 -10,-12" fill={theme.cupShade} opacity="0.55" />
+          <rect x="-4" y="6" width="8" height="11" fill={theme.cupShade} />
+          <rect x="-13" y="17" width="26" height="4" rx="1.5" fill={theme.cupMain} />
+          <rect x="-19" y="21" width="38" height="7" rx="2.5" fill={theme.cupBase} />
+        </g>
+      );
+    case 3:
+      return (
+        <g transform="translate(200, 62)">
+          <path d="M -14,18 L -6,0 L -16,-14 L -6,-14 L 0,2 L 6,-14 L 16,-14 L 6,0 L 14,18 Z" fill={theme.cupShade} />
+          <path d="M -10,18 L 0,-4 L 10,18 Z" fill={theme.cupMain} />
+          <circle cx="0" cy="-16" r="14" fill={theme.cupMain} />
+          <polygon points="0,-22 5.5,-18 3.5,-11.5 -3.5,-11.5 -5.5,-18" fill={theme.emblem} />
+          <rect x="-15" y="16" width="30" height="4" rx="2" fill={theme.cupMain} />
+          <rect x="-18" y="20" width="36" height="8" rx="3" fill={theme.cupBase} />
+        </g>
+      );
+    case 4:
+      return (
+        <g transform="translate(200, 62)">
+          <polygon points="-16,-22 -12,-31 -5,-24 0,-33 5,-24 12,-31 16,-22" fill={theme.cupShade} />
+          <path d="M -18,-22 L 18,-22 L 18,-4 C 18,9 0,16 0,16 C 0,16 -18,9 -18,-4 Z" fill={theme.cupMain} />
+          <path d="M -18,-16 L -26,-16 L -26,-5 L -16,-1" fill="none" stroke={theme.cupMain} strokeWidth="2.8" strokeLinejoin="round" />
+          <path d="M 18,-16 L 26,-16 L 26,-5 L 16,-1" fill="none" stroke={theme.cupMain} strokeWidth="2.8" strokeLinejoin="round" />
+          <line x1="-18" y1="-9" x2="18" y2="-9" stroke={theme.emblem} strokeWidth="2.5" />
+          <circle cx="0" cy="-1" r="4.5" fill={theme.emblem} />
+          <rect x="-6" y="14" width="12" height="7" fill={theme.cupShade} />
+          <rect x="-17" y="21" width="34" height="7" rx="3" fill={theme.cupBase} />
+        </g>
+      );
+    case 5:
+      return (
+        <g transform="translate(200, 62)">
+          <polygon points="-10,-8 -32,-24 -26,-12 -30,-4 -12,2" fill={theme.cupShade} />
+          <polygon points="10,-8 32,-24 26,-12 30,-4 12,2" fill={theme.cupShade} />
+          <polygon points="-16,-28 16,-28 8,12 -8,12" fill={theme.cupMain} />
+          <polygon points="0,-20 2.5,-14 9,-14 3.8,-10 5.8,-4 0,-8 -5.8,-4 -3.8,-10 -9,-14 -2.5,-14" fill={theme.emblem} />
+          <rect x="-5" y="12" width="10" height="8" fill={theme.cupShade} />
+          <rect x="-16" y="20" width="32" height="8" rx="3" fill={theme.cupBase} />
+        </g>
+      );
+    case 6:
+      return (
+        <g transform="translate(200, 62)">
+          <circle cx="-16" cy="-12" r="6" fill="none" stroke={theme.cupMain} strokeWidth="2.6" />
+          <circle cx="16" cy="-12" r="6" fill="none" stroke={theme.cupMain} strokeWidth="2.6" />
+          <circle cx="0" cy="-29" r="4.5" fill={theme.cupBase} />
+          <path d="M -14,-18 C -14,-26 14,-26 14,-18 L 11,2 L -11,2 Z" fill={theme.cupMain} />
+          <rect x="-15" y="-19" width="30" height="3.5" rx="1.5" fill={theme.cupShade} />
+          <rect x="-7" y="2" width="14" height="6" rx="2" fill={theme.cupShade} />
+          <polygon points="-11,8 11,8 15,20 -15,20" fill={theme.cupMain} />
+          <rect x="-19" y="20" width="38" height="8" rx="2.5" fill={theme.cupBase} />
+          <circle cx="0" cy="-9" r="4.5" fill={theme.emblem} />
+        </g>
+      );
+    default:
+      return (
+        <g transform="translate(200, 62)">
+          <polygon points="0,-34 2.5,-28 9,-28 4,-24 6,-18 0,-22 -6,-18 -4,-24 -9,-28 -2.5,-28" fill={theme.cupBase} />
+          <polygon points="0,-18 18,-6 10,16 -10,16 -18,-6" fill={theme.cupMain} />
+          <polygon points="0,-18 18,-6 0,16" fill={theme.cupShade} opacity="0.5" />
+          <polygon points="-18,-6 -26,-14 -20,4 -12,8" fill={theme.cupShade} />
+          <polygon points="18,-6 26,-14 20,4 12,8" fill={theme.cupShade} />
+          <polygon points="0,-9 6,-2 0,5 -6,-2" fill={theme.emblem} />
+          <rect x="-13" y="16" width="26" height="4" rx="1.5" fill={theme.cupShade} />
+          <rect x="-18" y="20" width="36" height="8" rx="3" fill={theme.cupBase} />
+        </g>
+      );
+  }
+}
+
+function TournamentFloodlightBanner({ index, height = 126 }) {
+  const variant = index % 8;
+  const theme = FLOODLIGHT_THEMES[variant];
+
+  return (
+    <div
+      style={{
+        height,
+        overflow: 'hidden',
+        position: 'relative',
+        background: theme.bg,
+        borderBottom: '3px solid rgba(245, 221, 144, 0.35)',
+      }}
+    >
+      <svg
+        viewBox="0 0 400 120"
+        width="100%"
+        height="100%"
+        preserveAspectRatio="xMidYMid slice"
+      >
+        <rect x="0" y="0" width="400" height="120" fill={theme.bg} />
+        <polygon points="30,0 90,0 220,120 110,120" fill={theme.sideBeam} opacity="0.18" />
+        <polygon points="370,0 310,0 180,120 290,120" fill={theme.sideBeam} opacity="0.18" />
+        <polygon points="155,0 245,0 275,120 125,120" fill={theme.centerBeam} opacity="0.14" />
+        <circle cx="70" cy="125" r="55" fill="none" stroke={theme.arch} strokeWidth="2" strokeOpacity="0.3" />
+        <circle cx="330" cy="125" r="55" fill="none" stroke={theme.arch} strokeWidth="2" strokeOpacity="0.3" />
+        <polygon points="118,34 121,41 128,41 122,45 124,52 118,48 112,52 114,45 108,41 115,41" fill={theme.star} />
+        <polygon points="282,34 285,41 292,41 286,45 288,52 282,48 276,52 278,45 272,41 279,41" fill={theme.star} />
+        <TrophyIllustration variant={variant} theme={theme} />
+      </svg>
+    </div>
+  );
+}
 
 const TorneosView = () => {
   const navigate = useNavigate();
@@ -207,136 +332,190 @@ const TorneosView = () => {
               <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>No hay torneos registrados.</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 310px), 1fr))', gap: '18px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 310px), 1fr))', gap: '20px' }}>
+              <style>{`
+                .sl-mgmt-tourn-card {
+                  background: #ffffff;
+                  border: 1px solid #e6e4dd;
+                  border-radius: 18px;
+                  overflow: hidden;
+                  display: flex;
+                  flex-direction: column;
+                  justify-content: space-between;
+                  box-shadow: 0 2px 10px rgba(20, 20, 19, 0.04);
+                  cursor: pointer;
+                  position: relative;
+                  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+                              box-shadow 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+                              border-color 0.24s ease;
+                }
+                .sl-mgmt-tourn-card:hover {
+                  border-color: #c9c6bc;
+                  transform: translateY(-4px);
+                  box-shadow: 0 14px 30px rgba(20, 20, 19, 0.09);
+                }
+              `}</style>
               {tournaments.map((t, idx) => {
                 const totalTeams = t.zones?.reduce((acc, z) => acc + (z.zone_teams?.length || 0), 0) || 0;
                 const totalZones = t.zones?.length || 0;
-                const banner = TOURNAMENT_BANNERS[idx % TOURNAMENT_BANNERS.length];
+                const theme = FLOODLIGHT_THEMES[idx % FLOODLIGHT_THEMES.length];
                 const isActive = t.is_active !== false;
 
                 return (
                   <div
                     key={t.id}
                     onClick={() => navigate(`/torneos/${t.id}`)}
-                    style={{
-                      background: '#ffffff',
-                      border: '1px solid #e5e4df',
-                      borderRadius: '14px',
-                      padding: '8px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      boxShadow: '0 1px 2px rgba(20, 20, 19, 0.03)',
-                      transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                      cursor: 'pointer',
-                      position: 'relative',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#c7c5bd';
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 8px 22px rgba(20, 20, 19, 0.08)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = '#e5e4df';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 1px 2px rgba(20, 20, 19, 0.03)';
-                    }}
+                    className="sl-mgmt-tourn-card"
                   >
-                    {/* Cabecera pastel con ícono centrado */}
-                    <div
-                      style={{
-                        height: '92px',
-                        borderRadius: '10px',
-                        background: banner.bg,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        position: 'relative',
-                      }}
-                    >
-                      <Trophy size={32} strokeWidth={1.6} style={{ color: banner.stroke }} />
-                    </div>
+                    {/* Ilustración estilo "Noche de Reflectores" a sangre completa (idéntica a la Web Visual) */}
+                    <TournamentFloodlightBanner index={idx} height={128} />
 
                     {/* Cuerpo de la tarjeta */}
                     <div
                       style={{
-                        padding: '14px 12px 8px',
+                        padding: '18px 20px 16px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '12px',
+                        gap: '14px',
                         flex: 1,
                         justifyContent: 'space-between',
                       }}
                     >
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {/* Fila 1: Nombre del Torneo + Píldora de estado (Vigente / Inactivo) */}
+                        {/* Fila 1: Píldora de Categoría asociada + Estado interactivo (Vigente / Inactivo) */}
                         <div
                           style={{
                             display: 'flex',
-                            alignItems: 'flex-start',
+                            alignItems: 'center',
                             justifyContent: 'space-between',
-                            gap: '10px',
+                            gap: '8px',
+                            flexWrap: 'wrap',
                           }}
                         >
-                          <h3
+                          <div
                             style={{
-                              margin: 0,
-                              fontSize: '16px',
-                              fontWeight: '700',
-                              color: '#141413',
-                              lineHeight: 1.3,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '7px',
+                              padding: '4px 10px',
+                              borderRadius: '999px',
+                              background: '#f5f4f0',
+                              border: '1px solid #e8e6df',
                             }}
-                            title={t.name}
                           >
-                            {t.name}
-                          </h3>
+                            <span
+                              style={{
+                                width: '7px',
+                                height: '7px',
+                                borderRadius: '50%',
+                                background: theme.bg,
+                                flexShrink: 0,
+                              }}
+                            />
+                            <span
+                              style={{
+                                fontSize: '11px',
+                                fontWeight: '700',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.08em',
+                                color: '#575652',
+                                lineHeight: 1,
+                              }}
+                            >
+                              Categoría · {t.category_name || 'Sin categoría'}
+                            </span>
+                          </div>
 
                           <button
                             type="button"
                             onClick={(e) => handleToggleActive(t, e)}
-                            title={`Hacé clic para cambiar a ${isActive ? 'Inactivo' : 'Activo'}`}
+                            title={`Hacé clic para cambiar a ${isActive ? 'Inactivo' : 'Vigente'}`}
                             style={{
                               height: '24px',
                               minHeight: '24px',
                               minWidth: 0,
-                              padding: '0 9px',
-                              borderRadius: '6px',
-                              fontSize: '11.5px',
-                              fontWeight: '600',
-                              background: isActive ? '#dbeafe' : '#fee2e2',
-                              color: isActive ? '#1d4ed8' : '#991b1b',
-                              border: 'none',
+                              padding: '0 10px',
+                              borderRadius: '999px',
+                              fontSize: '11px',
+                              fontWeight: '700',
+                              background: isActive ? '#eef7ed' : '#fef2f2',
+                              color: isActive ? '#2e7d32' : '#dc2626',
+                              border: isActive ? '1px solid #c8e6c9' : '1px solid #fecaca',
                               boxShadow: 'none',
                               textTransform: 'none',
                               letterSpacing: 0,
                               cursor: 'pointer',
                               flexShrink: 0,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
                             }}
                           >
+                            <span
+                              style={{
+                                width: '6px',
+                                height: '6px',
+                                borderRadius: '50%',
+                                background: isActive ? '#2e7d32' : '#dc2626',
+                              }}
+                            />
                             {isActive ? 'Vigente' : 'Inactivo'}
                           </button>
                         </div>
 
-                        {/* Fila 2: Píldoras grises con los detalles del torneo (Título en negrita, valor sin negrita) */}
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                          <span style={tagPill}>
-                            <strong style={{ fontWeight: '700', color: '#141413' }}>Categoría:</strong>{' '}
-                            <span style={{ fontWeight: '400' }}>{t.category_name || 'Sin categoría'}</span>
-                          </span>
-                          <span style={tagPill}>
-                            <strong style={{ fontWeight: '700', color: '#141413' }}>Zonas:</strong>{' '}
-                            <span style={{ fontWeight: '400' }}>{totalZones}</span>
-                          </span>
-                          <span style={tagPill}>
-                            <strong style={{ fontWeight: '700', color: '#141413' }}>Equipos:</strong>{' '}
-                            <span style={{ fontWeight: '400' }}>{totalTeams}</span>
-                          </span>
-                          <span style={tagPill}>
-                            <strong style={{ fontWeight: '700', color: '#141413' }}>Inicio:</strong>{' '}
-                            <span style={{ fontWeight: '400' }}>
+                        {/* Fila 2: Título del Torneo */}
+                        <h3
+                          style={{
+                            margin: 0,
+                            fontSize: '18.5px',
+                            fontWeight: '800',
+                            color: '#141413',
+                            letterSpacing: '-0.02em',
+                            lineHeight: 1.28,
+                          }}
+                          title={t.name}
+                        >
+                          {t.name}
+                        </h3>
+
+                        {/* Fila 3: Bloque estructurado con Zonas, Equipos e Inicio */}
+                        <div
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr 1.25fr',
+                            gap: '8px',
+                            padding: '10px 12px',
+                            background: '#f8f7f4',
+                            borderRadius: '12px',
+                            border: '1px solid #edece6',
+                          }}
+                        >
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <span style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#787772' }}>
+                              Zonas
+                            </span>
+                            <span style={{ fontSize: '13px', fontWeight: '800', color: '#141413' }}>
+                              {totalZones}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', borderLeft: '1px solid #e6e4dd', paddingLeft: '10px' }}>
+                            <span style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#787772' }}>
+                              Equipos
+                            </span>
+                            <span style={{ fontSize: '13px', fontWeight: '800', color: '#141413' }}>
+                              {totalTeams}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', borderLeft: '1px solid #e6e4dd', paddingLeft: '10px' }}>
+                            <span style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#787772' }}>
+                              Inicio
+                            </span>
+                            <span style={{ fontSize: '12.5px', fontWeight: '700', color: '#141413' }}>
                               {t.start_date ? formatDate(t.start_date) : 'Sin fecha'}
                             </span>
-                          </span>
+                          </div>
                         </div>
                       </div>
 
@@ -349,8 +528,7 @@ const TorneosView = () => {
                           justifyContent: 'space-between',
                           gap: '8px',
                           paddingTop: '12px',
-                          marginTop: '4px',
-                          borderTop: '1px solid #f1f0ec',
+                          borderTop: '1px solid #f0efe9',
                         }}
                       >
                         <button
@@ -360,10 +538,10 @@ const TorneosView = () => {
                             flex: 1,
                             height: '34px',
                             padding: '0 12px',
-                            borderRadius: '8px',
+                            borderRadius: '10px',
                             fontSize: '12.5px',
                             fontWeight: '600',
-                            background: '#faf9f6',
+                            background: '#f8f7f4',
                             color: '#141413',
                             border: '1px solid #e5e4df',
                             boxShadow: 'none',
@@ -392,7 +570,7 @@ const TorneosView = () => {
                               height: '34px',
                               minWidth: '34px',
                               padding: 0,
-                              borderRadius: '8px',
+                              borderRadius: '10px',
                               border: '1px solid #d4d3ce',
                               background: '#ffffff',
                               color: '#3f4249',
@@ -414,10 +592,10 @@ const TorneosView = () => {
                               height: '34px',
                               minWidth: '34px',
                               padding: 0,
-                              borderRadius: '8px',
-                              border: '1px solid #f3d4d4',
-                              background: '#ffffff',
-                              color: '#c62828',
+                              borderRadius: '10px',
+                              border: '1px solid #fecaca',
+                              background: '#fef2f2',
+                              color: '#dc2626',
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',

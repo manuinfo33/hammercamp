@@ -122,9 +122,9 @@ export function Header({
   };
 
   useEffect(() => {
-    fetch(`${API_URL}/categories/`)
+    fetch(`${API_URL}/tournaments/`)
       .then((res) => res.json())
-      .then((data) => setCategories(data))
+      .then((data) => setCategories(Array.isArray(data) ? data : []))
       .catch(console.error);
   }, []);
 

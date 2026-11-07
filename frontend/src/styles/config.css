@@ -125,7 +125,7 @@
   }
 
   .cf-tab.active svg {
-    color: #f5dd90 !important;
+    color: var(--gx-coral, #cc7a5c) !important;
   }
 
   .cf-panel { padding: 16px 14px; border-radius: 14px; }
@@ -178,8 +178,8 @@
 }
 
 .cwv-nav-btn:hover:not(.active) {
-  background: #f6f5f1 !important;
-  border-color: #e7e5df !important;
+  background: rgba(204, 122, 92, 0.05) !important;
+  border-color: rgba(204, 122, 92, 0.22) !important;
   box-shadow: none !important;
   transform: none !important;
 }
@@ -200,7 +200,8 @@
 
 .cwv-nav-btn:hover:not(.active) .cwv-nav-icon {
   background: #ffffff;
-  color: #141413;
+  border-color: rgba(204, 122, 92, 0.3);
+  color: var(--gx-coral, #cc7a5c);
 }
 
 .cwv-nav-text {
@@ -237,26 +238,27 @@
   text-overflow: ellipsis;
 }
 
-/* Estado activo suave y cálido (armonizado con las tarjetas de la sección) */
+/* Estado activo armonizado con el color naranja/coral de la barra lateral (.gx-side-item.active) */
 .cwv-nav-btn.active {
-  background: #f6eed6 !important;
-  border-color: #e2cb88 !important;
-  color: #261e0b !important;
-  box-shadow: 0 2px 6px rgba(140, 105, 20, 0.08) !important;
+  background: rgba(204, 122, 92, 0.1) !important;
+  border-color: rgba(204, 122, 92, 0.35) !important;
+  color: var(--gx-coral, #cc7a5c) !important;
+  box-shadow: 0 2px 8px rgba(204, 122, 92, 0.08) !important;
 }
 
 .cwv-nav-btn.active .cwv-nav-icon {
-  background: #f3dc88;
-  border-color: #dfc15d;
-  color: #4d3d0d;
+  background: rgba(204, 122, 92, 0.16);
+  border-color: rgba(204, 122, 92, 0.4);
+  color: var(--gx-coral, #cc7a5c);
 }
 
 .cwv-nav-btn.active .cwv-nav-title-desktop {
-  color: #1f1808;
+  color: var(--gx-coral, #cc7a5c);
+  font-weight: 700;
 }
 
 .cwv-nav-btn.active .cwv-nav-desc {
-  color: #6e5c30;
+  color: #8c5643;
 }
 
 /* Vista Celular: Dock compacto en una sola fila */
@@ -301,10 +303,15 @@
     height: 17px;
   }
 
+  .cwv-nav-btn.active {
+    background: rgba(204, 122, 92, 0.12) !important;
+    border-color: rgba(204, 122, 92, 0.35) !important;
+  }
+
   .cwv-nav-btn.active .cwv-nav-icon {
     background: transparent;
     border: none;
-    color: #785608;
+    color: var(--gx-coral, #cc7a5c);
   }
 
   .cwv-nav-text {
@@ -332,7 +339,7 @@
   }
 
   .cwv-nav-btn.active .cwv-nav-title-mobile {
-    color: #261e0b;
+    color: var(--gx-coral, #cc7a5c);
     font-weight: 700;
   }
 }

@@ -158,146 +158,234 @@ const CategoriasView = () => {
               <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>No hay categorías configuradas aún.</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '16px' }}>
-              {categories.map((cat) => {
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 310px), 1fr))', gap: '20px' }}>
+              <style>{`
+                .sl-mgmt-cat-card {
+                  background: #ffffff;
+                  border: 1px solid #e6e4dd;
+                  border-radius: 18px;
+                  overflow: hidden;
+                  display: flex;
+                  flex-direction: column;
+                  justify-content: space-between;
+                  box-shadow: 0 2px 10px rgba(20, 20, 19, 0.04);
+                  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+                              box-shadow 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+                              border-color 0.24s ease;
+                }
+                .sl-mgmt-cat-card:hover {
+                  border-color: #c9c6bc;
+                  transform: translateY(-3px);
+                  box-shadow: 0 14px 28px rgba(20, 20, 19, 0.08);
+                }
+              `}</style>
+              {categories.map((cat, idx) => {
                 const isSenior = cat.category_type === 'senior' || cat.category_type === 'veteranos';
                 const isLibre = cat.category_type === 'libre';
+                const accentColors = ['#132a4a', '#133829', '#3f1420', '#261b47', '#1b1d24', '#0f333e', '#3c1f14', '#1e293b'];
+                const accent = accentColors[idx % accentColors.length];
 
                 return (
-                  <div
-                    key={cat.id}
-                    style={{
-                      background: '#ffffff',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: '16px',
-                      padding: '20px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      gap: '14px',
-                      boxShadow: 'var(--gx-shadow-sm)',
-                      transition: 'border-color 0.2s ease',
-                    }}
-                  >
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-primary)', textTransform: 'uppercase' }}>{cat.name}</h3>
-                        <span
+                  <div key={cat.id} className="sl-mgmt-cat-card">
+                    {/* Barra superior sutil de acento (sin imagen, exclusiva de torneos) */}
+                    <div style={{ height: '5px', background: accent, width: '100%' }} />
+
+                    <div
+                      style={{
+                        padding: '18px 20px 16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: '16px',
+                        flex: 1,
+                      }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {/* Fila superior: Píldora de modalidad + Regla de edad */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+                          <div
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '7px',
+                              padding: '4px 10px',
+                              borderRadius: '999px',
+                              background: '#f5f4f0',
+                              border: '1px solid #e8e6df',
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: '7px',
+                                height: '7px',
+                                borderRadius: '50%',
+                                background: accent,
+                                flexShrink: 0,
+                              }}
+                            />
+                            <span
+                              style={{
+                                fontSize: '11px',
+                                fontWeight: '700',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.08em',
+                                color: '#575652',
+                                lineHeight: 1,
+                              }}
+                            >
+                              {cat.football_type || 'Fútbol 11'}
+                            </span>
+                          </div>
+
+                          <span
+                            style={{
+                              fontSize: '11px',
+                              fontWeight: '700',
+                              padding: '4px 10px',
+                              borderRadius: '999px',
+                              backgroundColor: isSenior ? '#f6eed6' : '#eef7ed',
+                              color: isSenior ? '#6b4c08' : '#2e7d32',
+                              border: isSenior ? '1px solid #e6d5a7' : '1px solid #c8e6c9',
+                              lineHeight: 1,
+                            }}
+                          >
+                            {isSenior
+                              ? `Senior (+${cat.min_age || 18})`
+                              : isLibre
+                              ? 'Libre (+18 años)'
+                              : 'Sin límite de edad'}
+                          </span>
+                        </div>
+
+                        {/* Título de la Categoría */}
+                        <h3
                           style={{
-                            fontSize: '11px',
-                            fontWeight: '600',
-                            padding: '4px 8px',
-                            borderRadius: '6px',
-                            backgroundColor: 'var(--gx-primary-soft)',
-                            color: '#8a6508',
-                            whiteSpace: 'nowrap',
+                            margin: 0,
+                            fontSize: '19px',
+                            fontWeight: '800',
+                            color: '#141413',
+                            letterSpacing: '-0.02em',
+                            lineHeight: 1.25,
                           }}
                         >
-                          {cat.football_type || 'Futbol 11'}
-                        </span>
+                          {cat.name}
+                        </h3>
+
+                        {/* Bloque estructurado de reglas de la categoría */}
+                        {isSenior ? (
+                          <div
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: '1fr 1fr',
+                              gap: '10px',
+                              padding: '10px 12px',
+                              background: '#f8f7f4',
+                              borderRadius: '12px',
+                              border: '1px solid #edece6',
+                            }}
+                          >
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                              <span style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#787772' }}>
+                                Cupo menores
+                              </span>
+                              <span style={{ fontSize: '12.5px', fontWeight: '700', color: '#141413' }}>
+                                {cat.max_underage_allowed > 0
+                                  ? `${cat.max_underage_allowed} ${cat.min_underage_age ? `(${cat.min_underage_age} a ${(cat.min_age || 40) - 1} años)` : 'permitidos'}`
+                                  : 'Sin menores (0)'}
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', borderLeft: '1px solid #e6e4dd', paddingLeft: '10px' }}>
+                              <span style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#787772' }}>
+                                Cumple {cat.min_age} en el año
+                              </span>
+                              <span style={{ fontSize: '12.5px', fontWeight: '700', color: '#141413' }}>
+                                {cat.allow_birthday_in_year ? 'Juega como mayor' : 'Ocupa cupo menor'}
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div
+                            style={{
+                              padding: '10px 12px',
+                              background: '#f8f7f4',
+                              borderRadius: '12px',
+                              border: '1px solid #edece6',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                            }}
+                          >
+                            <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#787772' }}>
+                              Regla de inscripción
+                            </span>
+                            <span style={{ fontSize: '12.5px', fontWeight: '700', color: '#141413' }}>
+                              {isLibre ? 'Mayores de 18 años' : 'Edad libre'}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
-                      {/* Tipo de categoría badge en verde unificado */}
-                      <div style={{ marginTop: '8px' }}>
-                        <span
+                      {/* Pie de tarjeta con acciones */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '8px',
+                          paddingTop: '12px',
+                          borderTop: '1px solid #f0efe9',
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleEdit(cat)}
                           style={{
-                            fontSize: '11px',
+                            flex: 1,
+                            height: '34px',
+                            padding: '0 12px',
+                            borderRadius: '10px',
+                            fontSize: '12.5px',
                             fontWeight: '600',
-                            padding: '4px 10px',
-                            borderRadius: '6px',
-                            backgroundColor: '#eef7ed',
-                            color: '#2e7d32',
-                            border: '1px solid #c8e6c9',
-                          }}
-                        >
-                          {isSenior
-                            ? `Senior (+${cat.min_age || 18})`
-                            : isLibre
-                            ? 'Libre (Mayores de 18)'
-                            : 'Sin restricción de edad'}
-                        </span>
-                      </div>
-
-                      {/* Detalle de Senior si aplica */}
-                      {isSenior && (
-                        <div
-                          style={{
-                            marginTop: '12px',
-                            padding: '12px',
-                            background: '#fafafb',
-                            borderRadius: '12px',
-                            border: '1px solid #ececef',
-                            fontSize: '12px',
-                            color: '#444',
-                            display: 'flex',
-                            flexDirection: 'column',
+                            background: '#f8f7f4',
+                            color: '#141413',
+                            border: '1px solid #e5e4df',
+                            boxShadow: 'none',
+                            textTransform: 'none',
+                            letterSpacing: 0,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
                             gap: '6px',
                           }}
                         >
-                          <div>
-                            <strong>Menores permitidos:</strong>{' '}
-                            {cat.max_underage_allowed > 0
-                              ? `${cat.max_underage_allowed} menor(es) ${
-                                  cat.min_underage_age ? `(de ${cat.min_underage_age} a ${(cat.min_age || 40) - 1} años)` : ''
-                                }`
-                              : 'Ningún menor (0)'}
-                          </div>
-                          <div>
-                            <strong>¿Cumple {cat.min_age} en el año?:</strong>{' '}
-                            {cat.allow_birthday_in_year ? 'Sí (Juega como mayor)' : 'No (Ocupa cupo de menor)'}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                          <Edit2 size={13} /> Editar categoría
+                        </button>
 
-                    {/* Acciones */}
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                        gap: '8px',
-                        paddingTop: '12px',
-                        borderTop: '1px solid #f0f0f2',
-                      }}
-                    >
-                      <button
-                        onClick={() => handleEdit(cat)}
-                        style={{
-                          background: '#ffffff',
-                          border: '1px solid var(--border-medium)',
-                          borderRadius: '10px',
-                          padding: '8px 14px',
-                          minHeight: '38px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          fontSize: '12px',
-                          color: '#444',
-                          fontWeight: '500',
-                        }}
-                      >
-                        <Edit2 size={14} /> Editar
-                      </button>
-                      <button
-                        onClick={() => handleOpenDeleteModal(cat)}
-                        style={{
-                          background: '#fef2f2',
-                          border: '1px solid #fecaca',
-                          borderRadius: '10px',
-                          padding: '8px 14px',
-                          minHeight: '38px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          fontSize: '12px',
-                          color: '#dc2626',
-                          fontWeight: '600',
-                        }}
-                      >
-                        <Trash2 size={14} /> Eliminar
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDeleteModal(cat)}
+                          className="secondary icon-only"
+                          title="Eliminar categoría"
+                          style={{
+                            width: '34px',
+                            height: '34px',
+                            minWidth: '34px',
+                            padding: 0,
+                            borderRadius: '10px',
+                            background: '#fef2f2',
+                            border: '1px solid #fecaca',
+                            color: '#dc2626',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );

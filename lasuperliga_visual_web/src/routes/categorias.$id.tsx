@@ -57,15 +57,26 @@ function CategoryDetailPage() {
     async function load() {
       setLoading(true);
       try {
-        const catRes = await fetch(`${API}/categories/`);
-        const cats = await catRes.json();
-        const cat = (cats || []).find((c: any) => c.id.toString() === id);
-        if (!cancelled) setCategory(cat);
+        const [catRes, tRes] = await Promise.all([
+          fetch(`${API}/categories/`),
+          fetch(`${API}/tournaments/`),
+        ]);
+        const cats = (await catRes.json()) || [];
+        const tournaments = (await tRes.json()) || [];
 
-        const tRes = await fetch(`${API}/tournaments/`);
-        const tournaments = await tRes.json();
-        const t = (tournaments || []).find((t: any) => t.category?.toString() === id);
-        if (!cancelled) setTournament(t || null);
+        const t =
+          tournaments.find((item: any) => item.id?.toString() === id) ||
+          tournaments.find((item: any) => item.category?.toString() === id) ||
+          null;
+        const cat =
+          cats.find(
+            (c: any) => c.id?.toString() === (t?.category?.toString() || id),
+          ) || null;
+
+        if (!cancelled) {
+          setCategory(cat);
+          setTournament(t);
+        }
 
         if (!t) {
           if (!cancelled) setLoading(false);
