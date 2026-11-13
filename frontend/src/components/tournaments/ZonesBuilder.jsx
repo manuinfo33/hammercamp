@@ -9,13 +9,23 @@ import { Plus, Users, X, Check, Search, Trash2, AlertTriangle } from 'lucide-rea
 // ------------------------------------------------------------------
 
 const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournamentId, onSaveFirst, onZoneDeleted }) => {
-  const [openZoneSelector, setOpenZoneSelector] = useState(null); // zoneId of selector open
+  const [openZoneSelectors, setOpenZoneSelectors] = useState({}); // { [zoneId]: boolean }
   const [zoneTeams, setZoneTeams] = useState({}); // { zoneId: [ZoneTeam] }
   const [saving, setSaving] = useState(false); // while auto-saving before opening
   const [availableTeams, setAvailableTeams] = useState([]);
-  const [teamSearch, setTeamSearch] = useState('');
+  const [teamSearches, setTeamSearches] = useState({}); // { [zoneId]: string }
   const [customAlert, setCustomAlert] = useState(null); // { title, message }
   const [deletingZoneIndex, setDeletingZoneIndex] = useState(null);
+
+  const isZoneOpen = (zoneId) => !!(zoneId && openZoneSelectors[zoneId]);
+
+  const toggleZoneSelector = (zoneId) => {
+    if (!zoneId) return;
+    setOpenZoneSelectors(prev => ({
+      ...prev,
+      [zoneId]: !prev[zoneId]
+    }));
+  };
 
   // Fetch teams for all already-saved zones
   useEffect(() => {
@@ -31,11 +41,6 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
       setAvailableTeams([]);
     }
   }, [categoryId]);
-
-  // Clear search whenever open selector changes
-  useEffect(() => {
-    setTeamSearch('');
-  }, [openZoneSelector]);
 
   const fetchAvailableTeams = async () => {
     try {
@@ -83,9 +88,9 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
         activeZone = updatedSavedZones.find(z => z.order === index);
       }
     }
-    
+
     if (activeZone) {
-      setOpenZoneSelector(prev => prev === activeZone.id ? null : activeZone.id);
+      toggleZoneSelector(activeZone.id);
     }
   };
 
@@ -114,12 +119,19 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
         }
         const updated = zones.filter((_, i) => i !== index);
         onChange(updated);
-        if (openZoneSelector === savedZone.id) {
-          setOpenZoneSelector(null);
-        }
+        setOpenZoneSelectors(prev => {
+          const next = { ...prev };
+          delete next[savedZone.id];
+          return next;
+        });
+        setTeamSearches(prev => {
+          const next = { ...prev };
+          delete next[savedZone.id];
+          return next;
+        });
       } catch (err) {
         console.error("Error al eliminar la zona:", err);
-        const detailMsg = err.response?.data?.detail || 
+        const detailMsg = err.response?.data?.detail ||
           'No se puede eliminar ya que los equipos cargados ya tienen partidos asignados en el torneo';
         setCustomAlert({
           title: 'Atención',
@@ -205,19 +217,19 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
             width: '32px', textAlign: 'center', fontSize: '16px', fontWeight: '800',
             color: 'var(--brand-beige)'
           }}>{zones.length}</span>
-          <button 
-            type="button" 
-            onClick={handleAddZone} 
+          <button
+            type="button"
+            onClick={handleAddZone}
             className="secondary"
             title="Agregar zona"
             disabled={zones.length >= 10}
-            style={{ 
-              width: '28px', 
-              height: '28px', 
-              padding: 0, 
-              minWidth: 'unset', 
-              display: 'flex', 
-              alignItems: 'center', 
+            style={{
+              width: '28px',
+              height: '28px',
+              padding: 0,
+              minWidth: 'unset',
+              display: 'flex',
+              alignItems: 'center',
               justifyContent: 'center',
               cursor: zones.length >= 10 ? 'not-allowed' : 'pointer',
               opacity: zones.length >= 10 ? 0.5 : 1
@@ -234,10 +246,12 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
         {zones.map((zone, index) => {
           const savedZone = savedZones.find(z => z.id && z.order === index);
           const teams = savedZone ? (zoneTeams[savedZone.id] || []) : [];
-          
-          // Filter available teams by search query
+          const isOpen = isZoneOpen(savedZone?.id);
+          const zoneSearch = (savedZone?.id && teamSearches[savedZone.id]) || '';
+
+          // Filter available teams by this zone's search query
           const filteredTeams = availableTeams.filter(team =>
-            team.name.toLowerCase().includes(teamSearch.toLowerCase())
+            team.name.toLowerCase().includes(zoneSearch.toLowerCase())
           );
 
           return (
@@ -246,10 +260,10 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
               background: 'rgba(255,255,255,0.02)', overflow: 'hidden'
             }}>
               {/* Zone header */}
-              <div 
+              <div
                 className="zone-card-header"
                 style={{
-                  borderBottom: (teams.length > 0 || openZoneSelector === savedZone?.id) ? '1px solid var(--border-subtle)' : 'none'
+                  borderBottom: (teams.length > 0 || isOpen) ? '1px solid var(--border-subtle)' : 'none'
                 }}
               >
                 {/* Zone number badge */}
@@ -301,7 +315,7 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
                   }}
                 >
                   <Users size={13} />
-                  {saving ? 'Guardando...' : (openZoneSelector === savedZone?.id ? 'Cerrar' : (teams.length > 0 ? `Equipos (${teams.length})` : '+ Equipos'))}
+                  {saving ? 'Guardando...' : (isOpen ? 'Cerrar' : (teams.length > 0 ? `Equipos (${teams.length})` : '+ Equipos'))}
                 </button>
 
                 {/* Delete Zone Button — Cesto de basura al lado de Equipos */}
@@ -346,11 +360,57 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
                 </button>
               </div>
 
+              {/* Chips de equipos cargados en esta zona (visibles siempre para poder comparar entre zonas) */}
+              {teams.length > 0 && (
+                <div style={{
+                  padding: '8px 14px',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  borderBottom: isOpen ? '1px solid var(--border-subtle)' : 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '6px'
+                }}>
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    color: 'var(--text-muted)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    marginRight: '4px'
+                  }}>
+                    Equipos ({teams.length}):
+                  </span>
+                  {teams.map(zt => {
+                    const teamObj = availableTeams.find(t => t.id === zt.team) || { name: zt.team_name || `Equipo #${zt.team}` };
+                    return (
+                      <span
+                        key={zt.id}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          fontSize: '11.5px',
+                          fontWeight: '600',
+                          background: 'rgba(34, 197, 94, 0.1)',
+                          color: '#16a34a',
+                          border: '1px solid rgba(34, 197, 94, 0.25)',
+                        }}
+                      >
+                        <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#16a34a' }} />
+                        {teamObj.name}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+
               {/* Inline Selector */}
-              {savedZone && openZoneSelector === savedZone.id && (
+              {savedZone && isOpen && (
                 <div style={{
                   padding: '14px',
-                  borderTop: '1px solid var(--border-subtle)',
                   background: 'rgba(34, 197, 94, 0.02)',
                   display: 'flex',
                   flexDirection: 'column',
@@ -377,20 +437,46 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
                         <input
                           type="text"
                           placeholder="Buscar equipo por nombre..."
-                          value={teamSearch}
-                          onChange={e => setTeamSearch(e.target.value)}
+                          value={zoneSearch}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setTeamSearches(prev => ({ ...prev, [savedZone.id]: val }));
+                          }}
                           style={{
                             width: '100%',
                             paddingLeft: '32px',
+                            paddingRight: zoneSearch ? '30px' : '10px',
                             height: '32px',
                             fontSize: '12px',
                             borderRadius: '6px',
                             border: '1px solid var(--border-subtle)',
                             background: 'var(--input-bg)',
                             color: 'var(--text-primary)',
-                            outline: 'none'
+                            outline: 'none',
+                            boxSizing: 'border-box'
                           }}
                         />
+                        {zoneSearch && (
+                          <button
+                            type="button"
+                            onClick={() => setTeamSearches(prev => ({ ...prev, [savedZone.id]: '' }))}
+                            style={{
+                              position: 'absolute',
+                              right: '8px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              color: 'var(--text-muted)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              padding: '2px'
+                            }}
+                          >
+                            <X size={12} />
+                          </button>
+                        )}
                       </div>
 
                       <div style={{
@@ -408,6 +494,10 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
                         ) : (
                           filteredTeams.map(team => {
                             const isAssigned = teams.some(zt => zt.team === team.id);
+                            const otherZone = !isAssigned && savedZones.find(z =>
+                              z.id && z.id !== savedZone.id && (zoneTeams[z.id] || []).some(zt => zt.team === team.id)
+                            );
+
                             return (
                               <div
                                 key={team.id}
@@ -445,10 +535,25 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
                                   color: isAssigned ? '#22c55e' : 'var(--text-primary)',
                                   whiteSpace: 'nowrap',
                                   overflow: 'hidden',
-                                  textOverflow: 'ellipsis'
+                                  textOverflow: 'ellipsis',
+                                  flex: 1
                                 }}>
                                   {team.name}
                                 </span>
+                                {otherZone && (
+                                  <span style={{
+                                    fontSize: '10px',
+                                    fontWeight: '700',
+                                    color: '#d97706',
+                                    background: 'rgba(245, 158, 11, 0.12)',
+                                    padding: '1px 5px',
+                                    borderRadius: '4px',
+                                    whiteSpace: 'nowrap',
+                                    flexShrink: 0
+                                  }}>
+                                    {otherZone.name}
+                                  </span>
+                                )}
                               </div>
                             );
                           })
@@ -465,7 +570,7 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
 
       {/* Modal de Alerta con diseño estándar del sistema */}
       {customAlert && createPortal(
-        <div 
+        <div
           style={{
             position: 'fixed',
             inset: 0,
@@ -478,7 +583,7 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
           }}
           className="animate-fade-in"
         >
-          <div 
+          <div
             style={{
               background: '#ffffff',
               border: '1px solid #e4e4e7',
