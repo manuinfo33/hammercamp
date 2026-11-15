@@ -30,6 +30,221 @@ const TABS: { id: TabId; label: string; mobileLabel: string; icon: any }[] = [
   { id: "sancionados", label: "Sancionados", mobileLabel: "Sanciones", icon: AlertTriangle },
 ];
 
+const FLOODLIGHT_THEMES = [
+  {
+    bg: "#132a4a",
+    sideBeam: "#7cb2f4",
+    centerBeam: "#f5dd90",
+    arch: "#7cb2f4",
+    star: "#f5dd90",
+    cupMain: "#f5dd90",
+    cupShade: "#e0be5a",
+    cupBase: "#faf9f6",
+    emblem: "#132a4a",
+  },
+  {
+    bg: "#133829",
+    sideBeam: "#6ee7b7",
+    centerBeam: "#fde68a",
+    arch: "#6ee7b7",
+    star: "#fde68a",
+    cupMain: "#fde68a",
+    cupShade: "#eab308",
+    cupBase: "#faf9f6",
+    emblem: "#133829",
+  },
+  {
+    bg: "#3f1420",
+    sideBeam: "#fda4af",
+    centerBeam: "#fcd34d",
+    arch: "#fda4af",
+    star: "#fcd34d",
+    cupMain: "#fcd34d",
+    cupShade: "#d99b26",
+    cupBase: "#faf9f6",
+    emblem: "#3f1420",
+  },
+  {
+    bg: "#261b47",
+    sideBeam: "#c4b5fd",
+    centerBeam: "#f5dd90",
+    arch: "#c4b5fd",
+    star: "#f5dd90",
+    cupMain: "#f5dd90",
+    cupShade: "#dfba48",
+    cupBase: "#faf9f6",
+    emblem: "#261b47",
+  },
+  {
+    bg: "#1b1d24",
+    sideBeam: "#fbbf24",
+    centerBeam: "#fef08a",
+    arch: "#9ca3af",
+    star: "#fbbf24",
+    cupMain: "#fde047",
+    cupShade: "#ca8a04",
+    cupBase: "#faf9f6",
+    emblem: "#1b1d24",
+  },
+  {
+    bg: "#0f333e",
+    sideBeam: "#67e8f9",
+    centerBeam: "#f5dd90",
+    arch: "#67e8f9",
+    star: "#f5dd90",
+    cupMain: "#f5dd90",
+    cupShade: "#d4af37",
+    cupBase: "#faf9f6",
+    emblem: "#0f333e",
+  },
+  {
+    bg: "#3c1f14",
+    sideBeam: "#fdba74",
+    centerBeam: "#fde68a",
+    arch: "#fdba74",
+    star: "#fde68a",
+    cupMain: "#fde68a",
+    cupShade: "#d97706",
+    cupBase: "#faf9f6",
+    emblem: "#3c1f14",
+  },
+  {
+    bg: "#1e293b",
+    sideBeam: "#93c5fd",
+    centerBeam: "#fde68a",
+    arch: "#93c5fd",
+    star: "#fde68a",
+    cupMain: "#f5dd90",
+    cupShade: "#cda434",
+    cupBase: "#faf9f6",
+    emblem: "#1e293b",
+  },
+];
+
+function getTournamentVariant(tournamentOrId: any): number {
+  const rawId = typeof tournamentOrId === "object" ? tournamentOrId?.id : tournamentOrId;
+  const id = Number(rawId);
+  if (!Number.isFinite(id) || id <= 0) return 0;
+  if (id === 16) return 0;
+  if (id === 2) return 1;
+  return Math.abs(id * 3 + Math.floor(id / 2)) % FLOODLIGHT_THEMES.length;
+}
+
+function TrophyIllustration({
+  variant,
+  theme,
+  x = 200,
+  y = 62,
+  scale = 1,
+}: {
+  variant: number;
+  theme: (typeof FLOODLIGHT_THEMES)[number];
+  x?: number;
+  y?: number;
+  scale?: number;
+}) {
+  const transform = `translate(${x}, ${y}) scale(${scale})`;
+  switch (variant) {
+    case 0:
+      return (
+        <g transform={transform}>
+          <path d="M -20,-28 L 20,-28 L 14,2 C 12,12 -12,12 -14,2 Z" fill={theme.cupMain} />
+          <path d="M -20,-22 L -28,-22 L -25,-6 L -15,-4" fill="none" stroke={theme.cupMain} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M 20,-22 L 28,-22 L 25,-6 L 15,-4" fill="none" stroke={theme.cupMain} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="-5" y="9" width="10" height="12" fill={theme.cupShade} />
+          <rect x="-16" y="21" width="32" height="7" rx="3" fill={theme.cupBase} />
+          <circle cx="0" cy="-12" r="6" fill={theme.emblem} />
+        </g>
+      );
+    case 1:
+      return (
+        <g transform={transform}>
+          <path d="M -13,-18 C -30,-30 -30,0 -11,4" fill="none" stroke={theme.cupMain} strokeWidth="3.2" strokeLinecap="round" />
+          <path d="M 13,-18 C 30,-30 30,0 11,4" fill="none" stroke={theme.cupMain} strokeWidth="3.2" strokeLinecap="round" />
+          <path d="M -14,-28 L 14,-28 L 17,-8 C 17,6 8,12 0,12 C -8,12 -17,6 -17,-8 Z" fill={theme.cupMain} />
+          <ellipse cx="0" cy="-28" rx="14" ry="3.5" fill={theme.cupShade} />
+          <rect x="-6" y="11" width="12" height="9" rx="2" fill={theme.cupShade} />
+          <rect x="-18" y="20" width="36" height="8" rx="3" fill={theme.cupBase} />
+          <polygon points="0,-19 5,-11 0,-3 -5,-11" fill={theme.emblem} />
+        </g>
+      );
+    case 2:
+      return (
+        <g transform={transform}>
+          <polyline points="-17,-22 -27,-18 -23,-4 -12,-2" fill="none" stroke={theme.cupMain} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+          <polyline points="17,-22 27,-18 23,-4 12,-2" fill="none" stroke={theme.cupMain} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+          <polygon points="-19,-26 19,-26 23,-12 11,6 -11,6 -23,-12" fill={theme.cupMain} />
+          <polygon points="-8,-26 8,-26 10,-12 4,6 -4,6 -10,-12" fill={theme.cupShade} opacity="0.55" />
+          <rect x="-4" y="6" width="8" height="11" fill={theme.cupShade} />
+          <rect x="-13" y="17" width="26" height="4" rx="1.5" fill={theme.cupMain} />
+          <rect x="-19" y="21" width="38" height="7" rx="2.5" fill={theme.cupBase} />
+        </g>
+      );
+    case 3:
+      return (
+        <g transform={transform}>
+          <path d="M -14,18 L -6,0 L -16,-14 L -6,-14 L 0,2 L 6,-14 L 16,-14 L 6,0 L 14,18 Z" fill={theme.cupShade} />
+          <path d="M -10,18 L 0,-4 L 10,18 Z" fill={theme.cupMain} />
+          <circle cx="0" cy="-16" r="14" fill={theme.cupMain} />
+          <polygon points="0,-22 5.5,-18 3.5,-11.5 -3.5,-11.5 -5.5,-18" fill={theme.emblem} />
+          <rect x="-15" y="16" width="30" height="4" rx="2" fill={theme.cupMain} />
+          <rect x="-18" y="20" width="36" height="8" rx="3" fill={theme.cupBase} />
+        </g>
+      );
+    case 4:
+      return (
+        <g transform={transform}>
+          <polygon points="-16,-22 -12,-31 -5,-24 0,-33 5,-24 12,-31 16,-22" fill={theme.cupShade} />
+          <path d="M -18,-22 L 18,-22 L 18,-4 C 18,9 0,16 0,16 C 0,16 -18,9 -18,-4 Z" fill={theme.cupMain} />
+          <path d="M -18,-16 L -26,-16 L -26,-5 L -16,-1" fill="none" stroke={theme.cupMain} strokeWidth="2.8" strokeLinejoin="round" />
+          <path d="M 18,-16 L 26,-16 L 26,-5 L 16,-1" fill="none" stroke={theme.cupMain} strokeWidth="2.8" strokeLinejoin="round" />
+          <line x1="-18" y1="-9" x2="18" y2="-9" stroke={theme.emblem} strokeWidth="2.5" />
+          <circle cx="0" cy="-1" r="4.5" fill={theme.emblem} />
+          <rect x="-6" y="14" width="12" height="7" fill={theme.cupShade} />
+          <rect x="-17" y="21" width="34" height="7" rx="3" fill={theme.cupBase} />
+        </g>
+      );
+    case 5:
+      return (
+        <g transform={transform}>
+          <polygon points="-10,-8 -32,-24 -26,-12 -30,-4 -12,2" fill={theme.cupShade} />
+          <polygon points="10,-8 32,-24 26,-12 30,-4 12,2" fill={theme.cupShade} />
+          <polygon points="-16,-28 16,-28 8,12 -8,12" fill={theme.cupMain} />
+          <polygon points="0,-20 2.5,-14 9,-14 3.8,-10 5.8,-4 0,-8 -5.8,-4 -3.8,-10 -9,-14 -2.5,-14" fill={theme.emblem} />
+          <rect x="-5" y="12" width="10" height="8" fill={theme.cupShade} />
+          <rect x="-16" y="20" width="32" height="8" rx="3" fill={theme.cupBase} />
+        </g>
+      );
+    case 6:
+      return (
+        <g transform={transform}>
+          <circle cx="-16" cy="-12" r="6" fill="none" stroke={theme.cupMain} strokeWidth="2.6" />
+          <circle cx="16" cy="-12" r="6" fill="none" stroke={theme.cupMain} strokeWidth="2.6" />
+          <circle cx="0" cy="-29" r="4.5" fill={theme.cupBase} />
+          <path d="M -14,-18 C -14,-26 14,-26 14,-18 L 11,2 L -11,2 Z" fill={theme.cupMain} />
+          <rect x="-15" y="-19" width="30" height="3.5" rx="1.5" fill={theme.cupShade} />
+          <rect x="-7" y="2" width="14" height="6" rx="2" fill={theme.cupShade} />
+          <polygon points="-11,8 11,8 15,20 -15,20" fill={theme.cupMain} />
+          <rect x="-19" y="20" width="38" height="8" rx="2.5" fill={theme.cupBase} />
+          <circle cx="0" cy="-9" r="4.5" fill={theme.emblem} />
+        </g>
+      );
+    default:
+      return (
+        <g transform={transform}>
+          <polygon points="0,-34 2.5,-28 9,-28 4,-24 6,-18 0,-22 -6,-18 -4,-24 -9,-28 -2.5,-28" fill={theme.cupBase} />
+          <polygon points="0,-18 18,-6 10,16 -10,16 -18,-6" fill={theme.cupMain} />
+          <polygon points="0,-18 18,-6 0,16" fill={theme.cupShade} opacity="0.5" />
+          <polygon points="-18,-6 -26,-14 -20,4 -12,8" fill={theme.cupShade} />
+          <polygon points="18,-6 26,-14 20,4 12,8" fill={theme.cupShade} />
+          <polygon points="0,-9 6,-2 0,5 -6,-2" fill={theme.emblem} />
+          <rect x="-13" y="16" width="26" height="4" rx="1.5" fill={theme.cupShade} />
+          <rect x="-18" y="20" width="36" height="8" rx="3" fill={theme.cupBase} />
+        </g>
+      );
+  }
+}
+
 function fmtDate(d: string | null) {
   if (!d) return "";
   const parts = d.split("-");
@@ -204,6 +419,9 @@ function CategoryDetailPage() {
     }
   };
 
+  const activeVariant = getTournamentVariant(tournament || category?.id);
+  const activeTheme = FLOODLIGHT_THEMES[activeVariant];
+
   return (
     <div
       className="sl-page-root"
@@ -216,17 +434,7 @@ function CategoryDetailPage() {
         color: "#1c1d21",
       }}
     >
-      <Header
-        mobileContext={
-          category
-            ? {
-                title: tournament ? tournament.name : category.name,
-                subtitle: `Categoría: ${category.name}`,
-                backTo: "/categorias",
-              }
-            : undefined
-        }
-      />
+      <Header />
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
@@ -247,15 +455,17 @@ function CategoryDetailPage() {
           box-sizing: border-box;
         }
         .sl-page-header {
-          background: #ffffff;
-          border: 1px solid #e4e4e7;
-          border-radius: 14px;
-          padding: 18px 20px;
-          box-shadow: 0 1px 2px rgba(20, 20, 19, 0.03);
+          position: relative;
+          overflow: hidden;
+          border-radius: 16px;
+          padding: 18px 22px;
+          box-shadow: 0 8px 26px rgba(15, 23, 42, 0.14);
           display: flex;
           align-items: center;
-          gap: 14px;
+          justify-content: space-between;
+          gap: 16px;
           margin-bottom: 20px;
+          transition: background-color 0.35s ease;
         }
         .sl-tn-tabs {
           display: flex;
@@ -419,59 +629,202 @@ function CategoryDetailPage() {
           </div>
         ) : (
           <>
-            {/* Header en PC idéntico a TournamentDetailView (en celular va integrado en la barra superior) */}
-            <div className="sl-page-header sl-hide-mobile">
-              <Link
-                to="/categorias"
-                title="Volver a Categorías"
+            {/* Recuadro de cabecera con la identidad visual ("Noche de Reflectores") y la copa del torneo */}
+            <div
+              className="sl-page-header"
+              style={{
+                backgroundColor: activeTheme.bg,
+                border: "1px solid rgba(255, 255, 255, 0.14)",
+                borderBottom: `3px solid ${activeTheme.cupMain}66`,
+              }}
+            >
+              {/* Fondo SVG de haces de reflectores, arcos y estrellas del torneo */}
+              <svg
+                viewBox="0 0 800 160"
+                width="100%"
+                height="100%"
+                preserveAspectRatio="xMidYMid slice"
                 style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 10,
-                  background: "#ffffff",
-                  border: "1px solid #d4d4d8",
-                  color: "#1c1d21",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                  textDecoration: "none",
+                  position: "absolute",
+                  inset: 0,
+                  pointerEvents: "none",
                 }}
+                aria-hidden="true"
               >
-                <ArrowLeft size={16} />
-              </Link>
+                <rect x="0" y="0" width="800" height="160" fill={activeTheme.bg} />
+                <polygon
+                  points="60,0 190,0 410,160 210,160"
+                  fill={activeTheme.sideBeam}
+                  opacity="0.18"
+                />
+                <polygon
+                  points="740,0 610,0 390,160 590,160"
+                  fill={activeTheme.sideBeam}
+                  opacity="0.18"
+                />
+                <polygon
+                  points="320,0 480,0 540,160 260,160"
+                  fill={activeTheme.centerBeam}
+                  opacity="0.14"
+                />
+                <circle
+                  cx="120"
+                  cy="165"
+                  r="85"
+                  fill="none"
+                  stroke={activeTheme.arch}
+                  strokeWidth="2"
+                  strokeOpacity="0.28"
+                />
+                <circle
+                  cx="680"
+                  cy="165"
+                  r="85"
+                  fill="none"
+                  stroke={activeTheme.arch}
+                  strokeWidth="2"
+                  strokeOpacity="0.28"
+                />
+                <polygon
+                  points="280,26 283,33 290,33 284,37 286,44 280,40 274,44 276,37 270,33 277,33"
+                  fill={activeTheme.star}
+                  opacity="0.55"
+                />
+                <polygon
+                  points="520,26 523,33 530,33 524,37 526,44 520,40 514,44 516,37 510,33 517,33"
+                  fill={activeTheme.star}
+                  opacity="0.55"
+                />
+              </svg>
 
+              {/* Izquierda: Botón Volver + Barra dorada + Título del Torneo y Categoría */}
               <div
                 style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 11,
-                  background: "color-mix(in srgb, var(--primary) 16%, transparent)",
-                  color: "var(--primary)",
+                  position: "relative",
+                  zIndex: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 14,
+                  minWidth: 0,
+                  flex: 1,
+                }}
+              >
+                <Link
+                  to="/categorias"
+                  title="Volver a Categorías"
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    background: "rgba(255, 255, 255, 0.12)",
+                    border: "1px solid rgba(255, 255, 255, 0.24)",
+                    color: "#ffffff",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    textDecoration: "none",
+                    backdropFilter: "blur(6px)",
+                  }}
+                >
+                  <ArrowLeft size={16} />
+                </Link>
+
+                <span
+                  style={{
+                    width: 5,
+                    height: 36,
+                    borderRadius: 999,
+                    backgroundColor: activeTheme.cupMain,
+                    flexShrink: 0,
+                    boxShadow: "0 0 10px rgba(245, 221, 144, 0.35)",
+                  }}
+                />
+
+                <div style={{ minWidth: 0 }}>
+                  <h1
+                    style={{
+                      margin: 0,
+                      fontSize: "1.3rem",
+                      fontWeight: 800,
+                      color: "#ffffff",
+                      lineHeight: 1.22,
+                      textShadow: "0 1px 3px rgba(0, 0, 0, 0.3)",
+                    }}
+                  >
+                    {tournament ? tournament.name : category.name}
+                  </h1>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      marginTop: 4,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        color: activeTheme.sideBeam,
+                        letterSpacing: "0.02em",
+                      }}
+                    >
+                      Categoría: {category.name}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        lineHeight: 1,
+                        color: activeTheme.star,
+                      }}
+                      aria-hidden="true"
+                    >
+                      ★
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Derecha: Copa y estrellas adjudicadas al torneo (idéntico al distintivo de Próxima Fecha en el Index) */}
+              <div
+                style={{
+                  position: "relative",
+                  zIndex: 2,
+                  height: 52,
+                  padding: "0 10px",
+                  borderRadius: 14,
+                  background: "rgba(0, 0, 0, 0.26)",
+                  border: "1px solid rgba(255, 255, 255, 0.16)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   flexShrink: 0,
                 }}
+                title={tournament ? tournament.name : category.name}
               >
-                <Trophy size={22} />
-              </div>
-
-              <div style={{ minWidth: 0 }}>
-                <h1
-                  style={{
-                    margin: 0,
-                    fontSize: "1.25rem",
-                    fontWeight: 800,
-                    color: "#1c1d21",
-                    lineHeight: 1.25,
-                  }}
+                <svg
+                  viewBox="0 0 116 68"
+                  width="80"
+                  height="46"
+                  aria-hidden="true"
                 >
-                  {tournament ? tournament.name : category.name}
-                </h1>
-                <p style={{ margin: "3px 0 0", fontSize: 12.5, color: "#71717a" }}>
-                  Categoría: {category.name}
-                </p>
+                  <polygon
+                    points="16,22 18.2,27 23.5,27 19.2,30.2 20.8,35.5 16,32.4 11.2,35.5 12.8,30.2 8.5,27 13.8,27"
+                    fill={activeTheme.star}
+                  />
+                  <polygon
+                    points="100,22 102.2,27 107.5,27 103.2,30.2 104.8,35.5 100,32.4 95.2,35.5 96.8,30.2 92.5,27 97.8,27"
+                    fill={activeTheme.star}
+                  />
+                  <TrophyIllustration
+                    variant={activeVariant}
+                    theme={activeTheme}
+                    x={58}
+                    y={36}
+                    scale={0.88}
+                  />
+                </svg>
               </div>
             </div>
 
@@ -783,8 +1136,8 @@ function CategoryDetailPage() {
                                             <span
                                               style={{
                                                 fontSize: 10,
-                                                fontWeight: 600,
-                                                color: "#6f737b",
+                                                fontWeight: 700,
+                                                color: "#141413",
                                               }}
                                             >
                                               {canchaLabel}
@@ -798,7 +1151,7 @@ function CategoryDetailPage() {
                                               style={{
                                                 fontSize: 11,
                                                 fontWeight: 700,
-                                                color: "#1c1d21",
+                                                color: "#141413",
                                               }}
                                             >
                                               {m.date.split("-").reverse().slice(0, 2).join("/")}
@@ -808,8 +1161,8 @@ function CategoryDetailPage() {
                                             <span
                                               style={{
                                                 fontSize: 10,
-                                                fontWeight: 600,
-                                                color: "#6f737b",
+                                                fontWeight: 700,
+                                                color: "#141413",
                                               }}
                                             >
                                               {m.time.slice(0, 5)} Hs
@@ -819,8 +1172,8 @@ function CategoryDetailPage() {
                                             <span
                                               style={{
                                                 fontSize: 10,
-                                                fontWeight: 600,
-                                                color: "#6f737b",
+                                                fontWeight: 700,
+                                                color: "#141413",
                                               }}
                                             >
                                               {canchaLabel}

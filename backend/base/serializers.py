@@ -255,16 +255,17 @@ class TournamentCreateSerializer(serializers.ModelSerializer):
             for zone_id, zone in existing.items():
                 if zone_id not in seen_ids:
                     from django.db.models import Q
-                    has_matches = Match.objects.filter(
-                        Q(match_round__tournament_zone=zone) | Q(impact_zone=zone)
-                    ).exists()
+                    team_ids = list(zone.zone_teams.values_list('team_id', flat=True))
+                    match_q = Q(match_round__tournament_zone=zone) | Q(impact_zone=zone)
+                    if team_ids:
+                        match_q |= (
+                            Q(match_round__tournament_zone__tournament=instance)
+                            & (Q(local_team_id__in=team_ids) | Q(visitor_team_id__in=team_ids))
+                        )
+                    has_matches = Match.objects.filter(match_q).exists()
                     if has_matches:
                         raise serializers.ValidationError({
-                            "detail": f"No se puede eliminar la zona '{zone.name}' ya que los equipos cargados ya tienen partidos asignados en el torneo."
-                        })
-                    if zone.zone_teams.exists():
-                        raise serializers.ValidationError({
-                            "detail": f"No se puede eliminar la zona '{zone.name}' porque contiene equipos asignados. Quitalos primero para poder eliminarla."
+                            "detail": "No se puede eliminar ya que los equipos cargados ya tienen partidos asignados en el torneo"
                         })
                     zone.delete()
         return instance

@@ -373,6 +373,15 @@ function TrophyIllustration({
   }
 }
 
+function getTournamentVariant(tournamentOrId: any): number {
+  const rawId = typeof tournamentOrId === "object" ? tournamentOrId?.id : tournamentOrId;
+  const id = Number(rawId);
+  if (!Number.isFinite(id) || id <= 0) return 0;
+  if (id === 16) return 0;
+  if (id === 2) return 1;
+  return Math.abs(id * 3 + Math.floor(id / 2)) % FLOODLIGHT_THEMES.length;
+}
+
 function TournamentFloodlightBanner({
   index,
   height = 132,
@@ -380,7 +389,7 @@ function TournamentFloodlightBanner({
   index: number;
   height?: number;
 }) {
-  const variant = index % 8;
+  const variant = ((index % FLOODLIGHT_THEMES.length) + FLOODLIGHT_THEMES.length) % FLOODLIGHT_THEMES.length;
   const theme = FLOODLIGHT_THEMES[variant];
 
   return (
@@ -558,13 +567,14 @@ function CategoriasIndexPage() {
                 gap: 22,
               }}
             >
-              {tournaments.map((t: any, idx: number) => {
+              {tournaments.map((t: any) => {
                 const matchedCat = categories.find(
                   (c: any) => String(c.id) === String(t.category),
                 );
                 const categoryName =
                   t.category_name || matchedCat?.name || "Categoría General";
-                const theme = FLOODLIGHT_THEMES[idx % 8];
+                const variantIndex = getTournamentVariant(t);
+                const theme = FLOODLIGHT_THEMES[variantIndex];
 
                 return (
                   <Link
@@ -574,7 +584,7 @@ function CategoriasIndexPage() {
                     className="sl-tourn-card"
                   >
                     {/* Ilustración superior a sangre completa */}
-                    <TournamentFloodlightBanner index={idx} height={132} />
+                    <TournamentFloodlightBanner index={variantIndex} height={132} />
 
                     {/* Cuerpo limpio y editorial: Categoría asociada + Título del torneo */}
                     <div

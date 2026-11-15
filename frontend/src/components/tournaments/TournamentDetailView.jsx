@@ -20,8 +20,8 @@ import '../../styles/tournaments.css';
 
 const TABS = [
   { id: 'principal', label: 'Principal' },
-  { id: 'fair_play', label: 'Fair Play' },
   { id: 'fixture', label: 'Fixture' },
+  { id: 'fair_play', label: 'Fair Play' },
   { id: 'buena_fe', label: 'Lista de Buena Fe' },
 ];
 
@@ -215,7 +215,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
   const navigate = useNavigate();
 
   const tournamentId = paramId || tournament?.id;
-  const initialTab = (paramTab && ['principal', 'fixture', 'buena_fe'].includes(paramTab)) ? paramTab : 'principal';
+  const initialTab = (paramTab && ['principal', 'fixture', 'fair_play', 'buena_fe'].includes(paramTab)) ? paramTab : 'principal';
 
   const { user, logout } = useAuth();
   const [mobileUserOpen, setMobileUserOpen] = useState(false);
@@ -229,7 +229,15 @@ export default function TournamentDetailView({ tournament, onBack }) {
   });
 
   useEffect(() => {
-    if (paramTab && ['principal', 'fixture', 'buena_fe'].includes(paramTab)) {
+    const handleSheetChanged = (e) => {
+      setMobileUserOpen(Boolean(e.detail?.open));
+    };
+    window.addEventListener('gx-user-sheet-changed', handleSheetChanged);
+    return () => window.removeEventListener('gx-user-sheet-changed', handleSheetChanged);
+  }, []);
+
+  useEffect(() => {
+    if (paramTab && ['principal', 'fixture', 'fair_play', 'buena_fe'].includes(paramTab)) {
       setActiveTab(paramTab);
     }
   }, [paramTab]);
@@ -2360,7 +2368,7 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                               <span>{m.visitor_score ?? 0}</span>
                                             </div>
                                             {canchaLabel && (
-                                              <span style={{ fontSize: '10px', fontWeight: '600', color: '#6f737b' }}>
+                                              <span style={{ fontSize: '10px', fontWeight: '700', color: '#141413' }}>
                                                 {canchaLabel}
                                               </span>
                                             )}
@@ -2369,17 +2377,17 @@ export default function TournamentDetailView({ tournament, onBack }) {
                                           /* IMAGEN 2: Partido Programado con Fecha, Horario y Cancha */
                                           <>
                                             {matchDate && (
-                                              <span style={{ fontSize: '11px', fontWeight: '700', color: '#1c1d21' }}>
+                                              <span style={{ fontSize: '11px', fontWeight: '700', color: '#141413' }}>
                                                 {matchDate.split('-').reverse().slice(0, 2).join('/')}
                                               </span>
                                             )}
                                             {matchTime && (
-                                              <span style={{ fontSize: '10px', fontWeight: '600', color: '#6f737b' }}>
+                                              <span style={{ fontSize: '10px', fontWeight: '700', color: '#141413' }}>
                                                 {`${matchTime.slice(0, 5)} Hs`}
                                               </span>
                                             )}
                                             {canchaLabel && (
-                                              <span style={{ fontSize: '10px', fontWeight: '600', color: '#6f737b' }}>
+                                              <span style={{ fontSize: '10px', fontWeight: '700', color: '#141413' }}>
                                                 {canchaLabel}
                                               </span>
                                             )}
@@ -3353,57 +3361,11 @@ export default function TournamentDetailView({ tournament, onBack }) {
       {/* Mobile Bottom Navigation Bar (Portal to document.body) */}
       {isMobile && !showTeamForm && !selectedMatchForScore && createPortal(
         <>
-          {mobileUserOpen && (
-            <div className="mobile-dropdown-menu animate-fade-in" style={{
-              position: 'fixed',
-              bottom: '74px',
-              right: '12px',
-              zIndex: 10001,
-              minWidth: '220px',
-              background: '#171717',
-              border: '1px solid #27272a',
-              borderRadius: '16px',
-              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)',
-              overflow: 'hidden'
-            }}>
-              <div style={{ padding: '16px', borderBottom: '1px solid #27272a' }}>
-                <p style={{ margin: 0, fontWeight: '700', fontSize: '13px', color: '#ffffff', textTransform: 'uppercase' }}>Hola {user?.first_name} {user?.last_name}</p>
-                <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#a1a1aa', fontWeight: '500' }}>{user?.role}</p>
-              </div>
-              <button 
-                onClick={() => {
-                  setMobileUserOpen(false);
-                  logout();
-                  window.location.href = '/login';
-                }}
-                className="mobile-logout-btn"
-                style={{
-                  width: '100%',
-                  background: 'transparent',
-                  color: '#f87171',
-                  border: 'none',
-                  borderTop: '1px solid #27272a',
-                  padding: '12px',
-                  fontSize: '13px',
-                  fontWeight: '700',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  cursor: 'pointer'
-                }}
-              >
-                <LogOut size={16} />
-                <span>Cerrar Sesión</span>
-              </button>
-            </div>
-          )}
-
           <div className="mobile-bottom-nav anthropic-theme">
             <button 
               onClick={() => {
                 handleTabChange('principal');
-                setMobileUserOpen(false);
+                window.dispatchEvent(new CustomEvent('gx-close-user-sheet'));
               }}
               className={`mobile-bottom-nav-item ${activeTab === 'principal' && !mobileUserOpen ? 'active' : ''}`}
             >
@@ -3412,8 +3374,18 @@ export default function TournamentDetailView({ tournament, onBack }) {
             </button>
             <button 
               onClick={() => {
+                handleTabChange('fixture');
+                window.dispatchEvent(new CustomEvent('gx-close-user-sheet'));
+              }}
+              className={`mobile-bottom-nav-item ${activeTab === 'fixture' && !mobileUserOpen ? 'active' : ''}`}
+            >
+              <Calendar size={20} />
+              <span className="mbn-label">Fixture</span>
+            </button>
+            <button 
+              onClick={() => {
                 handleTabChange('fair_play');
-                setMobileUserOpen(false);
+                window.dispatchEvent(new CustomEvent('gx-close-user-sheet'));
               }}
               className={`mobile-bottom-nav-item ${activeTab === 'fair_play' && !mobileUserOpen ? 'active' : ''}`}
               title="Fair Play"
@@ -3423,27 +3395,18 @@ export default function TournamentDetailView({ tournament, onBack }) {
             </button>
             <button 
               onClick={() => {
-                handleTabChange('fixture');
-                setMobileUserOpen(false);
-              }}
-              className={`mobile-bottom-nav-item ${activeTab === 'fixture' && !mobileUserOpen ? 'active' : ''}`}
-            >
-              <Calendar size={20} />
-              <span className="mbn-label">Fixture</span>
-            </button>
-            <button 
-              onClick={() => {
                 handleTabChange('buena_fe');
-                setMobileUserOpen(false);
+                window.dispatchEvent(new CustomEvent('gx-close-user-sheet'));
               }}
               className={`mobile-bottom-nav-item ${activeTab === 'buena_fe' && !mobileUserOpen ? 'active' : ''}`}
+              title="Lista de Buena Fe"
             >
               <UserCheck size={20} />
               <span className="mbn-label">Buena Fe</span>
             </button>
             <button 
               onClick={() => {
-                setMobileUserOpen(!mobileUserOpen);
+                window.dispatchEvent(new CustomEvent('gx-toggle-user-sheet'));
               }}
               className={`mobile-bottom-nav-item ${mobileUserOpen ? 'active' : ''}`}
             >

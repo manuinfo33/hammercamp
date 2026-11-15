@@ -120,8 +120,17 @@ function TrophyIllustration({ variant, theme }) {
   }
 }
 
+function getTournamentVariant(tournamentOrId) {
+  const rawId = typeof tournamentOrId === 'object' ? tournamentOrId?.id : tournamentOrId;
+  const id = Number(rawId);
+  if (!Number.isFinite(id) || id <= 0) return 0;
+  if (id === 16) return 0;
+  if (id === 2) return 1;
+  return Math.abs(id * 3 + Math.floor(id / 2)) % FLOODLIGHT_THEMES.length;
+}
+
 function TournamentFloodlightBanner({ index, height = 126 }) {
-  const variant = index % 8;
+  const variant = ((index % FLOODLIGHT_THEMES.length) + FLOODLIGHT_THEMES.length) % FLOODLIGHT_THEMES.length;
   const theme = FLOODLIGHT_THEMES[variant];
 
   return (
@@ -355,10 +364,11 @@ const TorneosView = () => {
                   box-shadow: 0 14px 30px rgba(20, 20, 19, 0.09);
                 }
               `}</style>
-              {tournaments.map((t, idx) => {
+              {tournaments.map((t) => {
                 const totalTeams = t.zones?.reduce((acc, z) => acc + (z.zone_teams?.length || 0), 0) || 0;
                 const totalZones = t.zones?.length || 0;
-                const theme = FLOODLIGHT_THEMES[idx % FLOODLIGHT_THEMES.length];
+                const variantIndex = getTournamentVariant(t);
+                const theme = FLOODLIGHT_THEMES[variantIndex];
                 const isActive = t.is_active !== false;
 
                 return (
@@ -368,7 +378,7 @@ const TorneosView = () => {
                     className="sl-mgmt-tourn-card"
                   >
                     {/* Ilustración estilo "Noche de Reflectores" a sangre completa (idéntica a la Web Visual) */}
-                    <TournamentFloodlightBanner index={idx} height={128} />
+                    <TournamentFloodlightBanner index={variantIndex} height={128} />
 
                     {/* Cuerpo de la tarjeta */}
                     <div

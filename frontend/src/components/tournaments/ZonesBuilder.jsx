@@ -79,13 +79,13 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
   };
 
   const handleAddTeamsClick = async (zone, index) => {
-    let activeZone = savedZones.find(z => z.id && z.order === index);
+    let activeZone = savedZones.find(z => (zone.id && z.id === zone.id) || (!zone.id && z.id && z.order === index));
     if (!activeZone && onSaveFirst) {
       setSaving(true);
       const updatedSavedZones = await onSaveFirst();
       setSaving(false);
       if (updatedSavedZones) {
-        activeZone = updatedSavedZones.find(z => z.order === index);
+        activeZone = updatedSavedZones.find(z => (zone.id && z.id === zone.id) || z.order === index);
       }
     }
 
@@ -95,21 +95,11 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
   };
 
   const handleDeleteZoneClick = async (zone, index) => {
-    const savedZone = savedZones.find(z => (zone.id && z.id === zone.id) || (z.order === index));
-    const assignedTeams = savedZone ? (zoneTeams[savedZone.id] || []) : [];
+    const savedZone = savedZones.find(z => (zone.id && z.id === zone.id) || (!zone.id && z.order === index));
 
-    // Si tiene equipos asignados: no se puede eliminar y mostramos alerta
-    if (assignedTeams.length > 0) {
-      setCustomAlert({
-        title: 'Atención',
-        message: 'No se puede eliminar ya que los equipos cargados ya tienen partidos asignados en el torneo'
-      });
-      return;
-    }
-
-    // Si la zona ya está guardada en la base de datos
+    // Si la zona ya está guardada en la base de datos, el backend valida únicamente si existen
+    // partidos asignados a esta zona o sus equipos dentro de este torneo.
     if (savedZone && savedZone.id) {
-      // Doble verificación: chequear si por backend existen partidos asignados
       try {
         setDeletingZoneIndex(index);
         await api.delete(`tournament-zones/${savedZone.id}/`);
@@ -129,9 +119,15 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
           delete next[savedZone.id];
           return next;
         });
+        setZoneTeams(prev => {
+          const next = { ...prev };
+          delete next[savedZone.id];
+          return next;
+        });
       } catch (err) {
         console.error("Error al eliminar la zona:", err);
         const detailMsg = err.response?.data?.detail ||
+          (Array.isArray(err.response?.data) ? err.response.data[0] : null) ||
           'No se puede eliminar ya que los equipos cargados ya tienen partidos asignados en el torneo';
         setCustomAlert({
           title: 'Atención',
@@ -141,7 +137,7 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
         setDeletingZoneIndex(null);
       }
     } else {
-      // Zona nueva aún no persistida en BD y sin equipos
+      // Zona nueva aún no persistida en BD
       const updated = zones.filter((_, i) => i !== index);
       onChange(updated);
     }
@@ -209,42 +205,110 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
 
   return (
     <div>
-      {/* Zone count selector: solo agregar zonas con '+' */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
-        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Cantidad de zonas:</span>
+      <style>{`
+        .zb-toolbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 14px;
+          padding: 10px 12px;
+          background: #ffffff;
+          border: 1px solid #e7e5e0;
+          border-radius: 12px;
+          flex-wrap: wrap;
+        }
+        .zb-zone-card-header {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 12px;
+          background: #ffffff;
+        }
+        .zb-zone-main-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex: 1;
+          min-width: 0;
+        }
+        .zb-zone-actions-row {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-shrink: 0;
+        }
+        @media (max-width: 540px) {
+          .zb-zone-card-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+          }
+          .zb-zone-actions-row {
+            width: 100%;
+          }
+          .zb-zone-actions-row .zone-action-btn {
+            flex: 1;
+            height: 36px !important;
+          }
+          .zb-zone-actions-row .zone-delete-btn {
+            width: 36px !important;
+            height: 36px !important;
+          }
+        }
+      `}</style>
+
+      {/* Zone count selector: barra clara con botón de agregar zona */}
+      <div className="zb-toolbar">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '12.5px', fontWeight: '700', color: '#27272a' }}>
+            Zonas activas:
+          </span>
           <span style={{
-            width: '32px', textAlign: 'center', fontSize: '16px', fontWeight: '800',
-            color: 'var(--brand-beige)'
-          }}>{zones.length}</span>
-          <button
-            type="button"
-            onClick={handleAddZone}
-            className="secondary"
-            title="Agregar zona"
-            disabled={zones.length >= 10}
-            style={{
-              width: '28px',
-              height: '28px',
-              padding: 0,
-              minWidth: 'unset',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: zones.length >= 10 ? 'not-allowed' : 'pointer',
-              opacity: zones.length >= 10 ? 0.5 : 1
-            }}
-          >
-            <Plus size={14} />
-          </button>
+            padding: '2px 9px',
+            borderRadius: '999px',
+            fontSize: '12.5px',
+            fontWeight: '800',
+            background: '#f5ebe4',
+            color: '#b86344',
+            border: '1px solid #e5d2c5'
+          }}>
+            {zones.length} / 10
+          </span>
         </div>
-        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>(máx. 10)</span>
+        <button
+          type="button"
+          onClick={handleAddZone}
+          className="secondary"
+          title="Agregar zona"
+          disabled={zones.length >= 10}
+          style={{
+            height: '34px',
+            padding: '0 12px',
+            minWidth: 'unset',
+            borderRadius: '8px',
+            background: '#ffffff',
+            color: '#1c1d21',
+            border: '1px solid #d4d4d8',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            fontSize: '12px',
+            fontWeight: '700',
+            cursor: zones.length >= 10 ? 'not-allowed' : 'pointer',
+            opacity: zones.length >= 10 ? 0.5 : 1
+          }}
+        >
+          <Plus size={14} color="#1c1d21" />
+          <span style={{ color: '#1c1d21' }}>Agregar Zona</span>
+        </button>
       </div>
 
       {/* Zone cards */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {zones.map((zone, index) => {
-          const savedZone = savedZones.find(z => z.id && z.order === index);
+          const savedZone = savedZones.find(z => (zone.id && z.id === zone.id) || (!zone.id && z.id && z.order === index));
           const teams = savedZone ? (zoneTeams[savedZone.id] || []) : [];
           const isOpen = isZoneOpen(savedZone?.id);
           const zoneSearch = (savedZone?.id && teamSearches[savedZone.id]) || '';
@@ -256,156 +320,113 @@ const ZonesBuilder = ({ zones, onChange, categoryId, savedZones = [], tournament
 
           return (
             <div key={index} style={{
-              border: '1px solid var(--border-subtle)', borderRadius: '14px',
-              background: 'rgba(255,255,255,0.02)', overflow: 'hidden'
+              border: '1px solid var(--border-subtle)', borderRadius: '12px',
+              background: '#ffffff', overflow: 'hidden'
             }}>
               {/* Zone header */}
               <div
-                className="zone-card-header"
+                className="zb-zone-card-header"
                 style={{
-                  borderBottom: (teams.length > 0 || isOpen) ? '1px solid var(--border-subtle)' : 'none'
+                  borderBottom: isOpen ? '1px solid var(--border-subtle)' : 'none'
                 }}
               >
-                {/* Zone number badge */}
-                <div style={{
-                  width: '26px', height: '26px', borderRadius: '8px', flexShrink: 0,
-                  background: 'var(--brand-beige)', display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', fontSize: '11px', fontWeight: '900', color: '#1a1512'
-                }}>{index + 1}</div>
+                <div className="zb-zone-main-row">
+                  {/* Zone number badge */}
+                  <div style={{
+                    width: '28px', height: '28px', borderRadius: '8px', flexShrink: 0,
+                    background: '#f5ebe4', border: '1px solid #e5d2c5', display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', fontSize: '12px', fontWeight: '800', color: '#b86344'
+                  }}>{index + 1}</div>
 
-                {/* Zone name input — always has a visible border */}
-                <input
-                  type="text"
-                  className="zone-input"
-                  value={zone.name}
-                  onChange={e => updateName(index, e.target.value)}
-                  style={{
-                    width: '100%',
-                    background: 'var(--input-bg)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: '8px',
-                    outline: 'none',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: 'var(--text-primary)',
-                    padding: '5px 10px',
-                    height: '34px',
-                    transition: 'border-color 0.15s',
-                  }}
-                  onFocus={e => e.target.style.borderColor = 'var(--brand-beige)'}
-                  onBlur={e => e.target.style.borderColor = 'var(--border-subtle)'}
-                  placeholder="Ingresa el nombre de la Zona"
-                />
-
-                {/* Add Teams button — always visible */}
-                <button
-                  type="button"
-                  className="zone-action-btn"
-                  onClick={() => handleAddTeamsClick(zone, index)}
-                  disabled={saving || deletingZoneIndex === index}
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                    fontSize: '11px', fontWeight: '700', height: '34px', padding: '0 12px',
-                    minWidth: '115px',
-                    background: 'linear-gradient(135deg, var(--brand-beige-subtle), rgba(212,184,150,0.08))',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: '8px', color: 'var(--brand-beige)', cursor: 'pointer',
-                    whiteSpace: 'nowrap', flexShrink: 0,
-                    opacity: (saving || deletingZoneIndex === index) ? 0.6 : 1
-                  }}
-                >
-                  <Users size={13} />
-                  {saving ? 'Guardando...' : (isOpen ? 'Cerrar' : (teams.length > 0 ? `Equipos (${teams.length})` : '+ Equipos'))}
-                </button>
-
-                {/* Delete Zone Button — Cesto de basura al lado de Equipos */}
-                <button
-                  type="button"
-                  className="zone-delete-btn"
-                  title="Eliminar zona"
-                  onClick={() => handleDeleteZoneClick(zone, index)}
-                  disabled={deletingZoneIndex === index}
-                  style={{
-                    width: '34px',
-                    height: '34px',
-                    minWidth: '34px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-subtle)',
-                    background: 'rgba(239, 68, 68, 0.08)',
-                    color: '#ef4444',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: deletingZoneIndex === index ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.15s ease',
-                    flexShrink: 0,
-                    padding: 0
-                  }}
-                  onMouseEnter={(e) => {
-                    if (deletingZoneIndex !== index) {
-                      e.currentTarget.style.background = '#ef4444';
-                      e.currentTarget.style.color = '#ffffff';
-                      e.currentTarget.style.borderColor = '#ef4444';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (deletingZoneIndex !== index) {
-                      e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)';
-                      e.currentTarget.style.color = '#ef4444';
-                      e.currentTarget.style.borderColor = 'var(--border-subtle)';
-                    }
-                  }}
-                >
-                  <Trash2 size={15} />
-                </button>
-              </div>
-
-              {/* Chips de equipos cargados en esta zona (visibles siempre para poder comparar entre zonas) */}
-              {teams.length > 0 && (
-                <div style={{
-                  padding: '8px 14px',
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  borderBottom: isOpen ? '1px solid var(--border-subtle)' : 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  gap: '6px'
-                }}>
-                  <span style={{
-                    fontSize: '11px',
-                    fontWeight: '700',
-                    color: 'var(--text-muted)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em',
-                    marginRight: '4px'
-                  }}>
-                    Equipos ({teams.length}):
-                  </span>
-                  {teams.map(zt => {
-                    const teamObj = availableTeams.find(t => t.id === zt.team) || { name: zt.team_name || `Equipo #${zt.team}` };
-                    return (
-                      <span
-                        key={zt.id}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          fontSize: '11.5px',
-                          fontWeight: '600',
-                          background: 'rgba(34, 197, 94, 0.1)',
-                          color: '#16a34a',
-                          border: '1px solid rgba(34, 197, 94, 0.25)',
-                        }}
-                      >
-                        <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#16a34a' }} />
-                        {teamObj.name}
-                      </span>
-                    );
-                  })}
+                  {/* Zone name input — always has a visible border */}
+                  <input
+                    type="text"
+                    className="zone-input"
+                    value={zone.name}
+                    onChange={e => updateName(index, e.target.value)}
+                    style={{
+                      width: '100%',
+                      background: '#ffffff',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: '8px',
+                      outline: 'none',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      color: 'var(--text-primary)',
+                      padding: '5px 10px',
+                      height: '36px',
+                      transition: 'border-color 0.15s',
+                    }}
+                    onFocus={e => e.target.style.borderColor = 'var(--brand-beige)'}
+                    onBlur={e => e.target.style.borderColor = 'var(--border-subtle)'}
+                    placeholder="Nombre de la Zona (ej. Zona A)"
+                  />
                 </div>
-              )}
+
+                <div className="zb-zone-actions-row">
+                  {/* Add Teams button — always visible */}
+                  <button
+                    type="button"
+                    className="zone-action-btn"
+                    onClick={() => handleAddTeamsClick(zone, index)}
+                    disabled={saving || deletingZoneIndex === index}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                      fontSize: '11.5px', fontWeight: '700', height: '36px', padding: '0 12px',
+                      minWidth: '115px',
+                      background: isOpen ? '#1c1d21' : '#f5ebe4',
+                      border: `1px solid ${isOpen ? '#1c1d21' : '#e5d2c5'}`,
+                      borderRadius: '8px', color: isOpen ? '#ffffff' : '#b86344', cursor: 'pointer',
+                      whiteSpace: 'nowrap', flexShrink: 0,
+                      opacity: (saving || deletingZoneIndex === index) ? 0.6 : 1
+                    }}
+                  >
+                    <Users size={13} />
+                    {saving ? 'Guardando...' : (isOpen ? 'Cerrar lista' : (teams.length > 0 ? `Equipos (${teams.length})` : '+ Equipos'))}
+                  </button>
+
+                  {/* Delete Zone Button — Cesto de basura al lado de Equipos */}
+                  <button
+                    type="button"
+                    className="zone-delete-btn"
+                    title="Eliminar zona"
+                    onClick={() => handleDeleteZoneClick(zone, index)}
+                    disabled={deletingZoneIndex === index}
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      minWidth: '36px',
+                      borderRadius: '8px',
+                      border: '1px solid #fecaca',
+                      background: 'rgba(239, 68, 68, 0.08)',
+                      color: '#ef4444',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: deletingZoneIndex === index ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.15s ease',
+                      flexShrink: 0,
+                      padding: 0
+                    }}
+                    onMouseEnter={(e) => {
+                      if (deletingZoneIndex !== index) {
+                        e.currentTarget.style.background = '#ef4444';
+                        e.currentTarget.style.color = '#ffffff';
+                        e.currentTarget.style.borderColor = '#ef4444';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (deletingZoneIndex !== index) {
+                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)';
+                        e.currentTarget.style.color = '#ef4444';
+                        e.currentTarget.style.borderColor = '#fecaca';
+                      }
+                    }}
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              </div>
 
               {/* Inline Selector */}
               {savedZone && isOpen && (

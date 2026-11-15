@@ -661,7 +661,7 @@ class TournamentViewSet(viewsets.ModelViewSet):
         )
 
         stats = MatchPlayerStat.objects.filter(
-            match__tournament_zone__tournament=tournament,
+            match__match_round__tournament_zone__tournament=tournament,
             player_id__in=duplicate_player_ids,
             played=True
         ).values('player_id', 'team_id').annotate(pj=Count('id'))
@@ -691,6 +691,13 @@ class TournamentViewSet(viewsets.ModelViewSet):
 
 
     def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        # Si es un borrador temporal creado al abrir zonas y cancelado antes de crear el torneo
+        if request.query_params.get('draft') == '1':
+            has_any_matches = Match.objects.filter(match_round__tournament_zone__tournament=instance).exists()
+            if not has_any_matches:
+                return super().destroy(request, *args, **kwargs)
+
         password = (
             request.headers.get('X-Password') or
             request.headers.get('x-password') or
@@ -731,18 +738,18 @@ class TournamentZoneViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         from django.db.models import Q
-        has_matches = Match.objects.filter(
-            Q(match_round__tournament_zone=instance) | Q(impact_zone=instance)
-        ).exists()
+        team_ids = list(instance.zone_teams.values_list('team_id', flat=True))
+        match_q = Q(match_round__tournament_zone=instance) | Q(impact_zone=instance)
+        if team_ids:
+            match_q |= (
+                Q(match_round__tournament_zone__tournament=instance.tournament)
+                & (Q(local_team_id__in=team_ids) | Q(visitor_team_id__in=team_ids))
+            )
+        has_matches = Match.objects.filter(match_q).exists()
         if has_matches:
             from rest_framework import serializers
             raise serializers.ValidationError({
-                "detail": "No se puede eliminar la zona ya que los equipos cargados ya tienen partidos asignados en el torneo."
-            })
-        if instance.zone_teams.exists():
-            from rest_framework import serializers
-            raise serializers.ValidationError({
-                "detail": "No se puede eliminar la zona porque tiene equipos asignados. Quitalos primero para poder eliminarla."
+                "detail": "No se puede eliminar ya que los equipos cargados ya tienen partidos asignados en el torneo"
             })
         return super().destroy(request, *args, **kwargs)
 

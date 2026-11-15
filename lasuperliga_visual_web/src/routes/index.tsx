@@ -518,6 +518,15 @@ function buildFallbackForecast(): { current: CurrentWeather; days: WeatherDay[] 
   };
 }
 
+function getTournamentVariant(tournamentOrId: any): number {
+  const rawId = typeof tournamentOrId === "object" ? tournamentOrId?.id : tournamentOrId;
+  const id = Number(rawId);
+  if (!Number.isFinite(id) || id <= 0) return 0;
+  if (id === 16) return 0;
+  if (id === 2) return 1;
+  return Math.abs(id * 3 + Math.floor(id / 2)) % FLOODLIGHT_THEMES.length;
+}
+
 function Index() {
   const { brandName, contactAddress } = useBranding();
   const [filter, setFilter] = useState("Todas");
@@ -571,9 +580,9 @@ function Index() {
     fetch(`${API_URL}/tournaments/`)
       .then((res) => res.json())
       .then((data) => {
-        const list = (Array.isArray(data) ? data : []).map((t, idx) => ({
+        const list = (Array.isArray(data) ? data : []).map((t) => ({
           ...t,
-          _themeIndex: idx,
+          _themeIndex: getTournamentVariant(t),
         }));
         const activeList = list.filter((t) => t.is_active !== false);
         const finalTournaments = activeList.length > 0 ? activeList : list;
@@ -628,12 +637,8 @@ function Index() {
 
   const selectedTournamentIndex = useMemo(() => {
     if (!selectedTournament) return 0;
-    if (typeof selectedTournament._themeIndex === "number") {
-      return selectedTournament._themeIndex;
-    }
-    const idx = tournaments.findIndex((t) => t.id === selectedTournament.id);
-    return idx >= 0 ? idx : 0;
-  }, [selectedTournament, tournaments]);
+    return getTournamentVariant(selectedTournament);
+  }, [selectedTournament]);
 
   const activeVariant = selectedTournamentIndex % FLOODLIGHT_THEMES.length;
   const activeTheme = FLOODLIGHT_THEMES[activeVariant];
@@ -1397,7 +1402,7 @@ function Index() {
                                 <span>{m.visitor_score}</span>
                               </div>
                               {canchaLabel && (
-                                <span className="text-[10px] font-semibold text-[#52525b] leading-tight">
+                                <span className="text-[10px] font-bold text-[#141413] leading-tight">
                                   {canchaLabel}
                                 </span>
                               )}
@@ -1405,17 +1410,17 @@ function Index() {
                           ) : m.date || m.time || canchaLabel ? (
                             <>
                               {m.date && (
-                                <span className="text-[11px] font-bold text-[#1c1d21] leading-tight">
+                                <span className="text-[11px] font-bold text-[#141413] leading-tight">
                                   {m.date.split("-").reverse().slice(0, 2).join("/")}
                                 </span>
                               )}
                               {m.time && (
-                                <span className="text-[10.5px] font-semibold text-[#52525b] leading-tight">
+                                <span className="text-[10.5px] font-bold text-[#141413] leading-tight">
                                   {m.time.slice(0, 5)} Hs
                                 </span>
                               )}
                               {canchaLabel && (
-                                <span className="text-[10px] font-semibold text-[#52525b] leading-tight">
+                                <span className="text-[10px] font-bold text-[#141413] leading-tight">
                                   {canchaLabel}
                                 </span>
                               )}

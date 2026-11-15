@@ -87,7 +87,7 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
     return () => {
       // If we created a new draft during this session, but user didn't submit successfully, delete it.
       if (isDraftCreated.current && !isSubmitted.current && currentIdRef.current) {
-        api.delete(`tournaments/${currentIdRef.current}/`).catch(err => {
+        api.delete(`tournaments/${currentIdRef.current}/?draft=1`).catch(err => {
           console.error("Cleanup: Error deleting draft tournament:", err);
         });
       }
@@ -326,7 +326,7 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
   };
 
   return (
-    <div className="responsive-form-card anthropic-theme animate-fade-in">
+    <div className="responsive-form-card tf-form-wrapper anthropic-theme animate-fade-in">
       <style>{`
         @keyframes pulseRedBtn {
           0%, 100% {
@@ -352,6 +352,7 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
           text-transform: uppercase;
           letter-spacing: 0.4px;
           animation: pulseRedBtn 1.5s infinite ease-in-out;
+          flex-shrink: 0;
         }
         .pending-section-dot {
           width: 6px;
@@ -359,38 +360,336 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
           border-radius: 50%;
           background: #dc2626;
         }
+        .tf-form-wrapper {
+          padding: 20px !important;
+        }
+        .tf-form-wrapper input,
+        .tf-form-wrapper select,
+        .tf-form-wrapper textarea {
+          background-color: #ffffff !important;
+          background: #ffffff !important;
+        }
+        .tf-sections-stack {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .tf-section-card {
+          background: #ffffff;
+          border: 1px solid #e7e5e0;
+          border-radius: 14px;
+          overflow: hidden;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+        .tf-section-card.is-open {
+          border-color: #dfcbbd;
+          box-shadow: 0 6px 20px rgba(28, 25, 23, 0.04);
+        }
+        .tf-section-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 13px 16px;
+          cursor: pointer;
+          user-select: none;
+          background: #fcfbfa;
+          transition: background 0.15s ease;
+        }
+        .tf-section-card.is-open .tf-section-header {
+          background: #faf6f3;
+          border-bottom: 1px solid #efe8e2;
+        }
+        .tf-section-header:hover {
+          background: #f7f3ef;
+        }
+        .tf-section-header-left {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          min-width: 0;
+          flex: 1;
+        }
+        .tf-section-icon {
+          width: 34px;
+          height: 34px;
+          border-radius: 9px;
+          background: #f5ebe4;
+          border: 1px solid #e8d5c8;
+          color: #cc7a5c;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          transition: all 0.2s ease;
+        }
+        .tf-section-card.is-open .tf-section-icon {
+          background: #cc7a5c;
+          border-color: #cc7a5c;
+          color: #ffffff;
+        }
+        .tf-section-title-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+          min-width: 0;
+        }
+        .tf-section-title {
+          font-size: 12.5px;
+          font-weight: 800;
+          color: #1c1d21;
+          text-transform: uppercase;
+          letter-spacing: 0.6px;
+          margin: 0;
+          line-height: 1.25;
+        }
+        .tf-section-card.is-open .tf-section-title {
+          color: #b86344;
+        }
+        .tf-section-toggle-btn {
+          width: 32px !important;
+          height: 32px !important;
+          padding: 0 !important;
+          min-width: unset !important;
+          border-radius: 8px !important;
+          border: 1px solid #e4e2dd !important;
+          background: #ffffff !important;
+          color: #cc7a5c !important;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          transition: all 0.15s ease;
+        }
+        .tf-section-card.is-open .tf-section-toggle-btn {
+          background: #f5ebe4 !important;
+          border-color: #dfcbbd !important;
+        }
+        .tf-section-body {
+          padding: 18px 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          background: #ffffff;
+        }
+        .tf-helper-banner {
+          font-size: 13px;
+          color: #52525b;
+          background: #f8f7f4;
+          border: 1px solid #eceae4;
+          border-radius: 10px;
+          padding: 10px 12px;
+          margin: 0;
+          line-height: 1.45;
+        }
+        .tf-input-suffix {
+          position: absolute;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          font-size: 11.5px;
+          font-weight: 700;
+          color: #71717a;
+          background: #ffffff;
+          border: 1px solid #e7e5e0;
+          padding: 2px 8px;
+          border-radius: 6px;
+          pointer-events: none;
+        }
+        .tf-cards-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+        }
+        .tf-card-box {
+          background: #ffffff;
+          border: 1px solid #e7e5e0;
+          border-radius: 12px;
+          padding: 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .tf-card-label {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          font-size: 11.5px;
+          font-weight: 800;
+          color: #27272a;
+          text-transform: uppercase;
+          letter-spacing: 0.4px;
+        }
+        .tf-soccer-card-icon {
+          width: 12px;
+          height: 16px;
+          border-radius: 3px;
+          display: inline-block;
+          flex-shrink: 0;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+        }
+        .tf-soccer-card-icon.yellow {
+          background: #facc15;
+          border: 1px solid #eab308;
+        }
+        .tf-soccer-card-icon.red {
+          background: #ef4444;
+          border: 1px solid #dc2626;
+        }
+        .tf-soccer-card-icon.blue {
+          background: #0ea5e9;
+          border: 1px solid #0284c7;
+        }
+        .tf-toggle-card {
+          background: #ffffff;
+          border: 1px solid #e7e5e0;
+          border-radius: 12px;
+          padding: 12px 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          transition: border-color 0.15s ease, background 0.15s ease;
+        }
+        .tf-toggle-card.is-active {
+          background: #ffffff;
+          border-color: #e7e5e0;
+        }
+        .tf-pts-3col {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 10px;
+        }
+        .tf-pts-card {
+          background: #ffffff;
+          border: 1px solid #e7e5e0;
+          border-radius: 12px;
+          padding: 10px;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .tf-pts-card label {
+          font-size: 11px !important;
+          font-weight: 800 !important;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+          color: #52525b !important;
+          margin: 0 !important;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .tf-tiebreaker-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .tf-rank-badge {
+          width: 36px;
+          height: 40px;
+          border-radius: 9px;
+          background: #f5ebe4;
+          border: 1px solid #e5d2c5;
+          color: #b86344;
+          font-size: 13px;
+          font-weight: 800;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        .tf-rank-badge.first {
+          background: #1c1d21;
+          border-color: #1c1d21;
+          color: #facc15;
+        }
+        .tf-actions-footer {
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+          gap: 12px;
+          padding-top: 16px;
+          margin-top: 4px;
+          border-top: 1px solid #e4e4e7;
+        }
+        @media (max-width: 768px) {
+          .tf-form-wrapper {
+            padding: 12px !important;
+            border-radius: 16px !important;
+          }
+          .tf-sections-stack {
+            gap: 10px;
+          }
+          .tf-section-header {
+            padding: 11px 13px;
+            gap: 10px;
+          }
+          .tf-section-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+          }
+          .tf-section-title {
+            font-size: 12px;
+          }
+          .tf-section-body {
+            padding: 14px 13px;
+            gap: 14px;
+          }
+          .tf-pts-3col {
+            gap: 8px;
+          }
+          .tf-pts-card {
+            padding: 8px;
+          }
+          .tf-pts-card select {
+            padding: 0 8px !important;
+            font-size: 13px !important;
+            height: 38px !important;
+          }
+          .tf-actions-footer {
+            justify-content: stretch;
+            gap: 10px;
+          }
+          .tf-actions-footer > button {
+            flex: 1;
+            height: 46px !important;
+            justify-content: center;
+            font-size: 13.5px !important;
+          }
+        }
       `}</style>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <form onSubmit={handleSubmit} className="tf-sections-stack">
 
         {/* Sección 1: Información del Torneo */}
-        <div>
+        <div className={`tf-section-card ${isInfoOpen ? 'is-open' : ''}`}>
           <div
+            className="tf-section-header"
             onClick={() => handleToggleSection('info', isInfoOpen, setIsInfoOpen)}
-            style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              marginBottom: isInfoOpen ? '16px' : '0', cursor: 'pointer', userSelect: 'none'
-            }}
           >
-            <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Trophy size={14} /> Información del Torneo
-            </h3>
+            <div className="tf-section-header-left">
+              <div className="tf-section-icon">
+                <Trophy size={16} />
+              </div>
+              <div className="tf-section-title-row">
+                <h3 className="tf-section-title">Información del Torneo</h3>
+              </div>
+            </div>
             <button
               type="button"
+              className="tf-section-toggle-btn"
               onClick={(e) => { e.stopPropagation(); handleToggleSection('info', isInfoOpen, setIsInfoOpen); }}
-              style={{
-                width: '28px', height: '28px', padding: 0, minWidth: 'unset',
-                borderRadius: '6px', border: '1px solid var(--border-subtle)',
-                background: 'transparent', color: '#cc7a5c', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}
+              aria-label={isInfoOpen ? 'Contraer sección' : 'Expandir sección'}
             >
               {isInfoOpen ? <Minus size={16} /> : <Plus size={16} />}
             </button>
           </div>
 
           {isInfoOpen && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="tf-section-body">
               {/* Nombre + Categoría */}
               <div className="responsive-form-grid">
                 <div className="input-group">
@@ -406,18 +705,18 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
                         setError('');
                         if (e.target.value.trim()) setNameError(false);
                       }}
-                      placeholder="Ej. Torneo Apertura 2025"
+                      placeholder="Ej. Torneo Apertura 2026"
                       style={{
                         paddingLeft: '40px',
                         height: '42px',
                         borderColor: nameError ? '#e07070' : (error ? '#e07070' : 'var(--border-subtle)'),
                         boxShadow: nameError ? '0 0 0 3px rgba(224, 112, 112, 0.25)' : 'none',
-                        background: nameError ? 'rgba(224, 112, 112, 0.04)' : 'transparent'
+                        background: '#ffffff'
                       }}
                     />
                   </div>
                   {nameError && (
-                    <span style={{ color: '#e07070', fontSize: '12px', marginTop: '6px', display: 'block', fontWeight: '400' }}>
+                    <span style={{ color: '#e07070', fontSize: '12px', marginTop: '6px', display: 'block', fontWeight: '500' }}>
                       Debés ingresar un nombre para el torneo antes de poder seleccionar equipos.
                     </span>
                   )}
@@ -480,13 +779,15 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
                         setFormData({ ...formData, half_duration: e.target.value });
                         setError('');
                       }}
-                      placeholder="1 a 200"
+                      placeholder="Ej. 25"
                       style={{
                         paddingLeft: '40px',
+                        paddingRight: '56px',
                         height: '42px',
                         borderColor: isHalfDurationInvalid() ? '#e07070' : 'var(--border-subtle)'
                       }}
                     />
+                    <span className="tf-input-suffix">min</span>
                   </div>
                   {isHalfDurationInvalid() && (
                     <span style={{ color: '#e07070', fontSize: '12px', marginTop: '4px', display: 'block', fontWeight: '500' }}>
@@ -500,39 +801,31 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
         </div>
 
         {/* Sección 2: Configuración de Zonas y Equipos */}
-        <div style={{ borderTop: '1px solid #e4e4e7', paddingTop: '20px' }}>
+        <div className={`tf-section-card ${isZonesOpen ? 'is-open' : ''}`}>
           <div
+            className="tf-section-header"
             onClick={() => handleToggleSection('zones', isZonesOpen, setIsZonesOpen)}
-            style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              marginBottom: isZonesOpen ? '16px' : '0', cursor: 'pointer', userSelect: 'none'
-            }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-              <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Layers size={14} /> Configuración de Zonas y Equipos
-              </h3>
+            <div className="tf-section-header-left">
+              <div className="tf-section-icon">
+                <Layers size={16} />
+              </div>
+              <div className="tf-section-title-row">
+                <h3 className="tf-section-title">Configuración de Zonas y Equipos</h3>
+              </div>
             </div>
             <button
               type="button"
+              className="tf-section-toggle-btn"
               onClick={(e) => { e.stopPropagation(); handleToggleSection('zones', isZonesOpen, setIsZonesOpen); }}
-              style={{
-                width: '28px', height: '28px', padding: 0, minWidth: 'unset',
-                borderRadius: '6px', border: '1px solid var(--border-subtle)',
-                background: 'transparent', color: '#cc7a5c', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}
+              aria-label={isZonesOpen ? 'Contraer sección' : 'Expandir sección'}
             >
               {isZonesOpen ? <Minus size={16} /> : <Plus size={16} />}
             </button>
           </div>
 
           {isZonesOpen && (
-            <div>
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 16px' }}>
-                Cada zona genera su propia tabla de posiciones. Podés agregar y distribuir equipos directamente desde cada zona.
-              </p>
-
+            <div className="tf-section-body">
               <ZonesBuilder
                 zones={zones}
                 onChange={setZones}
@@ -548,38 +841,34 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
           )}
         </div>
 
-        {/* Sección: Lista de Buena Fe */}
-        <div style={{ borderTop: '1px solid #e4e4e7', paddingTop: '20px' }}>
+        {/* Sección 3: Lista de Buena Fe */}
+        <div className={`tf-section-card ${isBuenaFeOpen ? 'is-open' : ''}`}>
           <div
+            className="tf-section-header"
             onClick={() => handleToggleSection('buenaFe', isBuenaFeOpen, setIsBuenaFeOpen)}
-            style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              marginBottom: isBuenaFeOpen ? '16px' : '0', cursor: 'pointer', userSelect: 'none'
-            }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-              <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <UserCheck size={14} /> Lista de Buena Fe
-              </h3>
+            <div className="tf-section-header-left">
+              <div className="tf-section-icon">
+                <UserCheck size={16} />
+              </div>
+              <div className="tf-section-title-row">
+                <h3 className="tf-section-title">Lista de Buena Fe</h3>
+              </div>
             </div>
             <button
               type="button"
+              className="tf-section-toggle-btn"
               onClick={(e) => { e.stopPropagation(); handleToggleSection('buenaFe', isBuenaFeOpen, setIsBuenaFeOpen); }}
-              style={{
-                width: '28px', height: '28px', padding: 0, minWidth: 'unset',
-                borderRadius: '6px', border: '1px solid var(--border-subtle)',
-                background: 'transparent', color: '#cc7a5c', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}
+              aria-label={isBuenaFeOpen ? 'Contraer sección' : 'Expandir sección'}
             >
               {isBuenaFeOpen ? <Minus size={16} /> : <Plus size={16} />}
             </button>
           </div>
 
           {isBuenaFeOpen && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="tf-section-body">
               <div className="input-group">
-                <label>Cantidad máxima de jugadores en lista de buena fe</label>
+                <label>Cupo máximo de jugadores por equipo</label>
                 <div style={{ position: 'relative' }}>
                   <Users size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#a1a1aa', pointerEvents: 'none' }} />
                   <input
@@ -593,10 +882,12 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
                     }}
                     style={{
                       paddingLeft: '40px',
+                      paddingRight: '88px',
                       height: '42px',
                       borderColor: isMaxPlayersInvalid() ? '#e07070' : 'var(--border-subtle)'
                     }}
                   />
+                  <span className="tf-input-suffix">jugadores</span>
                 </div>
                 {isMaxPlayersInvalid() && (
                   <span style={{ color: '#e07070', fontSize: '12px', marginTop: '4px', display: 'block', fontWeight: '500' }}>
@@ -608,57 +899,51 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
           )}
         </div>
 
-        {/* Sección 4: Puntaje fair play */}
-        <div style={{ borderTop: '1px solid #e4e4e7', paddingTop: '20px' }}>
+        {/* Sección 4: Puntaje Fair Play */}
+        <div className={`tf-section-card ${isFairPlayOpen ? 'is-open' : ''}`}>
           <div
+            className="tf-section-header"
             onClick={() => handleToggleSection('fairPlay', isFairPlayOpen, setIsFairPlayOpen)}
-            style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              marginBottom: isFairPlayOpen ? '16px' : '0', cursor: 'pointer', userSelect: 'none'
-            }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-              <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <CheckCircle size={14} /> Puntaje fair play
-              </h3>
-              {renderPendingBadge('fairPlay')}
+            <div className="tf-section-header-left">
+              <div className="tf-section-icon">
+                <CheckCircle size={16} />
+              </div>
+              <div className="tf-section-title-row">
+                <h3 className="tf-section-title">Puntaje Fair Play</h3>
+                {renderPendingBadge('fairPlay')}
+              </div>
             </div>
             <button
               type="button"
+              className="tf-section-toggle-btn"
               onClick={(e) => { e.stopPropagation(); handleToggleSection('fairPlay', isFairPlayOpen, setIsFairPlayOpen); }}
-              style={{
-                width: '28px', height: '28px', padding: 0, minWidth: 'unset',
-                borderRadius: '6px', border: '1px solid var(--border-subtle)',
-                background: 'transparent', color: '#cc7a5c', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}
+              aria-label={isFairPlayOpen ? 'Contraer sección' : 'Expandir sección'}
             >
               {isFairPlayOpen ? <Minus size={16} /> : <Plus size={16} />}
             </button>
           </div>
 
           {isFairPlayOpen && (
-            <>
+            <div className="tf-section-body">
               <fieldset disabled={isRulesLocked} className={isRulesLocked ? 'locked-rules-fieldset' : ''} style={{ border: 'none', padding: 0, margin: 0, minWidth: 0 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   {isRulesLocked && (
                     <div className="locked-rules-notice">
                       El puntaje Fair Play no puede modificarse una vez creado el torneo.
                     </div>
                   )}
-                  <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0, lineHeight: '1.4' }}>
-                    El puntaje de cada tarjeta se utiliza para definir las posiciones de los equipos en la tabla de Fair Play.
-                  </p>
 
-                  {/* Tarjetas: Amarilla y Roja */}
-                  <div className="responsive-form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '14px' }}>
+                  {/* Tarjetas: Amarilla y Roja lado a lado incluso en celular */}
+                  <div className="tf-cards-grid">
                     {/* AMARILLA */}
-                    <div className="input-group">
-                      <label style={{ fontSize: '11px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                        AMARILLA
-                      </label>
+                    <div className="tf-card-box">
+                      <div className="tf-card-label">
+                        <span className="tf-soccer-card-icon yellow" />
+                        Amarilla
+                      </div>
                       <div style={{ position: 'relative' }}>
-                        <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', color: '#888' }}>
+                        <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '12.5px', fontWeight: '600', color: '#71717a' }}>
                           pts:
                         </span>
                         <input
@@ -671,28 +956,31 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
                             setError('');
                           }}
                           style={{
-                            paddingLeft: '45px',
+                            paddingLeft: '44px',
                             height: '40px',
                             borderColor: isFpYellowInvalid() ? '#e07070' : 'var(--border-subtle)',
                             borderRadius: '8px',
-                            fontSize: '13px'
+                            fontSize: '14px',
+                            fontWeight: '700',
+                            background: '#ffffff'
                           }}
                         />
                       </div>
                       {isFpYellowInvalid() && (
-                        <span style={{ color: '#e07070', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                          Debe ingresar un número entre 1 y 300.
+                        <span style={{ color: '#e07070', fontSize: '11.5px', display: 'block' }}>
+                          Entre 1 y 300.
                         </span>
                       )}
                     </div>
 
                     {/* ROJA */}
-                    <div className="input-group">
-                      <label style={{ fontSize: '11px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                        ROJA
-                      </label>
+                    <div className="tf-card-box">
+                      <div className="tf-card-label">
+                        <span className="tf-soccer-card-icon red" />
+                        Roja
+                      </div>
                       <div style={{ position: 'relative' }}>
-                        <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', color: '#888' }}>
+                        <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '12.5px', fontWeight: '600', color: '#71717a' }}>
                           pts:
                         </span>
                         <input
@@ -705,57 +993,60 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
                             setError('');
                           }}
                           style={{
-                            paddingLeft: '45px',
+                            paddingLeft: '44px',
                             height: '40px',
                             borderColor: isFpRedInvalid() ? '#e07070' : 'var(--border-subtle)',
                             borderRadius: '8px',
-                            fontSize: '13px'
+                            fontSize: '14px',
+                            fontWeight: '700',
+                            background: '#ffffff'
                           }}
                         />
                       </div>
                       {isFpRedInvalid() && (
-                        <span style={{ color: '#e07070', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                          Debe ingresar un número entre 1 y 300.
+                        <span style={{ color: '#e07070', fontSize: '11.5px', display: 'block' }}>
+                          Entre 1 y 300.
                         </span>
                       )}
                     </div>
                   </div>
 
                   {/* Habilitar tarjeta azul */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '4px' }}>
-                    <div>
-                      <label style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none' }}>
-                        <div style={{
-                          position: 'relative', width: '36px', height: '20px',
-                          backgroundColor: formData.fp_blue_card_enabled ? '#0284c7' : '#d1d5db',
-                          borderRadius: '10px', transition: 'background-color 0.2s', flexShrink: 0
-                        }}>
-                          <div style={{
-                            position: 'absolute', top: '2px',
-                            left: formData.fp_blue_card_enabled ? '18px' : '2px',
-                            width: '16px', height: '16px', backgroundColor: '#ffffff',
-                            borderRadius: '50%', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-                          }} />
-                          <input
-                            type="checkbox"
-                            checked={formData.fp_blue_card_enabled}
-                            onChange={e => setFormData({ ...formData, fp_blue_card_enabled: e.target.checked })}
-                            style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
-                          />
-                        </div>
-                        <span style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-main)' }}>
+                  <div className={`tf-toggle-card ${formData.fp_blue_card_enabled ? 'is-active' : ''}`}>
+                    <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', cursor: 'pointer', userSelect: 'none', margin: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span className="tf-soccer-card-icon blue" />
+                        <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#1c1d21' }}>
                           Habilitar Tarjeta Azul
                         </span>
-                      </label>
-                    </div>
+                      </div>
+                      <div style={{
+                        position: 'relative', width: '40px', height: '22px',
+                        backgroundColor: formData.fp_blue_card_enabled ? '#0284c7' : '#d1d5db',
+                        borderRadius: '999px', transition: 'background-color 0.2s', flexShrink: 0
+                      }}>
+                        <div style={{
+                          position: 'absolute', top: '3px',
+                          left: formData.fp_blue_card_enabled ? '21px' : '3px',
+                          width: '16px', height: '16px', backgroundColor: '#ffffff',
+                          borderRadius: '50%', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                        }} />
+                        <input
+                          type="checkbox"
+                          checked={formData.fp_blue_card_enabled}
+                          onChange={e => setFormData({ ...formData, fp_blue_card_enabled: e.target.checked })}
+                          style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
+                        />
+                      </div>
+                    </label>
 
                     {formData.fp_blue_card_enabled && (
-                      <div className="input-group" style={{ maxWidth: '180px', marginTop: '4px' }}>
-                        <label style={{ fontSize: '11px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                          PUNTOS TARJETA AZUL
-                        </label>
-                        <div style={{ position: 'relative' }}>
-                          <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', color: '#888' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', paddingTop: '8px', borderTop: '1px solid #e7e5e0' }}>
+                        <span style={{ fontSize: '12px', fontWeight: '700', color: '#1c1d21', textTransform: 'uppercase' }}>
+                          Puntos Tarjeta Azul
+                        </span>
+                        <div style={{ position: 'relative', width: '120px' }}>
+                          <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#64748b' }}>
                             pts:
                           </span>
                           <input
@@ -768,61 +1059,60 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
                               setError('');
                             }}
                             style={{
-                              paddingLeft: '45px',
-                              height: '38px',
+                              paddingLeft: '38px',
+                              height: '36px',
                               borderColor: isFpBlueInvalid() ? '#e07070' : 'var(--border-subtle)',
                               borderRadius: '8px',
-                              fontSize: '13px'
+                              fontSize: '13.5px',
+                              fontWeight: '700',
+                              background: '#ffffff'
                             }}
                           />
                         </div>
-                        {isFpBlueInvalid() && (
-                          <span style={{ color: '#e07070', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                            Debe ingresar un número entre 1 y 300.
-                          </span>
-                        )}
                       </div>
+                    )}
+                    {formData.fp_blue_card_enabled && isFpBlueInvalid() && (
+                      <span style={{ color: '#e07070', fontSize: '12px', display: 'block' }}>
+                        Debe ingresar un número entre 1 y 300.
+                      </span>
                     )}
                   </div>
 
                   {/* Habilitar Walkover (WO) */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '4px' }}>
-                    <div>
-                      <label style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none' }}>
-                        <div style={{
-                          position: 'relative', width: '36px', height: '20px',
-                          backgroundColor: formData.fp_wo_enabled ? '#0284c7' : '#d1d5db',
-                          borderRadius: '10px', transition: 'background-color 0.2s', flexShrink: 0
-                        }}>
-                          <div style={{
-                            position: 'absolute', top: '2px',
-                            left: formData.fp_wo_enabled ? '18px' : '2px',
-                            width: '16px', height: '16px', backgroundColor: '#ffffff',
-                            borderRadius: '50%', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-                          }} />
-                          <input
-                            type="checkbox"
-                            checked={formData.fp_wo_enabled}
-                            onChange={e => setFormData({ ...formData, fp_wo_enabled: e.target.checked })}
-                            style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
-                          />
-                        </div>
-                        <span style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-main)' }}>
-                          Habilitar puntos por Walkover (WO)
+                  <div className={`tf-toggle-card ${formData.fp_wo_enabled ? 'is-active' : ''}`}>
+                    <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', cursor: 'pointer', userSelect: 'none', margin: 0 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#1c1d21' }}>
+                          Puntos por Walkover (WO)
                         </span>
-                      </label>
-                      <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0 0', lineHeight: '1.3' }}>
-                        Sumar puntos en la tabla del Fair Play cuando el equipo no se presenta
-                      </p>
-                    </div>
+                      </div>
+                      <div style={{
+                        position: 'relative', width: '40px', height: '22px',
+                        backgroundColor: formData.fp_wo_enabled ? '#0284c7' : '#d1d5db',
+                        borderRadius: '999px', transition: 'background-color 0.2s', flexShrink: 0
+                      }}>
+                        <div style={{
+                          position: 'absolute', top: '3px',
+                          left: formData.fp_wo_enabled ? '21px' : '3px',
+                          width: '16px', height: '16px', backgroundColor: '#ffffff',
+                          borderRadius: '50%', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                        }} />
+                        <input
+                          type="checkbox"
+                          checked={formData.fp_wo_enabled}
+                          onChange={e => setFormData({ ...formData, fp_wo_enabled: e.target.checked })}
+                          style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
+                        />
+                      </div>
+                    </label>
 
                     {formData.fp_wo_enabled && (
-                      <div className="input-group" style={{ maxWidth: '180px', marginTop: '6px' }}>
-                        <label style={{ fontSize: '11px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                          PUNTOS POR WO
-                        </label>
-                        <div style={{ position: 'relative' }}>
-                          <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', color: '#888' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', paddingTop: '8px', borderTop: '1px solid #e7e5e0' }}>
+                        <span style={{ fontSize: '12px', fontWeight: '700', color: '#1c1d21', textTransform: 'uppercase' }}>
+                          Puntos por WO
+                        </span>
+                        <div style={{ position: 'relative', width: '120px' }}>
+                          <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#64748b' }}>
                             pts:
                           </span>
                           <input
@@ -835,116 +1125,120 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
                               setError('');
                             }}
                             style={{
-                              paddingLeft: '45px',
-                              height: '38px',
+                              paddingLeft: '38px',
+                              height: '36px',
                               borderColor: isFpWoInvalid() ? '#e07070' : 'var(--border-subtle)',
                               borderRadius: '8px',
-                              fontSize: '13px'
+                              fontSize: '13.5px',
+                              fontWeight: '700',
+                              background: '#ffffff'
                             }}
                           />
                         </div>
-                        {isFpWoInvalid() && (
-                          <span style={{ color: '#e07070', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                            Debe ingresar un número entre 1 y 100.
-                          </span>
-                        )}
                       </div>
+                    )}
+                    {formData.fp_wo_enabled && isFpWoInvalid() && (
+                      <span style={{ color: '#e07070', fontSize: '12px', display: 'block' }}>
+                        Debe ingresar un número entre 1 y 100.
+                      </span>
                     )}
                   </div>
                 </div>
               </fieldset>
-            </>
+            </div>
           )}
         </div>
 
-        {/* Sección: Configuraciones Extras */}
-        <div style={{ borderTop: '1px solid #e4e4e7', paddingTop: '20px' }}>
+        {/* Sección 5: Configuraciones Extras */}
+        <div className={`tf-section-card ${isExtrasOpen ? 'is-open' : ''}`}>
           <div
+            className="tf-section-header"
             onClick={() => handleToggleSection('extras', isExtrasOpen, setIsExtrasOpen)}
-            style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              marginBottom: isExtrasOpen ? '16px' : '0', cursor: 'pointer', userSelect: 'none'
-            }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-              <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Settings size={14} /> Configuraciones Extras
-              </h3>
-              {renderPendingBadge('extras')}
+            <div className="tf-section-header-left">
+              <div className="tf-section-icon">
+                <Settings size={16} />
+              </div>
+              <div className="tf-section-title-row">
+                <h3 className="tf-section-title">Configuraciones Extras</h3>
+                {renderPendingBadge('extras')}
+              </div>
             </div>
             <button
               type="button"
+              className="tf-section-toggle-btn"
               onClick={(e) => { e.stopPropagation(); handleToggleSection('extras', isExtrasOpen, setIsExtrasOpen); }}
-              style={{
-                width: '28px', height: '28px', padding: 0, minWidth: 'unset',
-                borderRadius: '6px', border: '1px solid var(--border-subtle)',
-                background: 'transparent', color: '#cc7a5c', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}
+              aria-label={isExtrasOpen ? 'Contraer sección' : 'Expandir sección'}
             >
               {isExtrasOpen ? <Minus size={16} /> : <Plus size={16} />}
             </button>
           </div>
 
           {isExtrasOpen && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <fieldset disabled={isRulesLocked} className={isRulesLocked ? 'locked-rules-fieldset' : ''} style={{ border: 'none', padding: 0, margin: 0, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="tf-section-body">
+              <fieldset disabled={isRulesLocked} className={isRulesLocked ? 'locked-rules-fieldset' : ''} style={{ border: 'none', padding: 0, margin: 0, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 {isRulesLocked && (
                   <div className="locked-rules-notice">
                     Los puntos por partido y las amarillas para suspensión no pueden modificarse una vez creado el torneo.
                   </div>
                 )}
-                {/* Puntos por Partido */}
-                <div className="responsive-form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
-                  <div className="input-group">
-                    <label>Puntos por partido ganado</label>
-                    <select
-                      value={formData.pts_win}
-                      onChange={e => setFormData({ ...formData, pts_win: Number(e.target.value) })}
-                      style={{ height: '42px', borderColor: 'var(--border-subtle)', width: '100%' }}
-                    >
-                      {[1, 2, 3, 4, 5].map(pts => (
-                        <option key={pts} value={pts}>{pts} {pts === 1 ? 'punto' : 'puntos'}</option>
-                      ))}
-                    </select>
-                  </div>
 
-                  <div className="input-group">
-                    <label>Puntos por partido empatado</label>
-                    <select
-                      value={formData.pts_draw}
-                      onChange={e => setFormData({ ...formData, pts_draw: Number(e.target.value) })}
-                      style={{ height: '42px', borderColor: 'var(--border-subtle)', width: '100%' }}
-                    >
-                      {[0, 1, 2, 3, 4, 5].map(pts => (
-                        <option key={pts} value={pts}>{pts} {pts === 1 ? 'punto' : 'puntos'}</option>
-                      ))}
-                    </select>
-                  </div>
+                {/* Puntos por Partido en grilla compacta de 3 columnas incluso en celular */}
+                <div>
+                  <span style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+                    Puntaje por Resultado
+                  </span>
+                  <div className="tf-pts-3col">
+                    <div className="tf-pts-card">
+                      <label>Ganado</label>
+                      <select
+                        value={formData.pts_win}
+                        onChange={e => setFormData({ ...formData, pts_win: Number(e.target.value) })}
+                        style={{ height: '40px', borderColor: 'var(--border-subtle)', width: '100%', background: '#fff', fontWeight: '700' }}
+                      >
+                        {[1, 2, 3, 4, 5].map(pts => (
+                          <option key={pts} value={pts}>{pts} {pts === 1 ? 'pt' : 'pts'}</option>
+                        ))}
+                      </select>
+                    </div>
 
-                  <div className="input-group">
-                    <label>Puntos por partido perdido</label>
-                    <select
-                      value={formData.pts_loss}
-                      onChange={e => setFormData({ ...formData, pts_loss: Number(e.target.value) })}
-                      style={{ height: '42px', borderColor: 'var(--border-subtle)', width: '100%' }}
-                    >
-                      {[0, 1, 2, 3, 4, 5].map(pts => (
-                        <option key={pts} value={pts}>{pts} {pts === 1 ? 'punto' : 'puntos'}</option>
-                      ))}
-                    </select>
+                    <div className="tf-pts-card">
+                      <label>Empatado</label>
+                      <select
+                        value={formData.pts_draw}
+                        onChange={e => setFormData({ ...formData, pts_draw: Number(e.target.value) })}
+                        style={{ height: '40px', borderColor: 'var(--border-subtle)', width: '100%', background: '#fff', fontWeight: '700' }}
+                      >
+                        {[0, 1, 2, 3, 4, 5].map(pts => (
+                          <option key={pts} value={pts}>{pts} {pts === 1 ? 'pt' : 'pts'}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="tf-pts-card">
+                      <label>Perdido</label>
+                      <select
+                        value={formData.pts_loss}
+                        onChange={e => setFormData({ ...formData, pts_loss: Number(e.target.value) })}
+                        style={{ height: '40px', borderColor: 'var(--border-subtle)', width: '100%', background: '#fff', fontWeight: '700' }}
+                      >
+                        {[0, 1, 2, 3, 4, 5].map(pts => (
+                          <option key={pts} value={pts}>{pts} {pts === 1 ? 'pt' : 'pts'}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
 
                 {/* Amarillas para suspensión */}
                 <div className="input-group">
-                  <label>Cantidad de amarillas para suspensión</label>
+                  <label>Acumulación de amarillas para suspensión</label>
                   <select
                     value={formData.yellow_cards_suspension}
                     onChange={e => setFormData({ ...formData, yellow_cards_suspension: e.target.value })}
                     style={{ height: '42px', borderColor: 'var(--border-subtle)', width: '100%' }}
                   >
-                    <option value="none">Sin suspensión</option>
+                    <option value="none">Sin suspensión por acumulación</option>
                     {Array.from({ length: 10 }, (_, i) => i + 1).map(num => (
                       <option key={num} value={String(num)}>{num} {num === 1 ? 'amarilla' : 'amarillas'}</option>
                     ))}
@@ -954,18 +1248,18 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
 
               {/* Descripción / Modalidad del torneo */}
               <div className="input-group">
-                <label>Descripción / Modalidad del torneo</label>
+                <label>Descripción / Modalidad del torneo (opcional)</label>
                 <textarea
-                  rows={4}
+                  rows={3}
                   value={formData.description}
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Ingresá la descripción del torneo, detalles de premiación, formato de juego o reglas específicas..."
+                  placeholder="Ingresá detalles de premiación, formato de juego o reglas específicas..."
                   style={{
                     padding: '12px',
                     fontSize: '13px',
-                    borderRadius: '8px',
+                    borderRadius: '10px',
                     border: '1px solid var(--border-subtle)',
-                    background: 'var(--input-bg)',
+                    background: '#ffffff',
                     color: 'var(--text-primary)',
                     resize: 'vertical',
                     fontFamily: 'inherit'
@@ -976,86 +1270,77 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
           )}
         </div>
 
-        {/* Sección 3: Criterio de desempate */}
-        <div style={{ borderTop: '1px solid #e4e4e7', paddingTop: '20px' }}>
+        {/* Sección 6: Criterio de Desempate */}
+        <div className={`tf-section-card ${isTiebreakerOpen ? 'is-open' : ''}`}>
           <div
+            className="tf-section-header"
             onClick={() => handleToggleSection('tiebreaker', isTiebreakerOpen, setIsTiebreakerOpen)}
-            style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              marginBottom: isTiebreakerOpen ? '16px' : '0', cursor: 'pointer', userSelect: 'none'
-            }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-              <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#cc7a5c', textTransform: 'uppercase', letterSpacing: '1px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <ListOrdered size={14} /> Criterio de desempate
-              </h3>
+            <div className="tf-section-header-left">
+              <div className="tf-section-icon">
+                <ListOrdered size={16} />
+              </div>
+              <div className="tf-section-title-row">
+                <h3 className="tf-section-title">Criterio de Desempate</h3>
+              </div>
             </div>
             <button
               type="button"
+              className="tf-section-toggle-btn"
               onClick={(e) => { e.stopPropagation(); handleToggleSection('tiebreaker', isTiebreakerOpen, setIsTiebreakerOpen); }}
-              style={{
-                width: '28px', height: '28px', padding: 0, minWidth: 'unset',
-                borderRadius: '6px', border: '1px solid var(--border-subtle)',
-                background: 'transparent', color: '#cc7a5c', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}
+              aria-label={isTiebreakerOpen ? 'Contraer sección' : 'Expandir sección'}
             >
               {isTiebreakerOpen ? <Minus size={16} /> : <Plus size={16} />}
             </button>
           </div>
 
           {isTiebreakerOpen && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0, lineHeight: '1.4' }}>
-                En caso de empate en puntos en la tabla de posiciones los equipos se ordenaran siguiendo los siguientes criterios.
-              </p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div className="tf-section-body">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {/* CRITERIO 1: Puntos (Fijo y No Modificable) */}
-                <div className="input-group">
-                  <label style={{ fontSize: '11px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    CRITERIO 1
-                  </label>
+                <div className="tf-tiebreaker-row">
+                  <div className="tf-rank-badge first" title="Primer criterio obligatorio">1°</div>
                   <input
                     type="text"
                     value="Puntos"
                     disabled
                     readOnly
                     style={{
-                      height: '42px',
+                      height: '40px',
                       borderColor: 'var(--border-subtle)',
                       width: '100%',
-                      borderRadius: '8px',
-                      background: '#fafafb',
-                      color: '#666',
+                      borderRadius: '9px',
+                      background: '#ffffff',
+                      color: '#1c1d21',
                       padding: '0 12px',
                       cursor: 'not-allowed',
-                      fontWeight: '500'
+                      fontWeight: '600',
+                      fontSize: '13px'
                     }}
                   />
                 </div>
 
                 {/* CRITERIO 2 A 5 */}
                 {[
-                  { key: 'tiebreaker_2', label: 'CRITERIO 2' },
-                  { key: 'tiebreaker_3', label: 'CRITERIO 3' },
-                  { key: 'tiebreaker_4', label: 'CRITERIO 4' },
-                  { key: 'tiebreaker_5', label: 'CRITERIO 5' },
+                  { key: 'tiebreaker_2', rank: '2°' },
+                  { key: 'tiebreaker_3', rank: '3°' },
+                  { key: 'tiebreaker_4', rank: '4°' },
+                  { key: 'tiebreaker_5', rank: '5°' },
                 ].map(item => (
-                  <div key={item.key} className="input-group">
-                    <label style={{ fontSize: '11px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      {item.label}
-                    </label>
+                  <div key={item.key} className="tf-tiebreaker-row">
+                    <div className="tf-rank-badge">{item.rank}</div>
                     <select
                       value={formData[item.key]}
                       onChange={e => setFormData({ ...formData, [item.key]: e.target.value })}
                       style={{
-                        height: '42px',
+                        height: '40px',
                         borderColor: 'var(--border-subtle)',
                         width: '100%',
-                        borderRadius: '8px',
+                        borderRadius: '9px',
                         background: '#fff',
-                        padding: '0 12px'
+                        padding: '0 12px',
+                        fontSize: '13px',
+                        fontWeight: '600'
                       }}
                     >
                       {SECONDARY_TIEBREAKER_OPTIONS.map(opt => (
@@ -1070,17 +1355,17 @@ const TournamentForm = ({ tournament, onClose, onSuccess }) => {
         </div>
 
         {error && (
-          <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'rgba(204, 122, 92, 0.05)', color: '#cc7a5c', fontSize: '13px', border: '1px solid #e5c5bb' }}>
+          <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'rgba(204, 122, 92, 0.08)', color: '#b85d3d', fontSize: '13px', fontWeight: '600', border: '1px solid #e5c5bb' }}>
             {error}
           </div>
         )}
 
         {/* Actions */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '16px', borderTop: '1px solid #e4e4e7' }}>
-          <button type="button" onClick={onClose} className="secondary" style={{ height: '40px' }}>
+        <div className="tf-actions-footer">
+          <button type="button" onClick={onClose} className="secondary" style={{ height: '42px' }}>
             {!isCreating && saved ? 'Cerrar' : 'Cancelar'}
           </button>
-          <button type="submit" disabled={submitting || isAnyFieldInvalid()} style={{ height: '40px' }}>
+          <button type="submit" disabled={submitting || isAnyFieldInvalid()} style={{ height: '42px' }}>
             {submitting ? '...' : <><Check size={18} /> {!isCreating ? 'Guardar Cambios' : 'Crear Torneo'}</>}
           </button>
         </div>

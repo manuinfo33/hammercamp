@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   LayoutDashboard,
   Users,
@@ -23,6 +24,19 @@ import { useHeaderInfo } from '../context/HeaderContext';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useBranding } from '../context/BrandingContext';
+
+const IgReelIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="5" ry="5" />
+    <polygon points="10 8.5 16 12 10 15.5 10 8.5" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+const IgWhatsAppIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+  </svg>
+);
 
 const YouTubeIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -55,6 +69,9 @@ const Sidebar = () => {
   const isTournamentDetail = /^\/torneos\/[^/]+/.test(location.pathname);
 
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [sheetDragY, setSheetDragY] = useState(0);
+  const [isSheetDragging, setIsSheetDragging] = useState(false);
+  const [sheetClosing, setSheetClosing] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [dataMenuOpen, setDataMenuOpen] = useState(false);
   const [dataSheetOpen, setDataSheetOpen] = useState(false);
@@ -64,7 +81,75 @@ const Sidebar = () => {
 
   const userDropdownRef = useRef(null);
   const notificationsRef = useRef(null);
+  const dragStartYRef = useRef(null);
+  const dragCurrentYRef = useRef(0);
   const openDataMenu = () => setDataMenuOpen(true);
+
+  const closeUserSheet = () => {
+    setIsSheetDragging(false);
+    setSheetClosing(true);
+    setTimeout(() => {
+      setUserDropdownOpen(false);
+      setSheetClosing(false);
+      setSheetDragY(0);
+      dragStartYRef.current = null;
+      dragCurrentYRef.current = 0;
+    }, 200);
+  };
+
+  // Bloquea el scroll del fondo cuando el menú inferior de usuario está abierto
+  useEffect(() => {
+    if (!userDropdownOpen) return;
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    const prevOverscroll = document.body.style.overscrollBehavior;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overscrollBehavior = 'none';
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      document.body.style.overscrollBehavior = prevOverscroll;
+    };
+  }, [userDropdownOpen]);
+
+  const handleSheetDragStart = (clientY) => {
+    dragStartYRef.current = clientY;
+    dragCurrentYRef.current = 0;
+    setIsSheetDragging(true);
+  };
+
+  const handleSheetDragMove = (clientY) => {
+    if (dragStartYRef.current === null) return;
+    const deltaY = Math.max(0, clientY - dragStartYRef.current);
+    dragCurrentYRef.current = deltaY;
+    setSheetDragY(deltaY);
+  };
+
+  const handleSheetDragEnd = () => {
+    if (dragStartYRef.current === null) return;
+    const finalDelta = dragCurrentYRef.current;
+    dragStartYRef.current = null;
+    dragCurrentYRef.current = 0;
+    setIsSheetDragging(false);
+    if (finalDelta > 45) {
+      closeUserSheet();
+    } else {
+      setSheetDragY(0);
+    }
+  };
+
+  useEffect(() => {
+    if (!isSheetDragging) return;
+    const onMouseMove = (e) => handleSheetDragMove(e.clientY);
+    const onMouseUp = () => handleSheetDragEnd();
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [isSheetDragging]);
 
   // Cierra menús al cambiar de ruta
   useEffect(() => {
@@ -77,16 +162,32 @@ const Sidebar = () => {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (userDropdownRef.current && !userDropdownRef.current.contains(e.target)) {
-        setUserDropdownOpen(false);
-      }
       if (notificationsRef.current && !notificationsRef.current.contains(e.target)) {
         setNotificationsOpen(false);
       }
     };
+    const handleToggleSheet = () => {
+      setNotificationsOpen(false);
+      setDataSheetOpen(false);
+      setMoreSheetOpen(false);
+      setUserDropdownOpen((prev) => !prev);
+    };
+    const handleCloseSheet = () => {
+      setUserDropdownOpen(false);
+    };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    window.addEventListener('gx-toggle-user-sheet', handleToggleSheet);
+    window.addEventListener('gx-close-user-sheet', handleCloseSheet);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('gx-toggle-user-sheet', handleToggleSheet);
+      window.removeEventListener('gx-close-user-sheet', handleCloseSheet);
+    };
   }, []);
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('gx-user-sheet-changed', { detail: { open: userDropdownOpen } }));
+  }, [userDropdownOpen]);
 
   const handleLogout = () => {
     setUserDropdownOpen(false);
@@ -248,83 +349,124 @@ const Sidebar = () => {
                 onClick={() => {
                   setUserDropdownOpen(!userDropdownOpen);
                   setNotificationsOpen(false);
+                  setDataSheetOpen(false);
+                  setMoreSheetOpen(false);
                 }}
                 aria-label="Perfil de usuario"
                 title="Mi cuenta"
               >
                 <User size={20} />
               </button>
-              {userDropdownOpen && (
-                <>
-                  <div className="gx-sheet-backdrop" onClick={() => setUserDropdownOpen(false)} />
-                  <div className="gx-popover gx-popover-user">
-                  <div className="gx-user-profile-header">
-                    <div className="gx-user-avatar-badge">
-                      <User size={20} />
-                    </div>
-                    <div className="gx-user-details">
-                      <span className="name">{displayName}</span>
-                      <span className="role-tag">{user?.role || 'Usuario'}</span>
-                    </div>
-                  </div>
-
-                  <div className="gx-menu-group">
-                    <button
-                      type="button"
-                      className="gx-menu-item"
-                      onClick={() => { setUserDropdownOpen(false); setProfileModalOpen(true); }}
-                    >
-                      <span className="gx-menu-icon"><User size={16} /></span>
-                      <span className="gx-menu-lbl">Mi Perfil</span>
-                      <ChevronRight size={14} className="gx-menu-arrow" />
-                    </button>
-                    <button
-                      type="button"
-                      className="gx-menu-item"
-                      onClick={() => { setUserDropdownOpen(false); setHelpModalOpen(true); }}
-                    >
-                      <span className="gx-menu-icon"><HelpCircle size={16} /></span>
-                      <span className="gx-menu-lbl">Centro de Ayuda</span>
-                      <ChevronRight size={14} className="gx-menu-arrow" />
-                    </button>
-                  </div>
-
-                  <div className="gx-menu-group">
-                    <a
-                      href="https://www.youtube.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="gx-menu-item"
-                    >
-                      <span className="gx-menu-icon"><YouTubeIcon /></span>
-                      <span className="gx-menu-lbl">Videos Tutoriales</span>
-                      <ChevronRight size={14} className="gx-menu-arrow" />
-                    </a>
-                    <a
-                      href="https://wa.me/5491112345678"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="gx-menu-item"
-                    >
-                      <span className="gx-menu-icon"><WhatsAppIcon /></span>
-                      <span className="gx-menu-lbl">WhatsApp Soporte</span>
-                      <ChevronRight size={14} className="gx-menu-arrow" />
-                    </a>
-                  </div>
-
-                  <div className="gx-menu-footer">
-                    <button type="button" className="gx-menu-item gx-menu-logout" onClick={handleLogout}>
-                      <span className="gx-menu-icon"><LogOut size={16} /></span>
-                      <span className="gx-menu-lbl">Cerrar Sesión</span>
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
             </div>
           </div>
         </div>
       </header>
+
+      {/* Menú inferior estilo Instagram para el icono de usuario en vista celular */}
+      {userDropdownOpen && typeof document !== 'undefined' && createPortal(
+        <>
+          <div
+            className="gx-ig-sheet-backdrop"
+            onClick={closeUserSheet}
+            onTouchMove={(e) => e.preventDefault()}
+            style={{
+              opacity: sheetClosing ? 0 : Math.max(0.15, 1 - sheetDragY / 320),
+              transition: isSheetDragging ? 'none' : 'opacity 0.2s ease'
+            }}
+          />
+          <div
+            className="gx-ig-user-sheet"
+            role="dialog"
+            aria-label="Menú de usuario"
+            onTouchStart={(e) => {
+              if (e.touches && e.touches.length > 0) {
+                handleSheetDragStart(e.touches[0].clientY);
+              }
+            }}
+            onTouchMove={(e) => {
+              if (e.touches && e.touches.length > 0) {
+                handleSheetDragMove(e.touches[0].clientY);
+              }
+            }}
+            onTouchEnd={handleSheetDragEnd}
+            onTouchCancel={handleSheetDragEnd}
+            style={{
+              transform: sheetClosing
+                ? 'translateY(100%)'
+                : sheetDragY > 0
+                  ? `translateY(${sheetDragY}px)`
+                  : undefined,
+              transition: isSheetDragging ? 'none' : 'transform 0.2s cubic-bezier(0.22, 1, 0.36, 1)'
+            }}
+          >
+            <div
+              className="gx-ig-drag-zone"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleSheetDragStart(e.clientY);
+              }}
+            >
+              <div className="gx-ig-handle" />
+              <div className="gx-ig-header">
+                <span className="gx-ig-title">{displayName}</span>
+              </div>
+            </div>
+
+            <div className="gx-ig-list">
+              <button
+                type="button"
+                className="gx-ig-row"
+                onClick={() => { setUserDropdownOpen(false); setProfileModalOpen(true); }}
+              >
+                <span className="gx-ig-icon"><User size={22} strokeWidth={1.8} /></span>
+                <span className="gx-ig-label">Mi Perfil</span>
+                <span className="gx-ig-badge">{user?.role || 'Usuario'}</span>
+              </button>
+
+              <button
+                type="button"
+                className="gx-ig-row"
+                onClick={() => { setUserDropdownOpen(false); setHelpModalOpen(true); }}
+              >
+                <span className="gx-ig-icon"><HelpCircle size={22} strokeWidth={1.8} /></span>
+                <span className="gx-ig-label">Centro de Ayuda</span>
+              </button>
+
+              <a
+                href="https://www.youtube.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="gx-ig-row"
+                onClick={() => setUserDropdownOpen(false)}
+              >
+                <span className="gx-ig-icon"><IgReelIcon /></span>
+                <span className="gx-ig-label">Videos Tutoriales</span>
+              </a>
+
+              <a
+                href="https://wa.me/5491112345678"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="gx-ig-row"
+                onClick={() => setUserDropdownOpen(false)}
+              >
+                <span className="gx-ig-icon"><IgWhatsAppIcon /></span>
+                <span className="gx-ig-label">WhatsApp Soporte</span>
+              </a>
+
+              <button
+                type="button"
+                className="gx-ig-row gx-ig-row-logout"
+                onClick={handleLogout}
+              >
+                <span className="gx-ig-icon"><LogOut size={22} strokeWidth={1.8} /></span>
+                <span className="gx-ig-label">Cerrar Sesión</span>
+              </button>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
 
       {/* ============================================
           MENÚ LATERAL VERTICAL (desktop) — se expande al pasar el mouse
