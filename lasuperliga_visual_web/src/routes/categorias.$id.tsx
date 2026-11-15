@@ -467,6 +467,89 @@ function CategoryDetailPage() {
           margin-bottom: 20px;
           transition: background-color 0.35s ease;
         }
+        .sl-th-left {
+          position: relative;
+          z-index: 2;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          min-width: 0;
+          flex: 1;
+        }
+        .sl-th-back {
+          width: 38px;
+          height: 38px;
+          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.12);
+          border: 1px solid rgba(255, 255, 255, 0.24);
+          color: #ffffff;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          text-decoration: none;
+          backdrop-filter: blur(6px);
+          transition: background 0.15s ease;
+        }
+        .sl-th-back:hover {
+          background: rgba(255, 255, 255, 0.2);
+        }
+        .sl-th-bar {
+          width: 4px;
+          height: 36px;
+          border-radius: 999px;
+          flex-shrink: 0;
+          box-shadow: 0 0 10px rgba(245, 221, 144, 0.35);
+        }
+        .sl-th-text {
+          min-width: 0;
+          flex: 1;
+        }
+        .sl-th-title {
+          margin: 0;
+          font-size: 1.3rem;
+          font-weight: 800;
+          color: #ffffff;
+          line-height: 1.2;
+          letter-spacing: -0.01em;
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+          overflow-wrap: break-word;
+        }
+        .sl-th-meta {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          margin-top: 3px;
+          flex-wrap: wrap;
+        }
+        .sl-th-sub {
+          font-size: 12.5px;
+          font-weight: 700;
+          letter-spacing: 0.02em;
+          line-height: 1.2;
+        }
+        .sl-th-star {
+          font-size: 11px;
+          line-height: 1;
+        }
+        .sl-th-cup-box {
+          position: relative;
+          z-index: 2;
+          height: 50px;
+          padding: 0 10px;
+          border-radius: 13px;
+          background: rgba(0, 0, 0, 0.26);
+          border: 1px solid rgba(255, 255, 255, 0.16);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        .sl-th-cup-svg {
+          width: 76px;
+          height: 44px;
+          display: block;
+        }
         .sl-tn-tabs {
           display: flex;
           align-items: center;
@@ -562,10 +645,45 @@ function CategoryDetailPage() {
             padding: 12px 10px 28px;
           }
           .sl-page-header {
-            padding: 12px 14px;
+            padding: 11px 12px;
             margin-bottom: 14px;
-            border-radius: 12px;
-            gap: 10px;
+            border-radius: 13px;
+            gap: 8px;
+          }
+          .sl-th-left {
+            gap: 8px;
+          }
+          .sl-th-back {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+          }
+          .sl-th-bar {
+            width: 3.5px;
+            height: 28px;
+          }
+          .sl-th-title {
+            font-size: clamp(0.95rem, 4.1vw, 1.1rem);
+            line-height: 1.16;
+          }
+          .sl-th-meta {
+            margin-top: 2px;
+            gap: 4px;
+          }
+          .sl-th-sub {
+            font-size: 11px;
+          }
+          .sl-th-star {
+            font-size: 9.5px;
+          }
+          .sl-th-cup-box {
+            height: 36px;
+            padding: 0 6px;
+            border-radius: 9px;
+          }
+          .sl-th-cup-svg {
+            width: 52px;
+            height: 30px;
           }
           .sl-tn-tabs {
             display: none !important;
@@ -614,6 +732,40 @@ function CategoryDetailPage() {
             box-shadow: 0 -6px 20px rgba(24, 24, 27, 0.1);
             padding-bottom: env(safe-area-inset-bottom, 0px);
             box-sizing: content-box;
+          }
+        }
+        @media (max-width: 390px) {
+          .sl-page-header {
+            padding: 9px 10px;
+            gap: 6px;
+          }
+          .sl-th-left {
+            gap: 6px;
+          }
+          .sl-th-back {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+          }
+          .sl-th-bar {
+            width: 3px;
+            height: 24px;
+          }
+          .sl-th-title {
+            font-size: 0.9rem;
+            line-height: 1.15;
+          }
+          .sl-th-sub {
+            font-size: 10.5px;
+          }
+          .sl-th-cup-box {
+            height: 32px;
+            padding: 0 5px;
+            border-radius: 8px;
+          }
+          .sl-th-cup-svg {
+            width: 44px;
+            height: 26px;
           }
         }
       `}</style>
@@ -698,86 +850,34 @@ function CategoryDetailPage() {
               </svg>
 
               {/* Izquierda: Botón Volver + Barra dorada + Título del Torneo y Categoría */}
-              <div
-                style={{
-                  position: "relative",
-                  zIndex: 2,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 14,
-                  minWidth: 0,
-                  flex: 1,
-                }}
-              >
+              <div className="sl-th-left">
                 <Link
                   to="/categorias"
                   title="Volver a Categorías"
-                  style={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: 10,
-                    background: "rgba(255, 255, 255, 0.12)",
-                    border: "1px solid rgba(255, 255, 255, 0.24)",
-                    color: "#ffffff",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                    textDecoration: "none",
-                    backdropFilter: "blur(6px)",
-                  }}
+                  className="sl-th-back"
                 >
-                  <ArrowLeft size={16} />
+                  <ArrowLeft size={15} />
                 </Link>
 
                 <span
-                  style={{
-                    width: 5,
-                    height: 36,
-                    borderRadius: 999,
-                    backgroundColor: activeTheme.cupMain,
-                    flexShrink: 0,
-                    boxShadow: "0 0 10px rgba(245, 221, 144, 0.35)",
-                  }}
+                  className="sl-th-bar"
+                  style={{ backgroundColor: activeTheme.cupMain }}
                 />
 
-                <div style={{ minWidth: 0 }}>
-                  <h1
-                    style={{
-                      margin: 0,
-                      fontSize: "1.3rem",
-                      fontWeight: 800,
-                      color: "#ffffff",
-                      lineHeight: 1.22,
-                      textShadow: "0 1px 3px rgba(0, 0, 0, 0.3)",
-                    }}
-                  >
+                <div className="sl-th-text">
+                  <h1 className="sl-th-title">
                     {tournament ? tournament.name : category.name}
                   </h1>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      marginTop: 4,
-                    }}
-                  >
+                  <div className="sl-th-meta">
                     <span
-                      style={{
-                        fontSize: 12.5,
-                        fontWeight: 700,
-                        color: activeTheme.sideBeam,
-                        letterSpacing: "0.02em",
-                      }}
+                      className="sl-th-sub"
+                      style={{ color: activeTheme.sideBeam }}
                     >
                       Categoría: {category.name}
                     </span>
                     <span
-                      style={{
-                        fontSize: 11,
-                        lineHeight: 1,
-                        color: activeTheme.star,
-                      }}
+                      className="sl-th-star"
+                      style={{ color: activeTheme.star }}
                       aria-hidden="true"
                     >
                       ★
@@ -788,25 +888,12 @@ function CategoryDetailPage() {
 
               {/* Derecha: Copa y estrellas adjudicadas al torneo (idéntico al distintivo de Próxima Fecha en el Index) */}
               <div
-                style={{
-                  position: "relative",
-                  zIndex: 2,
-                  height: 52,
-                  padding: "0 10px",
-                  borderRadius: 14,
-                  background: "rgba(0, 0, 0, 0.26)",
-                  border: "1px solid rgba(255, 255, 255, 0.16)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
+                className="sl-th-cup-box"
                 title={tournament ? tournament.name : category.name}
               >
                 <svg
-                  viewBox="0 0 116 68"
-                  width="80"
-                  height="46"
+                  viewBox="4 6 108 56"
+                  className="sl-th-cup-svg"
                   aria-hidden="true"
                 >
                   <polygon
